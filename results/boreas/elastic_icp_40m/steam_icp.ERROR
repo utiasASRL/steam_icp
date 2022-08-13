@@ -1,0 +1,442 @@
+Log file created at: 2022/08/10 07:30:14
+Running on machine: obelisk
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+E20220810 07:30:14.494496 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:14.494669 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 90
+E20220810 07:30:15.519119 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:15.519299 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 89
+E20220810 07:30:15.830902 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:15.830965 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 73
+E20220810 07:30:15.867980 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:15.868031 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 70
+E20220810 07:30:15.904834 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:15.905419 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 48
+E20220810 07:30:15.929926 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:15.929960 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 60
+E20220810 07:30:15.947114 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:15.947160 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 72
+E20220810 07:30:15.978545 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:15.978593 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 59
+E20220810 07:30:16.013923 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:16.013975 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 88
+E20220810 07:30:16.043587 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:16.043627 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 88
+E20220810 07:30:16.473731 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:16.473780 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 56
+E20220810 07:30:16.499805 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:16.499840 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 69
+E20220810 07:30:16.536330 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:16.536373 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 83
+E20220810 07:30:16.840039 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:16.840085 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 99
+E20220810 07:30:16.869980 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:16.870036 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 69
+E20220810 07:30:16.901970 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:16.902017 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 82
+E20220810 07:30:16.930507 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:16.930545 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 66
+E20220810 07:30:16.954188 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:16.954231 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 64
+E20220810 07:30:16.986754 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:16.986814 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 65
+E20220810 07:30:17.018575 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.018621 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 49
+E20220810 07:30:17.069867 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.069911 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 45
+E20220810 07:30:17.107118 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.107160 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 63
+E20220810 07:30:17.136107 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.136152 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 93
+E20220810 07:30:17.160809 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.160853 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 82
+E20220810 07:30:17.183952 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.183995 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 94
+E20220810 07:30:17.218510 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.218546 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 96
+E20220810 07:30:17.252017 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.252056 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 63
+E20220810 07:30:17.285812 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.285856 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 66
+E20220810 07:30:17.312706 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.312747 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 58
+E20220810 07:30:17.343983 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.344069 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 66
+E20220810 07:30:17.375186 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.375236 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 72
+E20220810 07:30:17.406708 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.406752 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 65
+E20220810 07:30:17.441772 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.441833 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 70
+E20220810 07:30:17.482339 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.482378 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 73
+E20220810 07:30:17.524380 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.526469 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 86
+E20220810 07:30:17.643771 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:17.643834 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 99
+E20220810 07:30:19.335259 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:19.335309 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 85
+E20220810 07:30:19.363641 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:30:19.363679 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 89
+E20220810 07:35:48.798468 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:48.798527 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 73
+E20220810 07:35:49.563416 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:49.564457 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 88
+E20220810 07:35:54.066939 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.066982 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 75
+E20220810 07:35:54.114442 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.114490 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 52
+E20220810 07:35:54.164515 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.164589 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 75
+E20220810 07:35:54.224766 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.224823 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 98
+E20220810 07:35:54.278247 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.278299 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 96
+E20220810 07:35:54.337143 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.337189 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 86
+E20220810 07:35:54.583082 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.583142 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 68
+E20220810 07:35:54.643424 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.643476 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 86
+E20220810 07:35:54.692060 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.692101 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 71
+E20220810 07:35:54.752673 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.752723 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 68
+E20220810 07:35:54.819293 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.819339 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 76
+E20220810 07:35:54.867728 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.867771 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 57
+E20220810 07:35:54.898789 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.898831 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 41
+E20220810 07:35:54.940294 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.940343 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 24
+E20220810 07:35:54.981068 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:54.981108 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 38
+E20220810 07:35:55.023653 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.023696 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 41
+E20220810 07:35:55.063053 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.063338 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 48
+E20220810 07:35:55.109879 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.109925 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 57
+E20220810 07:35:55.146910 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.146955 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 52
+E20220810 07:35:55.183842 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.183892 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 64
+E20220810 07:35:55.223683 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.223726 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 49
+E20220810 07:35:55.267494 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.267683 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 45
+E20220810 07:35:55.302955 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.302999 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 24
+E20220810 07:35:55.352247 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.352296 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 16
+E20220810 07:35:55.389608 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.389658 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 4
+E20220810 07:35:55.447137 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.447197 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 3
+E20220810 07:35:55.488307 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.488354 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 5
+E20220810 07:35:55.528908 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.528941 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 4
+E20220810 07:35:55.563057 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.563114 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 8
+E20220810 07:35:55.599799 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.600136 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 6
+E20220810 07:35:55.633787 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.633826 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 3
+E20220810 07:35:55.666137 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.666208 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 0
+E20220810 07:35:55.696377 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.696408 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 2
+E20220810 07:35:55.719360 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.719401 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 2
+E20220810 07:35:55.748559 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.748601 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 3
+E20220810 07:35:55.783027 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.783082 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 4
+E20220810 07:35:55.818923 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.818966 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 1
+E20220810 07:35:55.852011 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.852063 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 8
+E20220810 07:35:55.882427 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.882469 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 11
+E20220810 07:35:55.910431 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.910476 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 20
+E20220810 07:35:55.953267 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.953320 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 34
+E20220810 07:35:55.982416 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:55.982456 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 19
+E20220810 07:35:56.013983 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.014045 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 34
+E20220810 07:35:56.054052 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.054108 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 42
+E20220810 07:35:56.081863 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.081903 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 36
+E20220810 07:35:56.127871 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.127919 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 20
+E20220810 07:35:56.171792 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.171844 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 16
+E20220810 07:35:56.222959 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.223007 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 5
+E20220810 07:35:56.257056 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.257100 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 3
+E20220810 07:35:56.300076 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.300118 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 4
+E20220810 07:35:56.327922 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.327965 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 11
+E20220810 07:35:56.363360 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.363405 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 21
+E20220810 07:35:56.400200 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.400245 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 25
+E20220810 07:35:56.448691 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.448757 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 32
+E20220810 07:35:56.480438 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.480496 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 23
+E20220810 07:35:56.510902 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.510944 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 9
+E20220810 07:35:56.547204 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.547258 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 28
+E20220810 07:35:56.587275 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.587324 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 25
+E20220810 07:35:56.624889 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.625070 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 24
+E20220810 07:35:56.670334 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.670392 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 28
+E20220810 07:35:56.705719 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.705760 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 22
+E20220810 07:35:56.735317 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.735371 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 3
+E20220810 07:35:56.758242 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.758278 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 4
+E20220810 07:35:56.785341 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.785415 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 9
+E20220810 07:35:56.824064 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.824110 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 4
+E20220810 07:35:56.865947 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.865998 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 6
+E20220810 07:35:56.902544 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.902590 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 9
+E20220810 07:35:56.939296 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.939365 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 11
+E20220810 07:35:56.982681 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:56.982726 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 17
+E20220810 07:35:57.017547 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.017591 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 13
+E20220810 07:35:57.052574 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.052757 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 21
+E20220810 07:35:57.080559 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.080600 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 17
+E20220810 07:35:57.117616 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.117651 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 27
+E20220810 07:35:57.144423 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.144459 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 23
+E20220810 07:35:57.179513 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.179560 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 25
+E20220810 07:35:57.218545 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.218586 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 25
+E20220810 07:35:57.259929 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.259979 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 16
+E20220810 07:35:57.297416 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.297454 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 11
+E20220810 07:35:57.335139 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.335202 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 5
+E20220810 07:35:57.378571 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.378618 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 11
+E20220810 07:35:57.427234 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.427276 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 10
+E20220810 07:35:57.461517 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.461562 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 10
+E20220810 07:35:57.490804 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.490844 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 7
+E20220810 07:35:57.517434 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.517505 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 9
+E20220810 07:35:57.550622 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.550668 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 8
+E20220810 07:35:57.600091 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.600143 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 5
+E20220810 07:35:57.649183 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.649262 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 12
+E20220810 07:35:57.686493 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.686628 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 15
+E20220810 07:35:57.730463 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.730521 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 11
+E20220810 07:35:57.775278 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.775362 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 13
+E20220810 07:35:57.816149 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.816197 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 17
+E20220810 07:35:57.861804 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.861846 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 18
+E20220810 07:35:57.907652 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.907694 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 18
+E20220810 07:35:57.951050 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:57.951112 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 13
+E20220810 07:35:58.004300 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.004354 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 24
+E20220810 07:35:58.046375 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.046422 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 21
+E20220810 07:35:58.085239 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.085287 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 23
+E20220810 07:35:58.124156 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.124204 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 28
+E20220810 07:35:58.163566 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.163609 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 13
+E20220810 07:35:58.197365 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.197410 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 25
+E20220810 07:35:58.236846 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.236886 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 21
+E20220810 07:35:58.268373 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.268446 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 26
+E20220810 07:35:58.313550 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.313596 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 16
+E20220810 07:35:58.367133 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.367177 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 19
+E20220810 07:35:58.403813 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.403858 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 22
+E20220810 07:35:58.437418 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.437491 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 21
+E20220810 07:35:58.479506 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.479547 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 9
+E20220810 07:35:58.526774 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.526825 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 13
+E20220810 07:35:58.565346 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.565389 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 14
+E20220810 07:35:58.611886 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.611956 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 12
+E20220810 07:35:58.654800 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.654841 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 16
+E20220810 07:35:58.691385 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.691431 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 23
+E20220810 07:35:58.727810 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.727869 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 28
+E20220810 07:35:58.762981 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.763029 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 27
+E20220810 07:35:58.810009 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.810070 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 32
+E20220810 07:35:58.868340 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.868391 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 49
+E20220810 07:35:58.925491 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.925537 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 49
+E20220810 07:35:58.976346 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:58.976378 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 56
+E20220810 07:35:59.006407 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.006455 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 65
+E20220810 07:35:59.039450 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.039494 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 93
+E20220810 07:35:59.094170 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.094231 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 89
+E20220810 07:35:59.147363 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.147408 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 96
+E20220810 07:35:59.264034 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.264088 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 87
+E20220810 07:35:59.344808 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.344851 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 97
+E20220810 07:35:59.376071 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.376122 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 47
+E20220810 07:35:59.410008 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.410050 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 70
+E20220810 07:35:59.454560 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.454617 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 66
+E20220810 07:35:59.499877 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.499924 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 58
+E20220810 07:35:59.543555 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.543606 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 85
+E20220810 07:35:59.590656 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.592572 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 84
+E20220810 07:35:59.628527 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.628567 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 69
+E20220810 07:35:59.660501 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.660544 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 56
+E20220810 07:35:59.703851 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.703903 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 72
+E20220810 07:35:59.755347 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.755395 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 68
+E20220810 07:35:59.809231 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.809283 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 74
+E20220810 07:35:59.845131 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.845173 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 67
+E20220810 07:35:59.884146 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.884194 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 67
+E20220810 07:35:59.934353 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.934410 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 63
+E20220810 07:35:59.986635 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:35:59.986686 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 50
+E20220810 07:36:00.036928 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.036978 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 54
+E20220810 07:36:00.079846 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.079890 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 45
+E20220810 07:36:00.122745 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.122795 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 65
+E20220810 07:36:00.176008 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.176057 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 65
+E20220810 07:36:00.217540 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.217576 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 69
+E20220810 07:36:00.256484 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.256541 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 68
+E20220810 07:36:00.297240 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.297286 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 74
+E20220810 07:36:00.336292 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.336347 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 80
+E20220810 07:36:00.379086 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.379137 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 87
+E20220810 07:36:00.431854 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.431903 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 90
+E20220810 07:36:00.534081 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.534143 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 91
+E20220810 07:36:00.577018 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.577062 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 75
+E20220810 07:36:00.619215 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.619263 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 84
+E20220810 07:36:00.672996 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.673056 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 91
+E20220810 07:36:00.727886 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.727947 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 87
+E20220810 07:36:00.773857 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:00.773905 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 87
+E20220810 07:36:04.206130 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.206187 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 49
+E20220810 07:36:04.247812 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.247860 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 66
+E20220810 07:36:04.295946 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.295995 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 88
+E20220810 07:36:04.351847 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.351897 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 86
+E20220810 07:36:04.396971 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.397022 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 82
+E20220810 07:36:04.442229 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.442274 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 71
+E20220810 07:36:04.473713 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.473748 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 87
+E20220810 07:36:04.520149 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.520200 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 43
+E20220810 07:36:04.568014 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.568056 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 31
+E20220810 07:36:04.616827 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.616888 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 16
+E20220810 07:36:04.670900 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.670943 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 17
+E20220810 07:36:04.721200 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.721243 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 14
+E20220810 07:36:04.760453 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.760519 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 31
+E20220810 07:36:04.799969 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.800021 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 23
+E20220810 07:36:04.842999 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.843056 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 27
+E20220810 07:36:04.888813 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.888854 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 74
+E20220810 07:36:04.944499 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:04.944558 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 40
+E20220810 07:36:04.998569 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:05.000627 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 36
+E20220810 07:36:05.037654 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:05.037695 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 33
+E20220810 07:36:05.083001 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:05.083052 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 37
+E20220810 07:36:05.143875 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:05.143920 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 40
+E20220810 07:36:05.199291 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:05.199954 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 47
+E20220810 07:36:05.262892 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:05.262940 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 63
+E20220810 07:36:05.310920 23703 elastic_icp.cpp:457] [CT_ICP]Error : not enough keypoints selected in ct-icp !
+E20220810 07:36:05.310969 23703 elastic_icp.cpp:458] [CT_ICP]Number_of_residuals : 90

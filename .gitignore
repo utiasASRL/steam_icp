@@ -1,0 +1,14 @@
+# Commit the .gitignore
+!.gitignore
+
+# Build files
+cmake-*
+cmake-build*
+
+# Python
+venv
+
+# ROS2
+build/
+install/
+log/

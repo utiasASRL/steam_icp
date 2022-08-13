@@ -1,0 +1,61 @@
+/**:
+  ros__parameters:
+    log_dir: /home/yuchen/ASRL/temp/doppler_odometry/kitti_raw/elastic
+
+    # SLAM OPTIONS ----
+    save_trajectory: true
+    suspend_on_failure: false
+    output_dir: /home/yuchen/ASRL/temp/doppler_odometry/kitti_raw/elastic
+
+    # VISUALIZATION OPTIONS ----
+    visualization_options:
+      odometry: false
+      raw_points: false
+      sampled_points: false
+      map_points: false
+
+    # DATASET OPTIONS ----
+    dataset: KITTI_raw
+    dataset_options:
+      all_sequences: true
+      root_path: /home/yuchen/ASRL/data/kitti_raw
+      sequence: "00"
+      init_frame: 0
+      last_frame: 100000
+      min_dist_lidar_center: 5.0
+      max_dist_lidar_center: 100.0
+
+    # ODOMETRY OPTIONS ----
+    odometry: Elastic
+    odometry_options:
+      init_num_frames: 20
+      voxel_size: 0.5 # The voxel size for the grid sampling of the new frame (before keypoints extraction)
+      sample_voxel_size: 1.5 # The size of a voxel for the selection of `keypoints` by grid sampling
+
+      size_voxel_map: 1.0 # The voxel size of in the voxel map
+      min_distance_points: 0.1
+      max_num_points_in_voxel: 20 # The maximum number of points per voxel of the map
+      max_distance: 100.0 # The threshold of the distance to suppress voxels from the map
+      min_number_neighbors: 20 # The minimum number of neighbor points to define a valid neighborhood
+      max_number_neighbors: 20
+
+      num_iters_icp: 10 # The number of iterations of the ICP
+
+      debug_print: true
+      debug_path: /home/yuchen/ASRL/temp/doppler_odometry/kitti_raw/elastic
+
+      elastic:
+        power_planarity: 2.0
+        beta_location_consistency: 0.001
+        beta_orientation_consistency: 0.0
+        beta_constant_velocity: 0.001
+        beta_small_velocity: 0.0
+        max_dist_to_plane: 0.3
+        loss_function: CAUCHY
+        sigma: 0.1
+        tolerant_min_threshold: 0.05
+        max_iterations: 5
+        weight_alpha: 0.9
+        weight_neighborhood: 0.1
+        convergence_threshold: 0.0001
+        num_threads: 10

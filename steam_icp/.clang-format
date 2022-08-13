@@ -1,0 +1,9 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+ColumnLimit: 120
+IncludeBlocks: Preserve  # do not merge multiple include blocks
+# AllowShortIfStatementsOnASingleLine: Never
+# AllowShortFunctionsOnASingleLine: None
+# AllowShortBlocksOnASingleLine: Never
+...
