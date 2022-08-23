@@ -40,6 +40,7 @@ class SteamOdometry : public Odometry {
     // radial velocity
     bool use_rv = false;
     bool merge_p2p_rv = false;
+    double rv_max_error = 2.0;
     STEAM_LOSS_FUNC rv_loss_func = STEAM_LOSS_FUNC::GM;
     double rv_cov_inv = 1.0;
     double rv_loss_threshold = 1.0;

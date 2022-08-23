@@ -738,26 +738,28 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
         const auto &w_ms_ins_intp_eval = w_ms_ins_intp_eval_vec[i];
         const auto error_func = p2p::radialVelError(w_ms_ins_intp_eval, keypoint.raw_pt, keypoint.radial_velocity);
 
-        const auto loss_func = [this]() -> BaseLossFunc::Ptr {
-          switch (options_.rv_loss_func) {
-            case STEAM_LOSS_FUNC::L2:
-              return L2LossFunc::MakeShared();
-            case STEAM_LOSS_FUNC::DCS:
-              return DcsLossFunc::MakeShared(options_.rv_loss_threshold);
-            case STEAM_LOSS_FUNC::CAUCHY:
-              return CauchyLossFunc::MakeShared(options_.rv_loss_threshold);
-            case STEAM_LOSS_FUNC::GM:
-              return GemanMcClureLossFunc::MakeShared(options_.rv_loss_threshold);
-            default:
-              return nullptr;
-          }
-          return nullptr;
-        }();
+        if (std::abs(error_func->value().value()) < options_.rv_max_error) {
+          const auto loss_func = [this]() -> BaseLossFunc::Ptr {
+            switch (options_.rv_loss_func) {
+              case STEAM_LOSS_FUNC::L2:
+                return L2LossFunc::MakeShared();
+              case STEAM_LOSS_FUNC::DCS:
+                return DcsLossFunc::MakeShared(options_.rv_loss_threshold);
+              case STEAM_LOSS_FUNC::CAUCHY:
+                return CauchyLossFunc::MakeShared(options_.rv_loss_threshold);
+              case STEAM_LOSS_FUNC::GM:
+                return GemanMcClureLossFunc::MakeShared(options_.rv_loss_threshold);
+              default:
+                return nullptr;
+            }
+            return nullptr;
+          }();
 
-        const auto cost = WeightedLeastSqCostTerm<1>::MakeShared(error_func, noise_model, loss_func);
+          const auto cost = WeightedLeastSqCostTerm<1>::MakeShared(error_func, noise_model, loss_func);
 
 #pragma omp critical(odometry_cost_term)
-        { meas_cost_terms.emplace_back(cost); }
+          { meas_cost_terms.emplace_back(cost); }
+        }
       }
 
       if (innerloop_time) inner_timer[2].second->stop();

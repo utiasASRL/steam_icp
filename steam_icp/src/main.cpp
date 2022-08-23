@@ -307,6 +307,7 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
 
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_rv, bool);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, merge_p2p_rv, bool);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, rv_max_error, double);
       std::string rv_loss_func;
       ROS2_PARAM(node, rv_loss_func, prefix, rv_loss_func, std::string);
       if (rv_loss_func == "L2")
