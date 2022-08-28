@@ -34,17 +34,10 @@ docker run -it --name steam_icp \
   steam_icp
 ```
 
-Go to root directory of this repository and build STEAM-ICP
+(Inside Container) Go to the root directory of this repository and build STEAM-ICP
 
 ```bash
-# steam icp
 bash build.sh
-
-# python venv for evaluation
-virtualenv venv
-source venv/bin/activate
-pip install -e pylgmath
-pip install -e pysteam
 ```
 
 ## Experiments

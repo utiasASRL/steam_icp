@@ -1,11 +1,7 @@
 /**:
   ros__parameters:
-    log_dir: /home/yuchen/ASRL/temp/doppler_odometry/dicp/steam
-
-    # SLAM OPTIONS ----
-    save_trajectory: true
-    suspend_on_failure: false
-    output_dir: /home/yuchen/ASRL/temp/doppler_odometry/dicp/steam
+    log_dir: /home/yuchen/ASRL/temp/steam_icp/dicp/steam
+    output_dir: /home/yuchen/ASRL/temp/steam_icp/dicp/steam
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
@@ -29,55 +25,11 @@
     # ODOMETRY OPTIONS ----
     odometry: STEAM
     odometry_options:
-      init_num_frames: 20
-      voxel_size: 0.5 # The voxel size for the grid sampling of the new frame (before keypoints extraction)
-      sample_voxel_size: 1.5 # The size of a voxel for the selection of `keypoints` by grid sampling
-
-      size_voxel_map: 1.0 # The voxel size of in the voxel map
-      min_distance_points: 0.1
-      max_num_points_in_voxel: 20 # The maximum number of points per voxel of the map
-      max_distance: 100.0 # The threshold of the distance to suppress voxels from the map
-      min_number_neighbors: 20 # The minimum number of neighbor points to define a valid neighborhood
-      max_number_neighbors: 20
-
-      num_iters_icp: 10 # The number of iterations of the ICP
-
       debug_print: true
-      debug_path: /home/yuchen/ASRL/temp/doppler_odometry/dicp/steam
+      debug_path: /home/yuchen/ASRL/temp/steam_icp/dicp/steam
 
       steam:
         T_sr_vec: [-1.42, -0.24, -1.37, 0.0, 0.0, 0.0]
-
         qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
-        num_extra_states: 0
-        add_prev_state: true
-        num_extra_prev_states: 0
-        lock_prev_pose: false
-        lock_prev_vel: false
-        prev_pose_as_prior: true
-        prev_vel_as_prior: true
-        no_prev_state_iters: 10
-        association_after_adding_prev_state: false
-
-        power_planarity: 2.0
-        p2p_initial_iters: 0
-        p2p_initial_max_dist: 0.5
-        p2p_refined_max_dist: 0.5
-        p2p_loss_func: CAUCHY # Options: [L2, DCS, CAUCHY, GM]
-        p2p_loss_sigma: 0.1
-
-        use_vp: false
-        vp_cov_diag: [1000.0, 0.001, 0.001, 1.0, 1.0, 1000.0]
-
         use_rv: false
-        merge_p2p_rv: false
-        rv_loss_func: GM # Options: [L2, DCS, CAUCHY, GM]
-        rv_cov_inv: 0.1
-        rv_loss_threshold: 0.05
-
-        verbose: false
-        max_iterations: 5
         num_threads: 10
-
-        delay_adding_points: 4
-        use_final_state_value: false

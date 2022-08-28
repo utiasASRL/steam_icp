@@ -57,7 +57,15 @@ RUN apt update && apt install -q -y \
   libboost-all-dev libomp-dev \
   libpcl-dev \
   python3-colcon-common-extensions \
-  virtualenv
+  virtualenv \
+  texlive-latex-extra \
+  clang-format
+
+## Install python dependencies
+# jupyter
+RUN pip3 install pexpect ipympl
+# evaluation
+RUN pip3 install asrl-pylgmath asrl-pysteam
 
 ## Switch to specified user
 USER ${USERID}:${GROUPID}

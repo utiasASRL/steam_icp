@@ -498,13 +498,6 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
     steam_trajectory->add(knot_steam_time, T_rm_var, w_mr_inr_var);
     steam_state_vars.emplace_back(T_rm_var);
     steam_state_vars.emplace_back(w_mr_inr_var);
-    //
-    if (options_.use_vp) {
-      const auto error_func = vspace_error<6>(w_mr_inr_var, Eigen::Matrix<double, 6, 1>::Zero());
-      const auto noise_model = StaticNoiseModel<6>::MakeShared(options_.vp_cov);
-      const auto loss_func = std::make_shared<L2LossFunc>();
-      prior_cost_terms.emplace_back(WeightedLeastSqCostTerm<6>::MakeShared(error_func, noise_model, loss_func));
-    }
     // cache the end state in full steam trajectory because it will be used again
     trajectory_vars_.emplace_back(knot_steam_time, T_rm_var, w_mr_inr_var);
     curr_trajectory_var_index++;
@@ -666,8 +659,7 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
       if (innerloop_time) inner_timer[2].second->start();
 
       const double dist_to_plane = std::abs((keypoint.pt - vector_neighbors[0]).transpose() * neighborhood.normal);
-      double max_dist_to_plane =
-          (iter >= options_.p2p_initial_iters ? options_.p2p_refined_max_dist : options_.p2p_initial_max_dist);
+      double max_dist_to_plane = options_.p2p_max_dist;
       bool use_p2p = (dist_to_plane < max_dist_to_plane);
       if (use_p2p) {
         Eigen::Vector3d closest_pt = vector_neighbors[0];
@@ -811,7 +803,7 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
 
     timer[3].second->stop();
 
-    if ((index_frame > 1) && iter >= options_.p2p_initial_iters &&
+    if ((index_frame > 1) &&
         (diff_rot < options_.threshold_orientation_norm && diff_trans < options_.threshold_translation_norm)) {
       if (options_.debug_print) {
         LOG(INFO) << "CT_ICP: Finished with N=" << iter << " ICP iterations" << std::endl;

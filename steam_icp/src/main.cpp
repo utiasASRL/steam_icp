@@ -83,7 +83,6 @@ struct EIGEN_ALIGN16 PCLPoint3D {
 
 // Parameters to run the SLAM
 struct SLAMOptions {
-  bool save_trajectory = true;           // whether to save the trajectory
   bool suspend_on_failure = false;       // Whether to suspend the execution once an error is detected
   std::string output_dir = "./outputs";  // The output path (relative or absolute) to save the pointclouds
 
@@ -117,7 +116,6 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
   /// slam options
   {
     std::string prefix = "";
-    ROS2_PARAM_CLAUSE(node, options, prefix, save_trajectory, bool);
     ROS2_PARAM_CLAUSE(node, options, prefix, suspend_on_failure, bool);
     ROS2_PARAM_CLAUSE(node, options, prefix, output_dir, std::string);
     if (!options.output_dir.empty() && options.output_dir[options.output_dir.size() - 1] != '/')
@@ -261,33 +259,10 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
         steam_icp_options.qc_diag << qc_diag[0], qc_diag[1], qc_diag[2], qc_diag[3], qc_diag[4], qc_diag[5];
       LOG(WARNING) << "Parameter " << prefix + "qc_diag"
                    << " = " << steam_icp_options.qc_diag.transpose() << std::endl;
-
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, num_extra_states, int);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, add_prev_state, bool);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, num_extra_prev_states, int);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, lock_prev_pose, bool);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, lock_prev_vel, bool);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, prev_pose_as_prior, bool);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, prev_vel_as_prior, bool);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, no_prev_state_iters, int);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, association_after_adding_prev_state, bool);
-
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_vp, bool);
-
-      std::vector<double> vp_cov_diag;
-      ROS2_PARAM_NO_LOG(node, vp_cov_diag, prefix, vp_cov_diag, std::vector<double>);
-      if ((vp_cov_diag.size() != 6) && (vp_cov_diag.size() != 0))
-        throw std::invalid_argument{"Velocity prior cov malformed. Must be 6 elements!"};
-      if (vp_cov_diag.size() == 6)
-        steam_icp_options.vp_cov.diagonal() << vp_cov_diag[0], vp_cov_diag[1], vp_cov_diag[2], vp_cov_diag[3],
-            vp_cov_diag[4], vp_cov_diag[5];
-      LOG(WARNING) << "Parameter " << prefix + "vp_cov_diag"
-                   << " = " << steam_icp_options.vp_cov.diagonal().transpose() << std::endl;
 
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, power_planarity, double);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p2p_initial_iters, int);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p2p_initial_max_dist, double);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p2p_refined_max_dist, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p2p_max_dist, double);
       std::string p2p_loss_func;
       ROS2_PARAM(node, p2p_loss_func, prefix, p2p_loss_func, std::string);
       if (p2p_loss_func == "L2")
@@ -301,7 +276,7 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       else {
         LOG(WARNING) << "Parameter " << prefix + "p2p_loss_func"
                      << " not specified. Using default value: "
-                     << "L2";
+                     << "CAUCHY";
       }
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p2p_loss_sigma, double);
 
@@ -321,7 +296,7 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       else {
         LOG(WARNING) << "Parameter " << prefix + "rv_loss_func"
                      << " not specified. Using default value: "
-                     << "GM";
+                     << "CAUCHY";
       }
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, rv_cov_inv, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, rv_loss_threshold, double);

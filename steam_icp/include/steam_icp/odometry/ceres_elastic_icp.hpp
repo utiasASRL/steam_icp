@@ -20,7 +20,7 @@ class CeresElasticOdometry : public Odometry {
     CERES_LOSS_FUNC loss_function = CERES_LOSS_FUNC::CAUCHY;
     double sigma = 0.1;
     double tolerant_min_threshold = 0.05;
-    int max_iterations = 1;
+    int max_iterations = 5;
     double weight_alpha = 0.9;
     double weight_neighborhood = 0.1;
     int num_threads = 1;
