@@ -7,8 +7,14 @@ cmake-build*
 
 # Python
 venv
+__pycache__/
+*.py[cod]
+*$py.class
 
 # ROS2
 build/
 install/
 log/
+
+#
+.vscode/
