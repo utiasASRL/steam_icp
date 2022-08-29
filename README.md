@@ -2,6 +2,10 @@
 
 Paper: Picking Up Speed: Continuous-Time Lidar-Only Odometry using Doppler Velocity Measurements
 
+Supplementary Material:
+
+- Full results on Aeva dataset [here](./results/2023-icra-wu-full-9.pdf).
+
 Dataset:
 
 - KITTI-raw/360: obtain from [CT-ICP codebase](https://github.com/jedeschaud/ct_icp).
