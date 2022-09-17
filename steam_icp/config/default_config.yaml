@@ -9,6 +9,7 @@
       raw_points: false
       sampled_points: false
       map_points: false
+      T_sr_vec: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
     # DATASET OPTIONS ----
     dataset: KITTI_raw
@@ -28,10 +29,10 @@
       debug_path: /home/yuchen/ASRL/temp/steam_icp/kitti_raw
 
       elastic:
-        num_threads: 10
+        num_threads: 20
 
       steam:
         T_sr_vec: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0] # motion prior Qc
         use_rv: false # change to true to use Doppler velocity measurements
-        num_threads: 10
+        num_threads: 20
