@@ -16,7 +16,7 @@ class BoreasAevaSequence : public Sequence {
   void save(const std::string& path, const Trajectory& trajectory) const override;
 
   bool hasGroundTruth() const override { return true; }
-  SeqError evaluate(const std::string &path, const Trajectory& trajectory) const override;
+  SeqError evaluate(const std::string& path, const Trajectory& trajectory) const override;
 
  private:
   std::string dir_path_;
@@ -56,21 +56,13 @@ class BoreasAevaDataset : public Dataset {
 
  private:
   static inline std::vector<std::string> SEQUENCES{
-      // old sequences without beam id
-      // "boreas-2022-05-13-09-23",  // highway 7
-      // "boreas-2022-05-13-10-30",  // marc santi
-      // "boreas-2022-05-13-11-47",  // glen shields
-      // "boreas-2022-05-18-17-23",  // cocksfield
-      // new sequences with beam id
-      // "boreas-2022-07-19-15-52",  // for debugging only (static)
-      // "boreas-2022-07-19-16-06",  // Near utias
-      "boreas-2022-08-05-12-59",  // Highway 7
-      "boreas-2022-08-05-13-30",  // Highway 404
-      "boreas-2022-08-05-13-54",  // Don Valley Parkway
-      "boreas-2022-08-05-15-01",  // Highway 427
+      "04",  // Highway 7
+      "05",  // Highway 404
+      "06",  // Don Valley Parkway
+      "07",  // Highway 427
   };
 
-  STEAM_ICP_REGISTER_DATASET("AEVA", BoreasAevaDataset);
+  STEAM_ICP_REGISTER_DATASET("AEVA_long", BoreasAevaDataset);
 };
 
 }  // namespace steam_icp

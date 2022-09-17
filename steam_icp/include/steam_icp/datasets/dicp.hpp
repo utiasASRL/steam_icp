@@ -16,7 +16,7 @@ class DICPSequence : public Sequence {
   void save(const std::string& path, const Trajectory& trajectory) const override;
 
   bool hasGroundTruth() const override { return true; }
-  SeqError evaluate(const std::string &path, const Trajectory& trajectory) const override;
+  SeqError evaluate(const std::string& path, const Trajectory& trajectory) const override;
 
  private:
   std::string dir_path_;
@@ -50,14 +50,13 @@ class DICPDataset : public Dataset {
 
  private:
   static inline std::vector<std::string> SEQUENCES{
-      "bunker-road",              //
-      "bunker-road-vehicles",     //
-      "robin-williams-tunnel",    //
-      "brisbane-lagoon-freeway",  //
-      // "san-francisco-city",       //
+      "00",  // Baker-Barry Tunnel (Empty)
+      "01",  // Baker-Barry Tunnel (Vehicles)
+      "02",  // Robin Williams Tunnel
+      "03",  // Brisbane Lagoon Freeway
   };
 
-  STEAM_ICP_REGISTER_DATASET("DICP", DICPDataset);
+  STEAM_ICP_REGISTER_DATASET("AEVA_short", DICPDataset);
 };
 
 }  // namespace steam_icp
