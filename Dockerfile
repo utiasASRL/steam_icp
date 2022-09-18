@@ -59,6 +59,9 @@ RUN apt update && apt install -q -y \
   python3-colcon-common-extensions \
   virtualenv \
   texlive-latex-extra \
+  texlive-fonts-recommended \
+  cm-super \
+  dvipng \
   clang-format
 
 ## Install python dependencies

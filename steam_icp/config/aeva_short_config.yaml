@@ -16,7 +16,7 @@
     dataset_options:
       all_sequences: true
       root_path: /home/yuchen/ASRL/data/aeva
-      sequence: "00"
+      sequence: "00" # 02 (Robin Williams Tunnel)
       init_frame: 0 # 50 (tunnel start)
       last_frame: 100000 # 230 (tunnel end)
       min_dist_lidar_center: 5.0

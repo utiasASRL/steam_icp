@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
-    log_dir: /home/yuchen/ASRL/temp/steam_icp/kitti_raw
-    output_dir: /home/yuchen/ASRL/temp/steam_icp/kitti_raw
+    log_dir: /home/yuchen/ASRL/temp/steam_icp/kitti_raw/elastic
+    output_dir: /home/yuchen/ASRL/temp/steam_icp/kitti_raw/elastic
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
@@ -23,10 +23,10 @@
       max_dist_lidar_center: 100.0
 
     # ODOMETRY OPTIONS ----
-    odometry: Elastic # Elastic, STEAM
+    odometry: Elastic # [Elastic, STEAM] - Elastic is CT-ICP, STEAM is STEAM-ICP/STEAM-DICP
     odometry_options:
       debug_print: true
-      debug_path: /home/yuchen/ASRL/temp/steam_icp/kitti_raw
+      debug_path: /home/yuchen/ASRL/temp/steam_icp/kitti_raw/elastic
 
       elastic:
         num_threads: 20
@@ -34,5 +34,5 @@
       steam:
         T_sr_vec: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0] # motion prior Qc
-        use_rv: false # change to true to use Doppler velocity measurements
+        use_rv: false # [true, false] - true is STEAM-DICP, false is STEAM-ICP
         num_threads: 20
