@@ -13,10 +13,9 @@ set(EXT_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/install/${CMAKE_BUILD_TYPE})
 set(GLOBAL_RUNTIME_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 # INSTALL GLOG
-set(GLOG_DEF "glog")
 ExternalProject_Add(
-	${GLOG_DEF}
-	PREFIX ${GLOG_DEF}
+	glog
+	PREFIX glog
 
 	GIT_REPOSITORY https://github.com/google/glog
 	GIT_TAG v0.5.0
@@ -27,7 +26,7 @@ ExternalProject_Add(
 		-DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/glog
 		-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
 
-	STEP_TARGETS 	  install 
+	STEP_TARGETS 	  install
 	BUILD_COMMAND     ${CMAKE_COMMAND} --build <BINARY_DIR> --config ${CMAKE_BUILD_TYPE} --target install --parallel 6)
 
 # INSTALL EIGEN
@@ -44,15 +43,14 @@ ExternalProject_Add(
 		-DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/Eigen3
 		-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
 
-		
-	STEP_TARGETS 	install	
+
+	STEP_TARGETS 	install
 	BUILD_COMMAND     ${CMAKE_COMMAND} --build <BINARY_DIR> --config ${CMAKE_BUILD_TYPE} --parallel 6)
-	
 
 # INSTALL CERES
 ExternalProject_Add(
-	Ceres	
-	PREFIX Ceres 
+	Ceres
+	PREFIX Ceres
 
 	GIT_REPOSITORY  https://ceres-solver.googlesource.com/ceres-solver
 	GIT_TAG 2.0.0
@@ -69,34 +67,14 @@ ExternalProject_Add(
 		-DGLOG_LIBRARY=${EXT_INSTALL_DIR}/glog/lib
 		-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
 		-DBUILD_SHARED_LIBS=ON
-	
-	DEPENDS	 ${GLOG_DEF}-install Eigen3_ext-install
+
+	DEPENDS	 glog-install Eigen3_ext-install
 	BUILD_COMMAND     ${CMAKE_COMMAND} --build <BINARY_DIR> --config ${CMAKE_BUILD_TYPE} --target install --parallel 6)
-
-# Install YAML-CPP
-ExternalProject_Add(
-	yaml-cpp	
-	PREFIX yaml-cpp 
-
-	GIT_REPOSITORY  https://github.com/jbeder/yaml-cpp
-	GIT_TAG yaml-cpp-0.6.3
-
-	BUILD_ALWAYS OFF
-	INSTALL_DIR ${EXT_INSTALL_DIR}/yaml-cpp
-	CMAKE_ARGS
-		-DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/yaml-cpp
-		-DYAML_CPP_BUILD_TESTS=OFF
-		-DYAML_CPP_BUILD_TOOLS=OFF
-		-DYAML_CPP_BUILD_CONTRIB=OFF
-		-DYAML_CPP_BUILD_TESTS=OFF
-	
-	DEPENDS	 	
-	BUILD_COMMAND     ${CMAKE_COMMAND} --build <BINARY_DIR> --config ${CMAKE_BUILD_TYPE} --parallel 6)
 
 # Install Tessil
 ExternalProject_Add(
-	tessil	
-	PREFIX tessil 
+	tessil
+	PREFIX tessil
 
 	GIT_REPOSITORY  https://github.com/Tessil/robin-map
 	GIT_TAG v0.6.3
@@ -105,48 +83,6 @@ ExternalProject_Add(
 	INSTALL_DIR ${EXT_INSTALL_DIR}/tessil
 	CMAKE_ARGS
 		-DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/tessil
-	
-	DEPENDS	 	
+
+	DEPENDS
 	BUILD_COMMAND     ${CMAKE_COMMAND} --build <BINARY_DIR> --config ${CMAKE_BUILD_TYPE} --parallel 6)
-
-if (WITH_VIZ3D)
-
-
-	# INSTALL GLAD
-	ExternalProject_Add(
-		glad
-		PREFIX glad
-
-		GIT_REPOSITORY  https://github.com/Dav1dde/glad
-		GIT_TAG  v0.1.34
-
-		BUILD_ALWAYS OFF
-		INSTALL_DIR ${EXT_INSTALL_DIR}/glad
-		CMAKE_ARGS
-			-DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/glad
-			-DGLAD_INSTALL=ON
-			-DCMAKE_POSITION_INDEPENDENT_CODE=ON
-			-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
-			
-		BUILD_COMMAND     ${CMAKE_COMMAND} --build <BINARY_DIR> --config ${CMAKE_BUILD_TYPE} --target install --parallel 6)
-		
-		
-	# INSTALL GLFW
-	ExternalProject_Add(
-		glfw
-		PREFIX glfw
-
-		GIT_REPOSITORY  https://github.com/glfw/glfw
-		GIT_TAG 3.3.3
-
-		BUILD_ALWAYS OFF
-		INSTALL_DIR ${EXT_INSTALL_DIR}/glfw
-		CMAKE_ARGS
-			-DCMAKE_POSITION_INDEPENDENT_CODE=ON
-			-DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/glfw
-			-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
-
-			
-		BUILD_COMMAND     ${CMAKE_COMMAND} --build <BINARY_DIR> --config ${CMAKE_BUILD_TYPE} --target install --parallel 6)
-endif()
-
