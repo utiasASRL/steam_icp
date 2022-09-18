@@ -1,4 +1,4 @@
-# steam_icp
+# STEAM-ICP
 
 Paper: [Picking Up Speed: Continuous-Time Lidar-Only Odometry using Doppler Velocity Measurements](https://arxiv.org/abs/2209.03304)
 
