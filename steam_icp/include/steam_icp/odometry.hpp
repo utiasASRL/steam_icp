@@ -111,4 +111,5 @@ struct OdometryRegister {
 ///
 #include "steam_icp/odometry/ceres_elastic_icp.hpp"
 #include "steam_icp/odometry/elastic_icp.hpp"
+#include "steam_icp/odometry/spline.hpp"
 #include "steam_icp/odometry/steam_icp.hpp"
