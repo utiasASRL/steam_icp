@@ -2,10 +2,6 @@
 
 Paper: [Picking Up Speed: Continuous-Time Lidar-Only Odometry using Doppler Velocity Measurements](https://arxiv.org/abs/2209.03304)
 
-Supplementary Material:
-
-- Full results on Aeva dataset [here](./results/2023-icra-wu-full-9.pdf).
-
 Dataset:
 
 - KITTI-raw/360: obtain from [CT-ICP codebase](https://github.com/jedeschaud/ct_icp).
@@ -69,9 +65,11 @@ source /opt/ros/galactic/setup.bash
 ros2 run rviz2 rviz2 -d ${WORKING_DIR}/steam_icp/rviz/steam_icp.rviz # launch rviz
 ```
 
+In terms of outputs, you should get something similar to the files in the [results](./results) directory.
+
 ## Evaluation
 
-See python scripts in the [script directory](./script) for evaluation.
+See python scripts in the [script](./script) directory for evaluation.
 
 ## Citation
 
