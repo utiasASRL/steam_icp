@@ -1,5 +1,4 @@
 import collections
-import os.path as osp
 import numpy as np
 import numpy.linalg as npla
 
@@ -265,7 +264,9 @@ def print_results(sequences, methods, load_gt_poses, load_pred_poses):
     t_err, r_err = get_avg_rpe(seq_rpe_errs_3d, 3)
     rpe_errs[pred_file]["avg"].update({'t_err_3d': t_err, 'r_err_3d': r_err})
 
-  for error_type in ["t_err_2d", "t_err_3d"]:
+  print("\n")
+
+  for error_type in ["t_err_3d"]:
     print(f"\nkitti metric {error_type}")
     for pred_file in methods:
       print(f"{pred_file} ", end="")
@@ -273,7 +274,7 @@ def print_results(sequences, methods, load_gt_poses, load_pred_poses):
         print(f" & {kitti_errs[pred_file][sequence][error_type]:.2f}", end="")
       print(f"  & {kitti_errs[pred_file]['avg'][error_type]:.2f}")
 
-  for error_type in ["r_err_2d", "r_err_3d"]:
+  for error_type in ["r_err_3d"]:
     print(f"\nkitti metric {error_type}")
     for pred_file in methods:
       print(f"{pred_file} ", end="")
@@ -281,7 +282,7 @@ def print_results(sequences, methods, load_gt_poses, load_pred_poses):
         print(f" & {kitti_errs[pred_file][sequence][error_type]:.4f}", end="")
       print(f"  & {kitti_errs[pred_file]['avg'][error_type]:.4f}")
 
-  for error_type in ["t_err_2d", "r_err_2d", "t_err_3d", "r_err_3d"]:
+  for error_type in ["t_err_3d", "r_err_3d"]:
     print(f"\nframe-to-frame metric {error_type}")
     for pred_file in methods:
       print(f"{pred_file} ", end="")
