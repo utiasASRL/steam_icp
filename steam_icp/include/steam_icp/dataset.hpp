@@ -125,8 +125,8 @@ struct DatasetRegister {
 }  // namespace steam_icp
 
 ///
+#include "steam_icp/datasets/aeva.hpp"
 #include "steam_icp/datasets/boreas_aeva.hpp"
 #include "steam_icp/datasets/boreas_velodyne.hpp"
-#include "steam_icp/datasets/dicp.hpp"
 #include "steam_icp/datasets/kitti_360.hpp"
 #include "steam_icp/datasets/kitti_raw.hpp"

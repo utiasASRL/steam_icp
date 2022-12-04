@@ -62,7 +62,7 @@ class BoreasAevaDataset : public Dataset {
       "07",  // Highway 427
   };
 
-  STEAM_ICP_REGISTER_DATASET("AEVA_long", BoreasAevaDataset);
+  STEAM_ICP_REGISTER_DATASET("BoreasAeva", BoreasAevaDataset);
 };
 
 }  // namespace steam_icp
