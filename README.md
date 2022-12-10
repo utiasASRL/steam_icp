@@ -1,11 +1,8 @@
 # STEAM-ICP
 
-Paper: [Picking Up Speed: Continuous-Time Lidar-Only Odometry using Doppler Velocity Measurements](https://arxiv.org/abs/2209.03304)
+Paper: [Picking Up Speed: Continuous-Time Lidar-Only Odometry using Doppler Velocity Measurements](https://ieeexplore.ieee.org/document/9968059)
 
-Dataset:
-
-- KITTI-raw/360: obtain from [CT-ICP codebase](https://github.com/jedeschaud/ct_icp).
-- Aeva: waiting for permission.
+Dataset: [KITTI-raw/360 (from CT-ICP)](https://github.com/jedeschaud/ct_icp) and [Aeva](https://drive.google.com/file/d/1JpQNnXejow3qy1qp5tVzak9qnuFmjYHW/view?usp=share_link).
 
 ## Installation
 
@@ -28,7 +25,6 @@ An example command to start a docker container with the image is
 docker run -it --name steam_icp \
   --privileged \
   --network=host \
-  --gpus all \
   -e DISPLAY=$DISPLAY \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   -v ${HOME}:${HOME}:rw \
@@ -74,15 +70,15 @@ See python scripts in the [script](./script) directory for evaluation.
 ## Citation
 
 ```bibtex
-@misc{https://doi.org/10.48550/arxiv.2209.03304,
-  doi       = {10.48550/ARXIV.2209.03304},
-  url       = {https://arxiv.org/abs/2209.03304},
-  author    = {Wu, Yuchen and Yoon, David J. and Burnett, Keenan and Kammel, Soeren and Chen, Yi and Vhavle, Heethesh and Barfoot, Timothy D.},
-  keywords  = {Robotics (cs.RO), FOS: Computer and information sciences, FOS: Computer and information sciences},
-  title     = {Picking Up Speed: Continuous-Time Lidar-Only Odometry using Doppler Velocity Measurements},
-  publisher = {arXiv},
-  year      = {2022},
-  copyright = {arXiv.org perpetual, non-exclusive license}
+@ARTICLE{9968059,
+  author={Wu, Yuchen and Yoon, David J. and Burnett, Keenan and Kammel, Soeren and Chen, Yi and Vhavle, Heethesh and Barfoot, Timothy D.},
+  journal={IEEE Robotics and Automation Letters}, 
+  title={Picking up Speed: Continuous-Time Lidar-Only Odometry Using Doppler Velocity Measurements}, 
+  year={2023},
+  volume={8},
+  number={1},
+  pages={264-271},
+  doi={10.1109/LRA.2022.3226068}
 }
 ```
 

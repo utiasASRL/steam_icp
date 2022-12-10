@@ -4,9 +4,9 @@
 
 namespace steam_icp {
 
-class DICPSequence : public Sequence {
+class AevaSequence : public Sequence {
  public:
-  DICPSequence(const Options& options);
+  AevaSequence(const Options& options);
 
   int currFrame() const override { return curr_frame_; }
   int numFrames() const override { return last_frame_ - init_frame_; }
@@ -27,9 +27,9 @@ class DICPSequence : public Sequence {
   int last_frame_ = std::numeric_limits<int>::max();  // exclusive bound
 };
 
-class DICPDataset : public Dataset {
+class AevaDataset : public Dataset {
  public:
-  DICPDataset(const Options& options) : Dataset(options) {
+  AevaDataset(const Options& options) : Dataset(options) {
     if (options_.all_sequences)
       sequences_ = SEQUENCES;
     else
@@ -41,7 +41,7 @@ class DICPDataset : public Dataset {
     if (!hasNext()) return nullptr;
     Sequence::Options options(options_);
     options.sequence = sequences_[next_sequence_++];
-    return std::make_shared<DICPSequence>(options);
+    return std::make_shared<AevaSequence>(options);
   }
 
  private:
@@ -54,9 +54,13 @@ class DICPDataset : public Dataset {
       "01",  // Baker-Barry Tunnel (Vehicles)
       "02",  // Robin Williams Tunnel
       "03",  // Brisbane Lagoon Freeway
+      "04",  // Highway 7
+      "05",  // Highway 404
+      "06",  // Don Valley Parkway
+      "07",  // Highway 427      
   };
 
-  STEAM_ICP_REGISTER_DATASET("AEVA_short", DICPDataset);
+  STEAM_ICP_REGISTER_DATASET("Aeva", AevaDataset);
 };
 
 }  // namespace steam_icp
