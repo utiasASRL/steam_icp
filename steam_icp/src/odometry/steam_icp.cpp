@@ -435,6 +435,7 @@ void SteamOdometry::updateMap(int index_frame, int update_frame) {
 
   map_.add(frame, kSizeVoxelMap, kMaxNumPointsInVoxel, kMinDistancePoints);
   frame.clear();
+  frame.shrink_to_fit();
 
   // remove points
   const double kMaxDistance = options_.max_distance;
