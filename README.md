@@ -2,6 +2,8 @@
 
 Paper: [Picking Up Speed: Continuous-Time Lidar-Only Odometry using Doppler Velocity Measurements](https://ieeexplore.ieee.org/document/9968059)
 
+For code that pertains to the picking-up-speed paper, `git checkout picking_up_speed`
+
 Dataset: [Boreas](https://www.boreas.utias.utoronto.ca/) and [KITTI-raw/360 (from CT-ICP)](https://github.com/jedeschaud/ct_icp) and [Aeva](https://drive.google.com/file/d/1JpQNnXejow3qy1qp5tVzak9qnuFmjYHW/view?usp=share_link).
 
 ## Installation
