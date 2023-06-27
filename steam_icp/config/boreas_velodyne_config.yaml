@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
-    log_dir: /home/ywu/ASRL/temp/steam_icp/boreas_aeva/steam
-    output_dir: /home/ywu/ASRL/temp/steam_icp/boreas_aeva/steam
+    log_dir: /home/krb/ASRL/temp/steam_icp/boreas_aeva/steam
+    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_aeva/steam
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
@@ -11,11 +11,11 @@
       map_points: false
 
     # DATASET OPTIONS ----
-    dataset: BoreasAeva
+    dataset: BoreasVelodyne
     dataset_options:
-      all_sequences: true
-      root_path: /home/ywu/ASRL/steam_icp/data/boreas_aeva
-      sequence: "04"
+      all_sequences: false
+      root_path: /workspace/nas/ASRL/2021-Boreas
+      sequence: "boreas-2020-11-26-13-58"
       init_frame: 0 # 5675 (highway 7 front image)
       last_frame: 100000 # 5680 (highway 7 front image)
       min_dist_sensor_center: 5.0
@@ -25,12 +25,11 @@
     odometry: STEAM
     odometry_options:
       debug_print: true
-      debug_path: /home/ywu/ASRL/temp/steam_icp/boreas_aeva/steam
+      debug_path: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steam
 
       elastic:
         num_threads: 20
 
       steam:
         qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
-        use_rv: false
         num_threads: 20

@@ -122,27 +122,6 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       options.output_dir += '/';
   }
 
-  /// visualization options
-  {
-    auto &visualization_options = options.visualization_options;
-    std::string prefix = "visualization_options.";
-
-    ROS2_PARAM_CLAUSE(node, visualization_options, prefix, odometry, bool);
-    ROS2_PARAM_CLAUSE(node, visualization_options, prefix, raw_points, bool);
-    ROS2_PARAM_CLAUSE(node, visualization_options, prefix, sampled_points, bool);
-    ROS2_PARAM_CLAUSE(node, visualization_options, prefix, map_points, bool);
-
-    std::vector<double> T_sr_vec;
-    ROS2_PARAM_NO_LOG(node, T_sr_vec, prefix, T_sr_vec, std::vector<double>);
-    if ((T_sr_vec.size() != 6) && (T_sr_vec.size() != 0))
-      throw std::invalid_argument{"T_sr malformed. Must be 6 elements!"};
-    if (T_sr_vec.size() == 6)
-      visualization_options.T_sr = lgmath::se3::vec2tran(Eigen::Matrix<double, 6, 1>(T_sr_vec.data()));
-    LOG(WARNING) << "Parameter " << prefix + "T_sr"
-                 << " = " << std::endl
-                 << visualization_options.T_sr << std::endl;
-  }
-
   /// dataset options
   {
     std::string prefix = "";
@@ -166,6 +145,29 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold, double);
       ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold2, double);
       ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold3, double);
+    }
+  }
+
+  /// visualization options
+  {
+    auto &visualization_options = options.visualization_options;
+    std::string prefix = "visualization_options.";
+
+    ROS2_PARAM_CLAUSE(node, visualization_options, prefix, odometry, bool);
+    ROS2_PARAM_CLAUSE(node, visualization_options, prefix, raw_points, bool);
+    ROS2_PARAM_CLAUSE(node, visualization_options, prefix, sampled_points, bool);
+    ROS2_PARAM_CLAUSE(node, visualization_options, prefix, map_points, bool);
+
+    if (options.dataset != "BoreasAeva" && options.dataset != "BoreasNavtech" && options.dataset != "BoreasVelodyne") {
+      std::vector<double> T_sr_vec;
+      ROS2_PARAM_NO_LOG(node, T_sr_vec, prefix, T_sr_vec, std::vector<double>);
+      if ((T_sr_vec.size() != 6) && (T_sr_vec.size() != 0))
+        throw std::invalid_argument{"T_sr malformed. Must be 6 elements!"};
+      if (T_sr_vec.size() == 6)
+        visualization_options.T_sr = lgmath::se3::vec2tran(Eigen::Matrix<double, 6, 1>(T_sr_vec.data()));
+      LOG(WARNING) << "(YAML)Parameter " << prefix + "T_sr"
+                   << " = " << std::endl
+                   << visualization_options.T_sr << std::endl;
     }
   }
 
@@ -251,15 +253,18 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       auto &steam_icp_options = dynamic_cast<SteamOdometry::Options &>(odometry_options);
       prefix = "odometry_options.steam.";
 
-      std::vector<double> T_sr_vec;
-      ROS2_PARAM_NO_LOG(node, T_sr_vec, prefix, T_sr_vec, std::vector<double>);
-      if ((T_sr_vec.size() != 6) && (T_sr_vec.size() != 0))
-        throw std::invalid_argument{"T_sr malformed. Must be 6 elements!"};
-      if (T_sr_vec.size() == 6)
-        steam_icp_options.T_sr = lgmath::se3::vec2tran(Eigen::Matrix<double, 6, 1>(T_sr_vec.data()));
-      LOG(WARNING) << "Parameter " << prefix + "T_sr"
-                   << " = " << std::endl
-                   << steam_icp_options.T_sr << std::endl;
+      if (options.dataset != "BoreasAeva" && options.dataset != "BoreasNavtech" &&
+          options.dataset != "BoreasVelodyne") {
+        std::vector<double> T_sr_vec;
+        ROS2_PARAM_NO_LOG(node, T_sr_vec, prefix, T_sr_vec, std::vector<double>);
+        if ((T_sr_vec.size() != 6) && (T_sr_vec.size() != 0))
+          throw std::invalid_argument{"T_sr malformed. Must be 6 elements!"};
+        if (T_sr_vec.size() == 6)
+          steam_icp_options.T_sr = lgmath::se3::vec2tran(Eigen::Matrix<double, 6, 1>(T_sr_vec.data()));
+        LOG(WARNING) << "Parameter " << prefix + "T_sr"
+                     << " = " << std::endl
+                     << steam_icp_options.T_sr << std::endl;
+      }
 
       std::vector<double> qc_diag;
       ROS2_PARAM_NO_LOG(node, qc_diag, prefix, qc_diag, std::vector<double>);
@@ -370,13 +375,15 @@ int main(int argc, char **argv) {
   LOG(WARNING) << "Logging to " << FLAGS_log_dir;
 
   // Read parameters
-  const auto options = loadOptions(node);
+  auto options = loadOptions(node);
 
   // Publish sensor vehicle transformations
-  auto T_rs_msg = tf2::eigenToTransform(Eigen::Affine3d(options.visualization_options.T_sr.inverse()));
-  T_rs_msg.header.frame_id = "vehicle";
-  T_rs_msg.child_frame_id = "lidar";
-  tf_static_bc->sendTransform(T_rs_msg);
+  if (options.dataset != "BoreasAeva" && options.dataset != "BoreasNavtech" && options.dataset != "BoreasVelodyne") {
+    auto T_rs_msg = tf2::eigenToTransform(Eigen::Affine3d(options.visualization_options.T_sr.inverse()));
+    T_rs_msg.header.frame_id = "vehicle";
+    T_rs_msg.child_frame_id = "sensor";
+    tf_static_bc->sendTransform(T_rs_msg);
+  }
 
   // Build the Output_dir
   LOG(WARNING) << "Creating directory " << options.output_dir << std::endl;
@@ -390,6 +397,47 @@ int main(int argc, char **argv) {
 
   while (auto seq = dataset->next()) {
     LOG(WARNING) << "Running odometry on sequence: " << seq->name() << std::endl;
+
+    // TODO: do the sendTransform() stuff here.
+    if (options.dataset == "BoreasAeva" || options.dataset == "BoreasVelodyne" || options.dataset == "BoreasNavtech") {
+      Eigen::Matrix4d T_sr = Eigen::Matrix4d::Identity();
+      fs::path root_path{options.dataset_options.root_path};
+      Eigen::Matrix4d yfwd2xfwd;
+      yfwd2xfwd << 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
+      if (options.dataset == "BoreasVelodyne") {
+        std::ifstream ifs(root_path / seq->name() / "calib" / "T_applanix_lidar.txt", std::ios::in);
+        Eigen::Matrix4d T_applanix_lidar_mat;
+        for (size_t row = 0; row < 4; row++)
+          for (size_t col = 0; col < 4; col++) ifs >> T_applanix_lidar_mat(row, col);
+        T_sr = (yfwd2xfwd * T_applanix_lidar_mat).inverse();
+      } else if (options.dataset == "BoreasNavtech") {
+        std::ifstream ifs1(root_path / seq->name() / "calib" / "T_applanix_lidar.txt", std::ios::in);
+        std::ifstream ifs2(root_path / seq->name() / "calib" / "T_radar_lidar.txt", std::ios::in);
+        Eigen::Matrix4d T_applanix_lidar_mat;
+        for (size_t row = 0; row < 4; row++)
+          for (size_t col = 0; col < 4; col++) ifs1 >> T_applanix_lidar_mat(row, col);
+        Eigen::Matrix4d T_radar_lidar_mat;
+        for (size_t row = 0; row < 4; row++)
+          for (size_t col = 0; col < 4; col++) ifs2 >> T_radar_lidar_mat(row, col);
+        T_sr = (yfwd2xfwd * T_applanix_lidar_mat * T_radar_lidar_mat.inverse()).inverse();
+      } else if (options.dataset == "BoreasAeva") {
+        std::ifstream ifs(root_path / seq->name() / "calib" / "T_applanix_aeva.txt", std::ios::in);
+        Eigen::Matrix4d T_applanix_lidar_mat;
+        for (size_t row = 0; row < 4; row++)
+          for (size_t col = 0; col < 4; col++) ifs >> T_applanix_lidar_mat(row, col);
+        T_sr = (yfwd2xfwd * T_applanix_lidar_mat).inverse();
+      }
+      options.visualization_options.T_sr = T_sr;
+      if (options.odometry == "STEAM") {
+        auto &steam_icp_options = dynamic_cast<SteamOdometry::Options &>(*options.odometry_options);
+        steam_icp_options.T_sr = T_sr;
+      }
+      LOG(WARNING) << "(BOREAS)Parameter T_sr = " << std::endl << T_sr << std::endl;
+      auto T_rs_msg = tf2::eigenToTransform(Eigen::Affine3d(T_sr.inverse()));
+      T_rs_msg.header.frame_id = "vehicle";
+      T_rs_msg.child_frame_id = "sensor";
+      tf_static_bc->sendTransform(T_rs_msg);
+    }
 
     // timers
     std::vector<std::pair<std::string, std::unique_ptr<Stopwatch<>>>> timer;
@@ -409,7 +457,7 @@ int main(int argc, char **argv) {
       timer[2].second->start();
       if (options.visualization_options.raw_points) {
         auto &raw_points = frame;
-        auto raw_points_msg = to_pc2_msg(raw_points, "lidar");
+        auto raw_points_msg = to_pc2_msg(raw_points, "sensor");
         raw_points_publisher->publish(raw_points_msg);
       }
       timer[2].second->stop();
