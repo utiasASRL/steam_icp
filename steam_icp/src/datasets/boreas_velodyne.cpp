@@ -87,8 +87,8 @@ std::vector<Point3D> BoreasVelodyneSequence::next() {
   auto filename = filenames_.at(curr_frame);
   int64_t time_delta_micro = std::stoll(filename.substr(0, filename.find("."))) - initial_timestamp_micro_;
   double time_delta_sec = static_cast<double>(time_delta_micro) / 1e6;
-  return readPointCloud(dir_path_ + "/" + filename, time_delta_sec, options_.min_dist_lidar_center,
-                        options_.max_dist_lidar_center);
+  return readPointCloud(dir_path_ + "/" + filename, time_delta_sec, options_.min_dist_sensor_center,
+                        options_.max_dist_sensor_center);
 }
 
 void BoreasVelodyneSequence::save(const std::string &path, const Trajectory &trajectory) const {

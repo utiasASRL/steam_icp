@@ -4,16 +4,16 @@
 
 namespace steam_icp {
 
-class BoreasVelodyneSequence : public Sequence {
+class BoreasNavtechSequence : public Sequence {
  public:
-  BoreasVelodyneSequence(const Options& options);
+  BoreasNavtechSequence(const Options &options);
 
   int currFrame() const override { return curr_frame_; }
   int numFrames() const override { return last_frame_ - init_frame_; }
   bool hasNext() const override { return curr_frame_ < last_frame_; }
   std::vector<Point3D> next() override;
 
-  void save(const std::string& path, const Trajectory& trajectory) const override;
+  void save(const std::string &path, const Trajectory &trajectory) const override;
 
  private:
   std::string dir_path_;
@@ -22,11 +22,14 @@ class BoreasVelodyneSequence : public Sequence {
   int init_frame_ = 0;
   int curr_frame_ = 0;
   int last_frame_ = std::numeric_limits<int>::max();  // exclusive bound
+
+  std::vector<Point3D> readPointCloud(const std::string &path, const int64_t &current_timestamp_micro,
+                                      const double &radar_resolution);
 };
 
-class BoreasVelodyneDataset : public Dataset {
+class BoreasNavtechDataset : public Dataset {
  public:
-  BoreasVelodyneDataset(const Options& options) : Dataset(options) {
+  BoreasNavtechDataset(const Options &options) : Dataset(options) {
     if (options_.all_sequences)
       sequences_ = SEQUENCES;
     else
@@ -38,7 +41,7 @@ class BoreasVelodyneDataset : public Dataset {
     if (!hasNext()) return nullptr;
     Sequence::Options options(options_);
     options.sequence = sequences_[next_sequence_++];
-    return std::make_shared<BoreasVelodyneSequence>(options);
+    return std::make_shared<BoreasNavtechSequence>(options);
   }
 
  private:
@@ -53,7 +56,7 @@ class BoreasVelodyneDataset : public Dataset {
       "boreas-2022-05-18-17-23",  // cocksfield
   };
 
-  STEAM_ICP_REGISTER_DATASET("BoreasVelodyne", BoreasVelodyneDataset);
+  STEAM_ICP_REGISTER_DATASET("BoreasNavtech", BoreasNavtechDataset);
 };
 
 }  // namespace steam_icp

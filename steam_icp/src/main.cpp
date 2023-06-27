@@ -155,8 +155,18 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
     ROS2_PARAM_CLAUSE(node, dataset_options, prefix, sequence, std::string);
     ROS2_PARAM_CLAUSE(node, dataset_options, prefix, init_frame, int);
     ROS2_PARAM_CLAUSE(node, dataset_options, prefix, last_frame, int);
-    ROS2_PARAM_CLAUSE(node, dataset_options, prefix, min_dist_lidar_center, float);
-    ROS2_PARAM_CLAUSE(node, dataset_options, prefix, max_dist_lidar_center, float);
+    ROS2_PARAM_CLAUSE(node, dataset_options, prefix, min_dist_sensor_center, float);
+    ROS2_PARAM_CLAUSE(node, dataset_options, prefix, max_dist_sensor_center, float);
+
+    if (options.dataset == "BoreasNavtech") {
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, radar_resolution, double);
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, radar_range_offset, double);
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_width, int);
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_guard, int);
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold, double);
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold2, double);
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold3, double);
+    }
   }
 
   /// odometry options

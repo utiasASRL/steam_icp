@@ -241,8 +241,8 @@ std::vector<Point3D> BoreasAevaSequence::next() {
   double time_delta_sec = static_cast<double>(time_delta_micro) / 1e6;
 
   // load point cloud
-  auto points = readPointCloud(dir_path_ + "/" + filename, time_delta_sec, options_.min_dist_lidar_center,
-                               options_.max_dist_lidar_center, has_beam_id_);
+  auto points = readPointCloud(dir_path_ + "/" + filename, time_delta_sec, options_.min_dist_sensor_center,
+                               options_.max_dist_sensor_center, has_beam_id_);
   if (has_beam_id_) calibrate(rt_parts_, azi_ranges_, vel_means_, points);
 
   return points;

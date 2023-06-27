@@ -122,8 +122,8 @@ std::vector<Point3D> AevaSequence::next() {
   auto filename = filenames_.at(curr_frame);
   auto timestamp = timestamps_.at(curr_frame);
 
-  return readPointCloud(dir_path_ + "/" + filename, timestamp, options_.min_dist_lidar_center,
-                        options_.max_dist_lidar_center);
+  return readPointCloud(dir_path_ + "/" + filename, timestamp, options_.min_dist_sensor_center,
+                        options_.max_dist_sensor_center);
 }
 
 void AevaSequence::save(const std::string &path, const Trajectory &trajectory) const {

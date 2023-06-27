@@ -12,6 +12,7 @@ add_compile_options(-march=native -O3 -pthread -Wall -Wextra)
 find_package(ament_cmake REQUIRED)
 
 find_package(Eigen3 REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(glog REQUIRED)
 find_package(tsl-robin-map REQUIRED CONFIG PATHS ${tessil_DIR} NO_DEFAULT_PATH)
 find_package(Ceres REQUIRED CONFIG PATHS ${Ceres_DIR} NO_DEFAULT_PATH)
@@ -23,6 +24,7 @@ find_package(nav_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(cv_bridge REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -43,7 +45,7 @@ file(GLOB_RECURSE STEAM_ICP_SRCS src/*.cpp)
 add_executable(${PROJECT_NAME} ${STEAM_ICP_SRCS})
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp tf2 tf2_ros tf2_eigen nav_msgs
-  pcl_conversions pcl_ros
+  pcl_conversions pcl_ros OpenCV
 )
 
 install(

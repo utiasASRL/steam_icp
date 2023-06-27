@@ -19,8 +19,16 @@ class Sequence {
     std::string sequence;
     int init_frame = 0;
     int last_frame = std::numeric_limits<int>::max();  // exclusive bound
-    double min_dist_lidar_center = 3.0;                // Threshold to filter points too close to the LiDAR center
-    double max_dist_lidar_center = 100.0;              // Threshold to filter points too far to the LiDAR center
+    double min_dist_sensor_center = 3.0;               // Threshold to filter points too close to the sensor center
+    double max_dist_sensor_center = 100.0;             // Threshold to filter points too far to the sensor center
+    // Navtech extraction parameters
+    double radar_resolution = 0.0596;
+    double radar_range_offset = -0.31;
+    int modified_cacfar_width = 101;
+    int modified_cacfar_guard = 5;
+    double modified_cacfar_threshold = 1.0;
+    double modified_cacfar_threshold2 = 0.0;
+    double modified_cacfar_threshold3 = 0.09;
   };
 
   Sequence(const Options &options) : options_(options) {}
@@ -127,6 +135,7 @@ struct DatasetRegister {
 ///
 #include "steam_icp/datasets/aeva.hpp"
 #include "steam_icp/datasets/boreas_aeva.hpp"
+#include "steam_icp/datasets/boreas_navtech.hpp"
 #include "steam_icp/datasets/boreas_velodyne.hpp"
 #include "steam_icp/datasets/kitti_360.hpp"
 #include "steam_icp/datasets/kitti_raw.hpp"

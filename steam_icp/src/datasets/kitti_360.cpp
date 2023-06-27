@@ -171,7 +171,7 @@ std::vector<Point3D> Kitti360Sequence::next() {
   if (!hasNext()) throw std::runtime_error("No more frames in sequence");
   int curr_frame = curr_frame_++;
   auto filename = dir_path_ + frame_file_name(curr_frame);
-  auto pc = readPointCloud(filename, options_.min_dist_lidar_center, options_.max_dist_lidar_center);
+  auto pc = readPointCloud(filename, options_.min_dist_sensor_center, options_.max_dist_sensor_center);
   for (auto &point : pc) point.timestamp = (static_cast<double>(curr_frame) + point.alpha_timestamp) / 10.0;
   return pc;
 }
