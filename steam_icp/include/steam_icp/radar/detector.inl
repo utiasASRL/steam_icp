@@ -44,7 +44,7 @@ std::vector<PointT> ModifiedCACFAR<PointT>::run(const cv::Mat &raw_scan, const f
 
   for (int i = 0; i < rows; ++i) {
     const double azimuth = azimuth_angles[i];
-    const double time = (azimuth_times[i] - initial_timestamp_micro_) * 1.0e-6;
+    const double time = (azimuth_times[i] - initial_timestamp_) / 1e6;
     const double alpha_time =
         std::min(1.0, std::max(0.0, 1 - (azimuth_times[azimuth_times.size() - 1] - azimuth_times[i]) / time_delta));
     double mean = 0;

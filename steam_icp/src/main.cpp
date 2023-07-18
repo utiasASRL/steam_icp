@@ -398,7 +398,6 @@ int main(int argc, char **argv) {
   while (auto seq = dataset->next()) {
     LOG(WARNING) << "Running odometry on sequence: " << seq->name() << std::endl;
 
-    // TODO: do the sendTransform() stuff here.
     if (options.dataset == "BoreasAeva" || options.dataset == "BoreasVelodyne" || options.dataset == "BoreasNavtech") {
       Eigen::Matrix4d T_sr = Eigen::Matrix4d::Identity();
       fs::path root_path{options.dataset_options.root_path};
@@ -447,6 +446,7 @@ int main(int argc, char **argv) {
 
     const auto odometry = Odometry::Get(options.odometry, *options.odometry_options);
     bool odometry_success = true;
+    int k = 0;
     while (seq->hasNext()) {
       LOG(INFO) << "Processing frame " << seq->currFrame() << std::endl;
 
@@ -511,8 +511,13 @@ int main(int argc, char **argv) {
 
       if (!rclcpp::ok()) {
         LOG(WARNING) << "Shutting down due to ctrl-c." << std::endl;
+        // dump timing information
+        for (size_t i = 0; i < timer.size(); i++) {
+          LOG(WARNING) << "Average " << timer[i].first << (timer[i].second->count() / (double)k) << " ms" << std::endl;
+        }
         return 0;
       }
+      k++;
     }
 
     if (!odometry_success) {

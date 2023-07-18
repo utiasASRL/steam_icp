@@ -21,10 +21,11 @@ class BoreasAevaSequence : public Sequence {
  private:
   std::string dir_path_;
   std::vector<std::string> filenames_;
-  int64_t initial_timestamp_micro_;
+  int64_t initial_timestamp_;
   int init_frame_ = 0;
   int curr_frame_ = 0;
   int last_frame_ = std::numeric_limits<int>::max();  // exclusive bound
+  double filename_to_time_convert_factor_ = 1.0e-6;   // may change depending on length of timestamp (ns vs. us)
 
   // velocity calibration parameters
   Eigen::MatrixXd rt_parts_;

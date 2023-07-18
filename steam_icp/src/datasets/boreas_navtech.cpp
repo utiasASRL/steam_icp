@@ -22,7 +22,7 @@ BoreasNavtechSequence::BoreasNavtechSequence(const Options &options) : Sequence(
   curr_frame_ = std::max((int)0, options_.init_frame);
   init_frame_ = std::max((int)0, options_.init_frame);
   std::sort(filenames_.begin(), filenames_.end());
-  initial_timestamp_micro_ = std::stoll(filenames_[0].substr(0, filenames_[0].find(".")));
+  initial_timestamp_ = std::stoll(filenames_[0].substr(0, filenames_[0].find(".")));
 }
 
 std::vector<Point3D> BoreasNavtechSequence::next() {
@@ -44,7 +44,7 @@ std::vector<Point3D> BoreasNavtechSequence::readPointCloud(const std::string &pa
   ModifiedCACFAR detector = ModifiedCACFAR<Point3D>(
       options_.modified_cacfar_width, options_.modified_cacfar_guard, options_.modified_cacfar_threshold,
       options_.modified_cacfar_threshold2, options_.modified_cacfar_threshold3, options_.min_dist_sensor_center,
-      options_.max_dist_sensor_center, options_.radar_range_offset, initial_timestamp_micro_, current_timestamp_micro);
+      options_.max_dist_sensor_center, options_.radar_range_offset, initial_timestamp_, current_timestamp_micro);
   return detector.run(fft_data, radar_resolution, azimuth_times, azimuth_angles);
 }
 

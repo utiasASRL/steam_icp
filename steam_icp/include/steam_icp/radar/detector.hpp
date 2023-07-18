@@ -50,7 +50,7 @@ class ModifiedCACFAR : public Detector<PointT> {
         minr_(minr),
         maxr_(maxr),
         range_offset_(range_offset),
-        initial_timestamp_micro_(initial_timestamp_micro),
+        initial_timestamp_(initial_timestamp_micro),
         current_timestamp_micro_(current_timestamp_micro) {}
 
   std::vector<PointT> run(const cv::Mat &raw_scan, const float &res, const std::vector<int64_t> &azimuth_times,
@@ -65,7 +65,7 @@ class ModifiedCACFAR : public Detector<PointT> {
   double minr_ = 2.0;
   double maxr_ = 100.0;
   double range_offset_ = -0.31;
-  int64_t initial_timestamp_micro_ = 0;
+  int64_t initial_timestamp_ = 0;
   int64_t current_timestamp_micro_ = 0;
 };
 

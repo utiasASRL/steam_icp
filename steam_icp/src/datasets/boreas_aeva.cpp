@@ -222,7 +222,7 @@ BoreasAevaSequence::BoreasAevaSequence(const Options &options) : Sequence(option
   curr_frame_ = std::max((int)0, options_.init_frame);
   init_frame_ = std::max((int)0, options_.init_frame);
   std::sort(filenames_.begin(), filenames_.end());
-  initial_timestamp_micro_ = std::stoll(filenames_[0].substr(0, filenames_[0].find(".")));
+  initial_timestamp_ = std::stoll(filenames_[0].substr(0, filenames_[0].find(".")));
 
   std::string calib_path = options_.root_path + "/" + options_.sequence + "/aeva_calib/";
   if (std::filesystem::exists(calib_path)) {
@@ -237,8 +237,12 @@ std::vector<Point3D> BoreasAevaSequence::next() {
   if (!hasNext()) throw std::runtime_error("No more frames in sequence");
   int curr_frame = curr_frame_++;
   auto filename = filenames_.at(curr_frame);
-  int64_t time_delta_micro = std::stoll(filename.substr(0, filename.find("."))) - initial_timestamp_micro_;
-  double time_delta_sec = static_cast<double>(time_delta_micro) / 1e6;
+  const std::string time_str = filename.substr(0, filename.find("."));
+  // filenames are epoch times --> at least 9 digits to encode the seconds
+  if (time_str.size() < 10) throw std::runtime_error("filename does not have enough digits to encode epoch time");
+  filename_to_time_convert_factor_ = 1.0 / pow(10, time_str.size() - 10);
+  int64_t time_delta = std::stoll(time_str) - initial_timestamp_;
+  double time_delta_sec = static_cast<double>(time_delta) * filename_to_time_convert_factor_;
 
   // load point cloud
   auto points = readPointCloud(dir_path_ + "/" + filename, time_delta_sec, options_.min_dist_sensor_center,

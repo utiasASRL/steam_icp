@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
-    log_dir: /home/krb/ASRL/temp/steam_icp/boreas_aeva/steam
-    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_aeva/steam
+    log_dir: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steam
+    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steam
 
     # VISUALIZATION OPTIONS ----
     visualization_options:

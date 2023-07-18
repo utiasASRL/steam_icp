@@ -65,7 +65,8 @@ inline double AngularDistance(const Eigen::Matrix3d &rota, const Eigen::Matrix3d
 }
 
 /* -------------------------------------------------------------------------------------------------------------- */
-// Subsample to keep one random point in every voxel of the current frame
+// Subsample to keep one (random) point in every voxel of the current frame
+// Run std::shuffle() first in order to retain a random point for each voxel.
 void sub_sample_frame(std::vector<Point3D> &frame, double size_voxel) {
   std::unordered_map<Voxel, std::vector<Point3D>> grid;
   for (int i = 0; i < (int)frame.size(); i++) {
@@ -401,8 +402,11 @@ void SteamOdometry::updateMap(int index_frame, int update_frame) {
   Time begin_steam_time = trajectory_[update_frame].begin_timestamp;
   Time end_steam_time = trajectory_[update_frame].end_timestamp;
 
+  std::cout << "begin_steam_time: " << begin_steam_time.seconds() << std::endl;
+
   // consistency check
   const auto &begin_var = trajectory_vars_.at(to_marginalize_ - 1);
+  std::cout << "begin_var.time: " << begin_var.time.seconds() << std::endl;
   if (begin_var.time > begin_steam_time) throw std::runtime_error("begin_var.time > begin_steam_time");
 
   // construct the trajectory for interpolation
@@ -425,9 +429,9 @@ void SteamOdometry::updateMap(int index_frame, int update_frame) {
     const auto T_rm_intp_eval = update_trajectory->getPoseInterpolator(Time(query_time));
     const auto T_ms_intp_eval = inverse(compose(T_sr_var_, T_rm_intp_eval));
 
-    Eigen::Matrix4d T_ms = T_ms_intp_eval->evaluate().matrix();
-    Eigen::Matrix3d R = T_ms.block<3, 3>(0, 0);
-    Eigen::Vector3d t = T_ms.block<3, 1>(0, 3);
+    const Eigen::Matrix4d T_ms = T_ms_intp_eval->evaluate().matrix();
+    const Eigen::Matrix3d R = T_ms.block<3, 3>(0, 0);
+    const Eigen::Vector3d t = T_ms.block<3, 1>(0, 3);
     //
     point.pt = R * point.raw_pt + t;
   }
@@ -486,6 +490,7 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
   }
   knot_times.emplace_back(curr_time);
 
+  // add new state variables, initialize with constant velocity
   for (size_t i = 0; i < knot_times.size(); ++i) {
     double knot_time = knot_times[i];
     Time knot_steam_time(knot_time);
@@ -816,7 +821,7 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
   LOG(INFO) << "Optimizing in a sliding window!" << std::endl;
   {
     //
-    steam_trajectory->addPriorCostTerms(*sliding_window_filter_);
+    steam_trajectory->addPriorCostTerms(*sliding_window_filter_);  // ** this includes state priors (like for x_0)
     for (const auto &prior_cost_term : prior_cost_terms) sliding_window_filter_->addCostTerm(prior_cost_term);
     for (const auto &meas_cost_term : meas_cost_terms) sliding_window_filter_->addCostTerm(meas_cost_term);
 
