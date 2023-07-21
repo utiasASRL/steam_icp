@@ -12,6 +12,18 @@ namespace steam_icp {
 
 namespace {
 
+Eigen::Matrix4d getMidPose(const Eigen::Matrix3d &begin_R, const Eigen::Matrix3d &end_R, const Eigen::Vector3d &begin_t,
+                           const Eigen::Vector3d &end_t) {
+  Eigen::Matrix4d mid_pose = Eigen::Matrix4d::Identity();
+  const auto q_begin = Eigen::Quaterniond(begin_R);
+  const auto q_end = Eigen::Quaterniond(end_R);
+  Eigen::Quaterniond q = q_begin.slerp(0.5, q_end);
+  q.normalize();
+  mid_pose.block<3, 3>(0, 0) = q.toRotationMatrix();
+  mid_pose.block<3, 1>(0, 3) = 0.5 * begin_t + 0.5 * end_t;
+  return mid_pose;
+}
+
 inline double AngularDistance(const Eigen::Matrix3d &rota, const Eigen::Matrix3d &rotb) {
   double norm = ((rota * rotb.transpose()).trace() - 1) / 2;
   norm = std::acos(norm) * 180 / M_PI;
@@ -379,7 +391,8 @@ CeresElasticOdometry::~CeresElasticOdometry() {
 
 Trajectory CeresElasticOdometry::trajectory() { return trajectory_; }
 
-auto CeresElasticOdometry::registerFrame(const std::vector<Point3D> &const_frame) -> RegistrationSummary {
+auto CeresElasticOdometry::registerFrame(const std::pair<double, std::vector<Point3D>> &const_frame)
+    -> RegistrationSummary {
   RegistrationSummary summary;
 
   // add a new frame
@@ -393,7 +406,7 @@ auto CeresElasticOdometry::registerFrame(const std::vector<Point3D> &const_frame
   initializeMotion(index_frame);
 
   //
-  auto frame = initializeFrame(index_frame, const_frame);
+  auto frame = initializeFrame(index_frame, const_frame.second);
 
   //
   if (index_frame > 0) {
@@ -439,10 +452,11 @@ auto CeresElasticOdometry::registerFrame(const std::vector<Point3D> &const_frame
   return summary;
 }
 
-void CeresElasticOdometry::initializeTimestamp(int index_frame, const std::vector<Point3D> &const_frame) {
+void CeresElasticOdometry::initializeTimestamp(int index_frame,
+                                               const std::pair<double, std::vector<Point3D>> &const_frame) {
   double min_timestamp = std::numeric_limits<double>::max();
   double max_timestamp = std::numeric_limits<double>::min();
-  for (const auto &point : const_frame) {
+  for (const auto &point : const_frame.second) {
     if (point.timestamp > max_timestamp) max_timestamp = point.timestamp;
     if (point.timestamp < min_timestamp) min_timestamp = point.timestamp;
   }
@@ -721,6 +735,8 @@ bool CeresElasticOdometry::icp(int index_frame, std::vector<Point3D> &keypoints)
     current_estimate.begin_t = begin_t;
     current_estimate.end_R = end_quat.toRotationMatrix();
     current_estimate.end_t = end_t;
+    current_estimate.setMidPose(
+        getMidPose(current_estimate.begin_R, current_estimate.end_R, current_estimate.begin_t, current_estimate.end_t));
 
     timer[3].second->stop();
 

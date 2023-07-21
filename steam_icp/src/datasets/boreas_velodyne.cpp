@@ -3,13 +3,84 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include "steam_icp/datasets/utils.hpp"
 
 namespace steam_icp {
 
 namespace {
 
-std::vector<Point3D> readPointCloud(const std::string &path, const double &time_delta_sec, const double &min_dist,
-                                    const double &max_dist) {
+inline Eigen::Matrix3d roll(const double &r) {
+  Eigen::Matrix3d res;
+  res << 1., 0., 0., 0., std::cos(r), std::sin(r), 0., -std::sin(r), std::cos(r);
+  return res;
+}
+
+inline Eigen::Matrix3d pitch(const double &p) {
+  Eigen::Matrix3d res;
+  res << std::cos(p), 0., -std::sin(p), 0., 1., 0., std::sin(p), 0., std::cos(p);
+  return res;
+}
+
+inline Eigen::Matrix3d yaw(const double &y) {
+  Eigen::Matrix3d res;
+  res << std::cos(y), std::sin(y), 0., -std::sin(y), std::cos(y), 0., 0., 0., 1.;
+  return res;
+}
+
+inline Eigen::Matrix3d rpy2rot(const double &r, const double &p, const double &y) {
+  return roll(r) * pitch(p) * yaw(y);
+}
+
+ArrayPoses loadPoses(const std::string &file_path) {
+  ArrayPoses poses;
+  std::ifstream pose_file(file_path);
+  if (pose_file.is_open()) {
+    std::string line;
+    std::getline(pose_file, line);  // header
+    for (; std::getline(pose_file, line);) {
+      if (line.empty()) continue;
+      std::stringstream ss(line);
+
+      int64_t timestamp = 0;
+      Eigen::Matrix4d T_ms = Eigen::Matrix4d::Identity();
+      double r = 0, p = 0, y = 0;
+
+      for (int i = 0; i < 10; ++i) {
+        std::string value;
+        std::getline(ss, value, ',');
+
+        if (i == 0)
+          timestamp = std::stol(value);
+        else if (i == 1)
+          T_ms(0, 3) = std::stod(value);
+        else if (i == 2)
+          T_ms(1, 3) = std::stod(value);
+        else if (i == 3)
+          T_ms(2, 3) = std::stod(value);
+        else if (i == 7)
+          r = std::stod(value);
+        else if (i == 8)
+          p = std::stod(value);
+        else if (i == 9)
+          y = std::stod(value);
+      }
+      T_ms.block<3, 3>(0, 0) = rpy2rot(r, p, y);
+
+      (void)timestamp;
+      // LOG(WARNING) << "loaded: " << timestamp << " " << std::fixed << std::setprecision(6)
+      //              << T_ms(0, 3) << " " << T_ms(1, 3) << " " << T_ms(2, 3) << " "
+      //              << r << " " << p << " " << y << " " << std::endl;
+
+      poses.push_back(T_ms);
+    }
+  } else {
+    throw std::runtime_error{"unable to open file: " + file_path};
+  }
+  return poses;
+}
+
+std::vector<Point3D> readPointCloud(const std::string &path, const std::string &precision_time_path,
+                                    const double &time_delta_sec, const double &min_dist, const double &max_dist) {
   std::vector<Point3D> frame;
   // read bin file
   std::ifstream ifs(path, std::ios::binary);
@@ -20,10 +91,33 @@ std::vector<Point3D> readPointCloud(const std::string &path, const double &time_
   const unsigned numPointsIn = std::floor(buffer.size() / point_step);
 
   auto getFloatFromByteArray = [](char *byteArray, unsigned index) -> float { return *((float *)(byteArray + index)); };
+  auto getDoubleFromByteArray = [](char *byteArray, unsigned index) -> double {
+    return *((double *)(byteArray + index));
+  };
 
   double frame_last_timestamp = std::numeric_limits<double>::min();
   double frame_first_timestamp = std::numeric_limits<double>::max();
   frame.reserve(numPointsIn);
+
+  bool use_precision_times = false;
+  Eigen::VectorXd precision_times;
+  if (std::filesystem::directory_entry(precision_time_path).is_regular_file()) {
+    std::ifstream ifs2(precision_time_path, std::ios::binary);
+    std::vector<char> buffer2(std::istreambuf_iterator<char>(ifs2), {});
+    const unsigned double_offset = 8;
+    const unsigned numPoints2 = std::floor(buffer2.size() / double_offset);
+    if (numPoints2 == numPointsIn) {
+      use_precision_times = true;
+      precision_times = Eigen::VectorXd::Zero(numPointsIn);
+      for (unsigned i(0); i < numPointsIn; i++) {
+        const int bufpos = i * double_offset;
+        precision_times(i, 0) = getDoubleFromByteArray(buffer2.data(), bufpos);
+      }
+    } else {
+      std::cout << "ERROR loading precision timestamp file..." << std::endl;
+    }
+  }
+
   const double min_dist2 = min_dist * min_dist;
   const double max_dist2 = max_dist * max_dist;
   for (unsigned i(0); i < numPointsIn; i++) {
@@ -48,7 +142,11 @@ std::vector<Point3D> readPointCloud(const std::string &path, const double &time_
     new_point.alpha_timestamp =
         static_cast<double>(getFloatFromByteArray(buffer.data(), bufpos + offset * float_offset));
 
-    new_point.alpha_timestamp = getFloatFromByteArray(buffer.data(), bufpos + offset * float_offset);
+    if (use_precision_times) {
+      new_point.alpha_timestamp = precision_times(i, 0);
+    } else {
+      new_point.alpha_timestamp = getFloatFromByteArray(buffer.data(), bufpos + offset * float_offset);
+    }
 
     if (new_point.alpha_timestamp < frame_first_timestamp) {
       frame_first_timestamp = new_point.alpha_timestamp;
@@ -84,7 +182,7 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
   initial_timestamp_ = std::stoll(filenames_[0].substr(0, filenames_[0].find(".")));
 }
 
-std::vector<Point3D> BoreasVelodyneSequence::next() {
+std::pair<double, std::vector<Point3D>> BoreasVelodyneSequence::next() {
   if (!hasNext()) throw std::runtime_error("No more frames in sequence");
   int curr_frame = curr_frame_++;
   auto filename = filenames_.at(curr_frame);
@@ -95,8 +193,10 @@ std::vector<Point3D> BoreasVelodyneSequence::next() {
   int64_t time_delta = std::stoll(time_str) - initial_timestamp_;
   double time_delta_sec = static_cast<double>(time_delta) * filename_to_time_convert_factor_;
   std::cout << "time_delta_sec: " << std::setprecision(10) << time_delta_sec << std::endl;
-  return readPointCloud(dir_path_ + "/" + filename, time_delta_sec, options_.min_dist_sensor_center,
-                        options_.max_dist_sensor_center);
+  const auto precision_time_file = options_.root_path + "/" + options_.sequence + "/lidar_times/" + filename;
+  return std::make_pair(time_delta_sec,
+                        readPointCloud(dir_path_ + "/" + filename, precision_time_file, time_delta_sec,
+                                       options_.min_dist_sensor_center, options_.max_dist_sensor_center));
 }
 
 void BoreasVelodyneSequence::save(const std::string &path, const Trajectory &trajectory) const {
@@ -121,6 +221,27 @@ void BoreasVelodyneSequence::save(const std::string &path, const Trajectory &tra
              << R(1, 2) << " " << t(1) << " " << R(2, 0) << " " << R(2, 1) << " " << R(2, 2) << " " << t(2)
              << std::endl;
   }
+}
+
+auto BoreasVelodyneSequence::evaluate(const std::string &path, const Trajectory &trajectory) const -> SeqError {
+  //
+  std::string ground_truth_file = options_.root_path + "/" + options_.sequence + "/applanix/lidar_poses.csv";
+  const auto gt_poses_full = loadPoses(ground_truth_file);
+  const ArrayPoses gt_poses(gt_poses_full.begin() + init_frame_, gt_poses_full.begin() + last_frame_);
+
+  //
+  ArrayPoses poses;
+  poses.reserve(trajectory.size());
+  for (auto &frame : trajectory) {
+    poses.emplace_back(frame.getMidPose());
+  }
+
+  //
+  if (gt_poses.size() == 0 || gt_poses.size() != poses.size())
+    throw std::runtime_error{"estimated and ground truth poses are not the same size."};
+
+  const auto filename = path + "/" + options_.sequence + "_eval.txt";
+  return evaluateOdometry(filename, gt_poses, poses);
 }
 
 }  // namespace steam_icp

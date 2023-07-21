@@ -20,20 +20,46 @@ struct TrajectoryFrame {
   }
 
   Eigen::Matrix4d getMidPose() const {
-    Eigen::Matrix4d mid_pose = Eigen::Matrix4d::Identity();
-    auto q_begin = Eigen::Quaterniond(begin_R);
-    auto q_end = Eigen::Quaterniond(end_R);
-    Eigen::Vector3d t_begin = begin_t;
-    Eigen::Vector3d t_end = end_t;
-    Eigen::Quaterniond q = q_begin.slerp(0.5, q_end);
-    q.normalize();
-    mid_pose.block<3, 3>(0, 0) = q.toRotationMatrix();
-    mid_pose.block<3, 1>(0, 3) = 0.5 * t_begin + 0.5 * t_end;
-    return mid_pose;
+    if (mid_pose_init) {
+      return mid_pose_;
+    } else {
+      Eigen::Matrix4d mid_pose = Eigen::Matrix4d::Identity();
+      auto q_begin = Eigen::Quaterniond(begin_R);
+      auto q_end = Eigen::Quaterniond(end_R);
+      Eigen::Vector3d t_begin = begin_t;
+      Eigen::Vector3d t_end = end_t;
+      Eigen::Quaterniond q = q_begin.slerp(0.5, q_end);
+      q.normalize();
+      mid_pose.block<3, 3>(0, 0) = q.toRotationMatrix();
+      mid_pose.block<3, 1>(0, 3) = 0.5 * t_begin + 0.5 * t_end;
+      return mid_pose;
+    }
+  }
+
+  // if we want to evaluate the trajectory at a specific timestamp other than
+  // the middle of (begin_timestamp, end_timestamp), use this function.
+  void setEvalTime(double eval_timestamp) {
+    eval_timestamp_ = eval_timestamp;
+    eval_time_init = true;
+  }
+
+  double getEvalTime() const {
+    if (eval_time_init) {
+      return eval_timestamp_;
+    } else {
+      return (begin_timestamp + end_timestamp) / 2.0;
+    }
+  }
+
+  void setMidPose(Eigen::Matrix4d mid_pose) {
+    mid_pose_ = mid_pose;
+    mid_pose_init = true;
   }
 
   double begin_timestamp = 0.0;
   double end_timestamp = 1.0;
+  bool eval_time_init = false;
+  bool mid_pose_init = false;
 
   Eigen::Matrix3d begin_R = Eigen::Matrix3d::Identity();
   Eigen::Vector3d begin_t = Eigen::Vector3d::Zero();
@@ -45,6 +71,10 @@ struct TrajectoryFrame {
   Eigen::Matrix<double, 12, 12> end_state_cov = Eigen::Matrix<double, 12, 12>::Identity();
 
   std::vector<Point3D> points;
+
+ private:
+  Eigen::Matrix4d mid_pose_ = Eigen::Matrix4d::Identity();
+  double eval_timestamp_ = 0.5;
 };
 
 using Trajectory = std::vector<TrajectoryFrame>;

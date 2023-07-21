@@ -11,7 +11,7 @@ class BoreasAevaSequence : public Sequence {
   int currFrame() const override { return curr_frame_; }
   int numFrames() const override { return last_frame_ - init_frame_; }
   bool hasNext() const override { return curr_frame_ < last_frame_; }
-  std::vector<Point3D> next() override;
+  std::pair<double, std::vector<Point3D>> next() override;
 
   void save(const std::string& path, const Trajectory& trajectory) const override;
 

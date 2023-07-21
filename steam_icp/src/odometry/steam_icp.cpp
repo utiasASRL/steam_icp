@@ -214,6 +214,11 @@ Trajectory SteamOdometry::trajectory() {
       frame.begin_R = begin_T_ms.block<3, 3>(0, 0);
       frame.begin_t = begin_T_ms.block<3, 1>(0, 3);
 
+      Time mid_steam_time(static_cast<double>(frame.getEvalTime()));
+      const auto mid_T_mr = inverse(full_trajectory->getPoseInterpolator(mid_steam_time))->evaluate().matrix();
+      const auto mid_T_ms = mid_T_mr * options_.T_sr.inverse();
+      frame.setMidPose(mid_T_ms);
+
       Time end_steam_time(frame.end_timestamp);
       const auto end_T_mr = inverse(full_trajectory->getPoseInterpolator(end_steam_time))->evaluate().matrix();
       const auto end_T_ms = end_T_mr * options_.T_sr.inverse();
@@ -224,7 +229,7 @@ Trajectory SteamOdometry::trajectory() {
   return trajectory_;
 }
 
-auto SteamOdometry::registerFrame(const std::vector<Point3D> &const_frame) -> RegistrationSummary {
+auto SteamOdometry::registerFrame(const std::pair<double, std::vector<Point3D>> &const_frame) -> RegistrationSummary {
   RegistrationSummary summary;
 
   // add a new frame
@@ -238,7 +243,7 @@ auto SteamOdometry::registerFrame(const std::vector<Point3D> &const_frame) -> Re
   initializeMotion(index_frame);
 
   //
-  auto frame = initializeFrame(index_frame, const_frame);
+  auto frame = initializeFrame(index_frame, const_frame.second);
 
   //
   if (index_frame > 0) {
@@ -316,24 +321,31 @@ auto SteamOdometry::registerFrame(const std::vector<Point3D> &const_frame) -> Re
   return summary;
 }
 
-void SteamOdometry::initializeTimestamp(int index_frame, const std::vector<Point3D> &const_frame) {
+void SteamOdometry::initializeTimestamp(int index_frame, const std::pair<double, std::vector<Point3D>> &const_frame) {
   double min_timestamp = std::numeric_limits<double>::max();
   double max_timestamp = std::numeric_limits<double>::min();
-  for (const auto &point : const_frame) {
+  for (const auto &point : const_frame.second) {
     if (point.timestamp > max_timestamp) max_timestamp = point.timestamp;
     if (point.timestamp < min_timestamp) min_timestamp = point.timestamp;
   }
   trajectory_[index_frame].begin_timestamp = min_timestamp;
   trajectory_[index_frame].end_timestamp = max_timestamp;
+  // purpose: eval trajectory at the exact file stamp to match ground truth
+  trajectory_[index_frame].setEvalTime(const_frame.first);
 }
 
 void SteamOdometry::initializeMotion(int index_frame) {
   if (index_frame <= 1) {
     // Initialize first pose at Identity
-    trajectory_[index_frame].begin_R = Eigen::MatrixXd::Identity(3, 3);
-    trajectory_[index_frame].begin_t = Eigen::Vector3d(0., 0., 0.);
-    trajectory_[index_frame].end_R = Eigen::MatrixXd::Identity(3, 3);
-    trajectory_[index_frame].end_t = Eigen::Vector3d(0., 0., 0.);
+    // trajectory_[index_frame].begin_R = Eigen::MatrixXd::Identity(3, 3);
+    // trajectory_[index_frame].begin_t = Eigen::Vector3d(0., 0., 0.);
+    // trajectory_[index_frame].end_R = Eigen::MatrixXd::Identity(3, 3);
+    // trajectory_[index_frame].end_t = Eigen::Vector3d(0., 0., 0.);
+    const Eigen::Matrix4d T_rs = options_.T_sr.inverse();
+    trajectory_[index_frame].begin_R = T_rs.block<3, 3>(0, 0);
+    trajectory_[index_frame].begin_t = T_rs.block<3, 1>(0, 3);
+    trajectory_[index_frame].end_R = T_rs.block<3, 3>(0, 0);
+    trajectory_[index_frame].end_t = T_rs.block<3, 1>(0, 3);
   } else {
     // Different regimen for the second frame due to the bootstrapped elasticity
     Eigen::Matrix3d R_next_end = trajectory_[index_frame - 1].end_R * trajectory_[index_frame - 2].end_R.inverse() *
@@ -362,6 +374,10 @@ std::vector<Point3D> SteamOdometry::initializeFrame(int index_frame, const std::
   // initialize points
   auto q_begin = Eigen::Quaterniond(trajectory_[index_frame].begin_R);
   auto q_end = Eigen::Quaterniond(trajectory_[index_frame].end_R);
+  std::cout << "begin_R" << std::endl;
+  std::cout << trajectory_[index_frame].begin_R << std::endl;
+  std::cout << "end_R" << std::endl;
+  std::cout << trajectory_[index_frame].end_R << std::endl;
   Eigen::Vector3d t_begin = trajectory_[index_frame].begin_t;
   Eigen::Vector3d t_end = trajectory_[index_frame].end_t;
   for (auto &point : frame) {
@@ -423,8 +439,9 @@ void SteamOdometry::updateMap(int index_frame, int update_frame) {
   LOG(INFO) << "Adding points to map between (inclusive): " << begin_steam_time.seconds() << " - "
             << end_steam_time.seconds() << ", with num states: " << num_states << std::endl;
 
-  for (auto &point : frame) {
-    const double query_time = point.timestamp;
+#pragma omp parallel for num_threads(options_.num_threads)
+  for (unsigned i = 0; i < frame.size(); i++) {
+    const double query_time = frame[i].timestamp;
 
     const auto T_rm_intp_eval = update_trajectory->getPoseInterpolator(Time(query_time));
     const auto T_ms_intp_eval = inverse(compose(T_sr_var_, T_rm_intp_eval));
@@ -433,7 +450,7 @@ void SteamOdometry::updateMap(int index_frame, int update_frame) {
     const Eigen::Matrix3d R = T_ms.block<3, 3>(0, 0);
     const Eigen::Vector3d t = T_ms.block<3, 1>(0, 3);
     //
-    point.pt = R * point.raw_pt + t;
+    frame[i].pt = R * frame[i].raw_pt + t;
   }
 #endif
 
@@ -802,6 +819,11 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
     diff_trans += (current_estimate.end_t - end_T_ms.block<3, 1>(0, 3)).norm();
     diff_rot += AngularDistance(current_estimate.end_R, end_T_ms.block<3, 3>(0, 0));
 
+    Time curr_mid_steam_time(static_cast<double>(trajectory_[index_frame].getEvalTime()));
+    const auto mid_T_mr = inverse(steam_trajectory->getPoseInterpolator(curr_mid_steam_time))->evaluate().matrix();
+    const auto mid_T_ms = mid_T_mr * options_.T_sr.inverse();
+    current_estimate.setMidPose(mid_T_ms);
+
     current_estimate.begin_R = begin_T_ms.block<3, 3>(0, 0);
     current_estimate.begin_t = begin_T_ms.block<3, 1>(0, 3);
     current_estimate.end_R = end_T_ms.block<3, 3>(0, 0);
@@ -848,10 +870,19 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
   const auto curr_end_T_mr = inverse(steam_trajectory->getPoseInterpolator(curr_end_steam_time))->evaluate().matrix();
   const auto curr_end_T_ms = curr_end_T_mr * options_.T_sr.inverse();
 
+  Time curr_mid_steam_time(static_cast<double>(trajectory_[index_frame].getEvalTime()));
+  const auto mid_T_mr = inverse(steam_trajectory->getPoseInterpolator(curr_mid_steam_time))->evaluate().matrix();
+  const auto mid_T_ms = mid_T_mr * options_.T_sr.inverse();
+  current_estimate.setMidPose(mid_T_ms);
+
   current_estimate.begin_R = curr_begin_T_ms.block<3, 3>(0, 0);
   current_estimate.begin_t = curr_begin_T_ms.block<3, 1>(0, 3);
   current_estimate.end_R = curr_end_T_ms.block<3, 3>(0, 0);
   current_estimate.end_t = curr_end_T_ms.block<3, 1>(0, 3);
+  std::cout << "curr_begin_T_ms" << std::endl;
+  std::cout << curr_begin_T_ms << std::endl;
+  std::cout << "curr_end_T_ms" << std::endl;
+  std::cout << curr_end_T_ms << std::endl;
   // clang-format on
 
   timer[0].second->start();

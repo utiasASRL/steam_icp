@@ -233,7 +233,7 @@ BoreasAevaSequence::BoreasAevaSequence(const Options &options) : Sequence(option
   }
 }
 
-std::vector<Point3D> BoreasAevaSequence::next() {
+std::pair<double, std::vector<Point3D>> BoreasAevaSequence::next() {
   if (!hasNext()) throw std::runtime_error("No more frames in sequence");
   int curr_frame = curr_frame_++;
   auto filename = filenames_.at(curr_frame);
@@ -249,7 +249,7 @@ std::vector<Point3D> BoreasAevaSequence::next() {
                                options_.max_dist_sensor_center, has_beam_id_);
   if (has_beam_id_) calibrate(rt_parts_, azi_ranges_, vel_means_, points);
 
-  return points;
+  return std::make_pair(time_delta_sec, points);
 }
 
 void BoreasAevaSequence::save(const std::string &path, const Trajectory &trajectory) const {

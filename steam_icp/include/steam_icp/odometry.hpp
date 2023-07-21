@@ -66,7 +66,7 @@ class Odometry {
     bool success = true;                                 // Whether the registration was a success
   };
   // Registers a new Frame to the Map with an initial estimate
-  virtual RegistrationSummary registerFrame(const std::vector<Point3D> &frame) = 0;
+  virtual RegistrationSummary registerFrame(const std::pair<double, std::vector<Point3D>> &frame) = 0;
 
  protected:
   Trajectory trajectory_;

@@ -456,7 +456,7 @@ int main(int argc, char **argv) {
 
       timer[2].second->start();
       if (options.visualization_options.raw_points) {
-        auto &raw_points = frame;
+        auto &raw_points = frame.second;
         auto raw_points_msg = to_pc2_msg(raw_points, "sensor");
         raw_points_publisher->publish(raw_points_msg);
       }

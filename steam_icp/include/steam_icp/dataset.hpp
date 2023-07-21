@@ -41,7 +41,7 @@ class Sequence {
     throw std::runtime_error("set random initial frame not supported");
   };
   virtual bool hasNext() const = 0;
-  virtual std::vector<Point3D> next() = 0;
+  virtual std::pair<double, std::vector<Point3D>> next() = 0;
   virtual bool withRandomAccess() const { return false; }
   virtual std::vector<Point3D> frame(size_t /* index */) const {
     throw std::runtime_error("random access not supported");
