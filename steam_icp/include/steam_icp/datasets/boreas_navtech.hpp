@@ -26,9 +26,9 @@ class BoreasNavtechSequence : public Sequence {
   int curr_frame_ = 0;
   int last_frame_ = std::numeric_limits<int>::max();  // exclusive bound
   double filename_to_time_convert_factor_ = 1.0e-6;   // may change depending on length of timestamp (ns vs. us)
+  double beta = 0.049;
 
-  std::vector<Point3D> readPointCloud(const std::string &path, const int64_t &current_timestamp_micro,
-                                      const double &radar_resolution);
+  std::vector<Point3D> readPointCloud(const std::string &path, const double &radar_resolution);
 };
 
 class BoreasNavtechDataset : public Dataset {

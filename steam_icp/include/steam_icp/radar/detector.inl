@@ -40,13 +40,15 @@ std::vector<PointT> ModifiedCACFAR<PointT>::run(const cv::Mat &raw_scan, const f
   std::vector<PointT> raw_points;
   raw_points.reserve(2000);
 
-  const double time_delta = azimuth_times[azimuth_times.size() - 1] - azimuth_times[0];
+  const double time_delta = azimuth_times.back() - azimuth_times.front();
 
+#pragma omp declare reduction( \
+        merge_points : std::vector<PointT> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
+#pragma omp parallel for num_threads(num_threads_) reduction(merge_points : raw_points)
   for (int i = 0; i < rows; ++i) {
     const double azimuth = azimuth_angles[i];
-    const double time = (azimuth_times[i] - initial_timestamp_) / 1e6;
-    const double alpha_time =
-        std::min(1.0, std::max(0.0, 1 - (azimuth_times[azimuth_times.size() - 1] - azimuth_times[i]) / time_delta));
+    const double time = (azimuth_times[i] - initial_timestamp_) * 1.0e-6;
+    const double alpha_time = std::min(1.0, std::max(0.0, 1 - (azimuth_times.back() - azimuth_times[i]) / time_delta));
     double mean = 0;
     for (int j = mincol; j < maxcol; ++j) {
       mean += raw_scan.at<float>(i, j);
@@ -71,13 +73,13 @@ std::vector<PointT> ModifiedCACFAR<PointT>::run(const cv::Mat &raw_scan, const f
       } else if (num_peak_points > 0) {
         PointT p;
         const double rho = res * peak_points / num_peak_points + range_offset_;
-        p.raw_pt[0] = rho * std::cos(azimuth);
-        p.raw_pt[1] = rho * std::sin(azimuth);
+        p.raw_pt[0] = rho * std::cos(-azimuth);
+        p.raw_pt[1] = rho * std::sin(-azimuth);
         p.raw_pt[2] = 0.0;
         p.pt = p.raw_pt;
         p.timestamp = time;
         p.alpha_timestamp = alpha_time;
-        raw_points.push_back(p);
+        raw_points.emplace_back(p);
         peak_points = 0;
         num_peak_points = 0;
       }

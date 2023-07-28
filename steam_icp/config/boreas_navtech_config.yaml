@@ -5,17 +5,17 @@
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
-      odometry: false
-      raw_points: false
-      sampled_points: false
-      map_points: false
+      odometry: true
+      raw_points: true
+      sampled_points: true
+      map_points: true
 
     # DATASET OPTIONS ----
     dataset: BoreasNavtech
     dataset_options:
       all_sequences: false
-      root_path: /workspace/nas/ASRL/2021-Boreas
-      sequence: "boreas-2020-11-26-13-58"
+      root_path: /workspace/raid/krb/boreas
+      sequence: "boreas-2021-09-02-11-42"
       init_frame: 0 # 5675 (highway 7 front image)
       last_frame: 100000 # 5680 (highway 7 front image)
       min_dist_sensor_center: 2.0
@@ -27,16 +27,35 @@
       modified_cacfar_threshold: 1.0
       modified_cacfar_threshold2: 0.0
       modified_cacfar_threshold3: 0.09
+      modified_cacfar_num_threads: 20
 
     # ODOMETRY OPTIONS ----
-    odometry: STEAM
+    odometry: STEAMRIO
     odometry_options:
       debug_print: true
-      debug_path: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steam
+      debug_path: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steam
+      min_number_neighbors: 1
+      init_voxel_size: 1.0
+      voxel_size: 1.0
+      init_sample_voxel_size: 1.0
+      sample_voxel_size: 1.0
+      max_distance: 80.0  # determines radius for cropping when adding to the map
+      max_number_neighbors: 1  # determines size of priority queue when getting neighbors from map
+      max_num_points_in_voxel: 1
+      num_iters_icp: 100
+      voxel_lifetime: 3
 
       elastic:
         num_threads: 20
 
       steam:
-        qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
+        qc_diag: [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.01] #[50.0, 50.0, 50.0, 5.0, 5.0, 5.0]  # [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.01]
         num_threads: 20
+        # parameters copied from VTR3:
+        p2p_loss_sigma: 1.0
+        p2p_loss_func: CAUCHY  # (L2, DCS, CAUCHY, GM)
+        p2p_max_dist: 5.0
+        beta: 0.049
+        voxel_downsample: false
+        verbose: false
+        max_iterations: 10

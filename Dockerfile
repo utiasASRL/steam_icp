@@ -71,7 +71,13 @@ RUN pip3 install pexpect ipympl
 RUN pip3 install asrl-pylgmath asrl-pysteam
 
 RUN apt update && apt install -q -y \
-  libsuitesparse-dev
+  libsuitesparse-dev \
+  wget
+
+RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
+  && chmod +x ./dotnet-install.sh \
+  && ./dotnet-install.sh --version latest --runtime aspnetcore
+
 
 ## Switch to specified user
 USER ${USERID}:${GROUPID}

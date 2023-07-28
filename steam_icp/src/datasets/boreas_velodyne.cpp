@@ -180,6 +180,33 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
   init_frame_ = std::max((int)0, options_.init_frame);
   std::sort(filenames_.begin(), filenames_.end());
   initial_timestamp_ = std::stoll(filenames_[0].substr(0, filenames_[0].find(".")));
+  const std::string imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu.csv";
+  std::ifstream imu_file(imu_path);
+  if (imu_file.is_open()) {
+    std::string line;
+    std::getline(imu_file, line);  // header
+    for (; std::getline(imu_file, line);) {
+      if (line.empty()) continue;
+      std::stringstream ss(line);
+      IMUData imu_data;
+      std::string value;
+      std::getline(ss, value, ',');
+      imu_data.timestamp = std::stoll(value);
+      std::getline(ss, value, ',');
+      imu_data.ang_vel[2] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.ang_vel[1] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.ang_vel[0] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.lin_acc[2] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.lin_acc[1] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.lin_acc[0] = std::stod(value);
+      imu_data_vec_.push_back(imu_data);
+    }
+  }
 }
 
 std::pair<double, std::vector<Point3D>> BoreasVelodyneSequence::next() {
@@ -192,11 +219,11 @@ std::pair<double, std::vector<Point3D>> BoreasVelodyneSequence::next() {
   filename_to_time_convert_factor_ = 1.0 / pow(10, time_str.size() - 10);
   int64_t time_delta = std::stoll(time_str) - initial_timestamp_;
   double time_delta_sec = static_cast<double>(time_delta) * filename_to_time_convert_factor_;
-  std::cout << "time_delta_sec: " << std::setprecision(10) << time_delta_sec << std::endl;
   const auto precision_time_file = options_.root_path + "/" + options_.sequence + "/lidar_times/" + filename;
-  return std::make_pair(time_delta_sec,
-                        readPointCloud(dir_path_ + "/" + filename, precision_time_file, time_delta_sec,
-                                       options_.min_dist_sensor_center, options_.max_dist_sensor_center));
+  std::vector<IMUData> curr_imu_data_vec;
+  const auto pc = readPointCloud(dir_path_ + "/" + filename, precision_time_file, time_delta_sec,
+                                 options_.min_dist_sensor_center, options_.max_dist_sensor_center);
+  return std::make_pair(time_delta_sec, pc);
 }
 
 void BoreasVelodyneSequence::save(const std::string &path, const Trajectory &trajectory) const {

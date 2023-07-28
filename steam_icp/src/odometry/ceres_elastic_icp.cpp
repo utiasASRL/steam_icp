@@ -669,7 +669,7 @@ bool CeresElasticOdometry::icp(int index_frame, std::vector<Point3D> &keypoints)
 
     timer[1].second->stop();
 
-    if (number_keypoints_used < 100) {
+    if (number_keypoints_used < options_.min_number_keypoints) {
       LOG(ERROR) << "[CT_ICP]Error : not enough keypoints selected in ct-icp !" << std::endl;
       LOG(ERROR) << "[CT_ICP]Number_of_residuals : " << number_keypoints_used << std::endl;
       icp_success = false;

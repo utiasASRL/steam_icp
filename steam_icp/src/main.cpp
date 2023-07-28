@@ -145,6 +145,7 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold, double);
       ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold2, double);
       ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold3, double);
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_num_threads, int);
     }
   }
 
@@ -181,6 +182,10 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       options.odometry_options = std::make_shared<CeresElasticOdometry::Options>();
     else if (options.odometry == "STEAM")
       options.odometry_options = std::make_shared<SteamOdometry::Options>();
+    else if (options.odometry == "STEAMLIO")
+      options.odometry_options = std::make_shared<SteamLioOdometry::Options>();
+    else if (options.odometry == "STEAMRIO")
+      options.odometry_options = std::make_shared<SteamRioOdometry::Options>();
     else
       throw std::invalid_argument{"Unknown odometry type!"};
 
@@ -199,10 +204,12 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
     ROS2_PARAM_CLAUSE(node, odometry_options, prefix, max_distance, double);
     ROS2_PARAM_CLAUSE(node, odometry_options, prefix, min_number_neighbors, int);
     ROS2_PARAM_CLAUSE(node, odometry_options, prefix, max_number_neighbors, int);
+    ROS2_PARAM_CLAUSE(node, odometry_options, prefix, voxel_lifetime, int);
 
     ROS2_PARAM_CLAUSE(node, odometry_options, prefix, num_iters_icp, int);
     ROS2_PARAM_CLAUSE(node, odometry_options, prefix, threshold_orientation_norm, double);
     ROS2_PARAM_CLAUSE(node, odometry_options, prefix, threshold_translation_norm, double);
+    ROS2_PARAM_CLAUSE(node, odometry_options, prefix, min_number_keypoints, int);
 
     ROS2_PARAM_CLAUSE(node, odometry_options, prefix, debug_print, bool);
     ROS2_PARAM_CLAUSE(node, odometry_options, prefix, debug_path, std::string);
@@ -322,6 +329,108 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
 
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, delay_adding_points, int);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_final_state_value, bool);
+    } else if (options.odometry == "STEAMLIO") {
+      auto &steam_icp_options = dynamic_cast<SteamLioOdometry::Options &>(odometry_options);
+      prefix = "odometry_options.steam.";
+
+      if (options.dataset != "BoreasAeva" && options.dataset != "BoreasNavtech" &&
+          options.dataset != "BoreasVelodyne") {
+        std::vector<double> T_sr_vec;
+        ROS2_PARAM_NO_LOG(node, T_sr_vec, prefix, T_sr_vec, std::vector<double>);
+        if ((T_sr_vec.size() != 6) && (T_sr_vec.size() != 0))
+          throw std::invalid_argument{"T_sr malformed. Must be 6 elements!"};
+        if (T_sr_vec.size() == 6)
+          steam_icp_options.T_sr = lgmath::se3::vec2tran(Eigen::Matrix<double, 6, 1>(T_sr_vec.data()));
+        LOG(WARNING) << "Parameter " << prefix + "T_sr"
+                     << " = " << std::endl
+                     << steam_icp_options.T_sr << std::endl;
+      }
+
+      std::vector<double> qc_diag;
+      ROS2_PARAM_NO_LOG(node, qc_diag, prefix, qc_diag, std::vector<double>);
+      if ((qc_diag.size() != 6) && (qc_diag.size() != 0))
+        throw std::invalid_argument{"Qc diagonal malformed. Must be 6 elements!"};
+      if (qc_diag.size() == 6)
+        steam_icp_options.qc_diag << qc_diag[0], qc_diag[1], qc_diag[2], qc_diag[3], qc_diag[4], qc_diag[5];
+      LOG(WARNING) << "Parameter " << prefix + "qc_diag"
+                   << " = " << steam_icp_options.qc_diag.transpose() << std::endl;
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, num_extra_states, int);
+
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, power_planarity, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p2p_max_dist, double);
+      std::string p2p_loss_func;
+      ROS2_PARAM(node, p2p_loss_func, prefix, p2p_loss_func, std::string);
+      if (p2p_loss_func == "L2")
+        steam_icp_options.p2p_loss_func = SteamLioOdometry::STEAM_LOSS_FUNC::L2;
+      else if (p2p_loss_func == "DCS")
+        steam_icp_options.p2p_loss_func = SteamLioOdometry::STEAM_LOSS_FUNC::DCS;
+      else if (p2p_loss_func == "CAUCHY")
+        steam_icp_options.p2p_loss_func = SteamLioOdometry::STEAM_LOSS_FUNC::CAUCHY;
+      else if (p2p_loss_func == "GM")
+        steam_icp_options.p2p_loss_func = SteamLioOdometry::STEAM_LOSS_FUNC::GM;
+      else {
+        LOG(WARNING) << "Parameter " << prefix + "p2p_loss_func"
+                     << " not specified. Using default value: "
+                     << "CAUCHY";
+      }
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p2p_loss_sigma, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, verbose, bool);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, max_iterations, int);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, num_threads, int);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, delay_adding_points, int);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_final_state_value, bool);
+    } else if (options.odometry == "STEAMRIO") {
+      auto &steam_icp_options = dynamic_cast<SteamRioOdometry::Options &>(odometry_options);
+      prefix = "odometry_options.steam.";
+
+      if (options.dataset != "BoreasAeva" && options.dataset != "BoreasNavtech" &&
+          options.dataset != "BoreasVelodyne") {
+        std::vector<double> T_sr_vec;
+        ROS2_PARAM_NO_LOG(node, T_sr_vec, prefix, T_sr_vec, std::vector<double>);
+        if ((T_sr_vec.size() != 6) && (T_sr_vec.size() != 0))
+          throw std::invalid_argument{"T_sr malformed. Must be 6 elements!"};
+        if (T_sr_vec.size() == 6)
+          steam_icp_options.T_sr = lgmath::se3::vec2tran(Eigen::Matrix<double, 6, 1>(T_sr_vec.data()));
+        LOG(WARNING) << "Parameter " << prefix + "T_sr"
+                     << " = " << std::endl
+                     << steam_icp_options.T_sr << std::endl;
+      }
+
+      std::vector<double> qc_diag;
+      ROS2_PARAM_NO_LOG(node, qc_diag, prefix, qc_diag, std::vector<double>);
+      if ((qc_diag.size() != 6) && (qc_diag.size() != 0))
+        throw std::invalid_argument{"Qc diagonal malformed. Must be 6 elements!"};
+      if (qc_diag.size() == 6)
+        steam_icp_options.qc_diag << qc_diag[0], qc_diag[1], qc_diag[2], qc_diag[3], qc_diag[4], qc_diag[5];
+      LOG(WARNING) << "Parameter " << prefix + "qc_diag"
+                   << " = " << steam_icp_options.qc_diag.transpose() << std::endl;
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, num_extra_states, int);
+
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, power_planarity, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p2p_max_dist, double);
+      std::string p2p_loss_func;
+      ROS2_PARAM(node, p2p_loss_func, prefix, p2p_loss_func, std::string);
+      if (p2p_loss_func == "L2")
+        steam_icp_options.p2p_loss_func = SteamRioOdometry::STEAM_LOSS_FUNC::L2;
+      else if (p2p_loss_func == "DCS")
+        steam_icp_options.p2p_loss_func = SteamRioOdometry::STEAM_LOSS_FUNC::DCS;
+      else if (p2p_loss_func == "CAUCHY")
+        steam_icp_options.p2p_loss_func = SteamRioOdometry::STEAM_LOSS_FUNC::CAUCHY;
+      else if (p2p_loss_func == "GM")
+        steam_icp_options.p2p_loss_func = SteamRioOdometry::STEAM_LOSS_FUNC::GM;
+      else {
+        LOG(WARNING) << "Parameter " << prefix + "p2p_loss_func"
+                     << " not specified. Using default value: "
+                     << "CAUCHY";
+      }
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p2p_loss_sigma, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, verbose, bool);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, max_iterations, int);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, num_threads, int);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, delay_adding_points, int);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_final_state_value, bool);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, beta, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, voxel_downsample, bool);
     }
   }
 
@@ -401,8 +510,9 @@ int main(int argc, char **argv) {
     if (options.dataset == "BoreasAeva" || options.dataset == "BoreasVelodyne" || options.dataset == "BoreasNavtech") {
       Eigen::Matrix4d T_sr = Eigen::Matrix4d::Identity();
       fs::path root_path{options.dataset_options.root_path};
-      Eigen::Matrix4d yfwd2xfwd;
+      Eigen::Matrix4d yfwd2xfwd, zup2zdown;
       yfwd2xfwd << 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
+      zup2zdown << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
       if (options.dataset == "BoreasVelodyne") {
         std::ifstream ifs(root_path / seq->name() / "calib" / "T_applanix_lidar.txt", std::ios::in);
         Eigen::Matrix4d T_applanix_lidar_mat;
@@ -418,7 +528,7 @@ int main(int argc, char **argv) {
         Eigen::Matrix4d T_radar_lidar_mat;
         for (size_t row = 0; row < 4; row++)
           for (size_t col = 0; col < 4; col++) ifs2 >> T_radar_lidar_mat(row, col);
-        T_sr = (yfwd2xfwd * T_applanix_lidar_mat * T_radar_lidar_mat.inverse()).inverse();
+        T_sr = (yfwd2xfwd * T_applanix_lidar_mat * (zup2zdown * T_radar_lidar_mat).inverse()).inverse();
       } else if (options.dataset == "BoreasAeva") {
         std::ifstream ifs(root_path / seq->name() / "calib" / "T_applanix_aeva.txt", std::ios::in);
         Eigen::Matrix4d T_applanix_lidar_mat;
@@ -429,6 +539,14 @@ int main(int argc, char **argv) {
       options.visualization_options.T_sr = T_sr;
       if (options.odometry == "STEAM") {
         auto &steam_icp_options = dynamic_cast<SteamOdometry::Options &>(*options.odometry_options);
+        steam_icp_options.T_sr = T_sr;
+      }
+      if (options.odometry == "STEAMLIO") {
+        auto &steam_icp_options = dynamic_cast<SteamLioOdometry::Options &>(*options.odometry_options);
+        steam_icp_options.T_sr = T_sr;
+      }
+      if (options.odometry == "STEAMRIO") {
+        auto &steam_icp_options = dynamic_cast<SteamRioOdometry::Options &>(*options.odometry_options);
         steam_icp_options.T_sr = T_sr;
       }
       LOG(WARNING) << "(BOREAS)Parameter T_sr = " << std::endl << T_sr << std::endl;

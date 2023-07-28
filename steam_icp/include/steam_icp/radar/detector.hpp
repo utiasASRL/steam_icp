@@ -22,9 +22,6 @@
 
 #include "opencv2/opencv.hpp"
 
-// #include "vtr_radar/data_types/point.hpp"
-#include "steam_icp/radar/utils.hpp"
-
 namespace steam_icp {
 
 template <class PointT>
@@ -40,18 +37,18 @@ template <class PointT>
 class ModifiedCACFAR : public Detector<PointT> {
  public:
   ModifiedCACFAR() = default;
-  ModifiedCACFAR(int width, int guard, double threshold, double threshold2, double threshold3, double minr, double maxr,
-                 double range_offset, int64_t initial_timestamp_micro, int64_t current_timestamp_micro)
+  ModifiedCACFAR(int width, int guard, double threshold, double threshold2, double threshold3, int num_threads,
+                 double minr, double maxr, double range_offset, int64_t initial_timestamp_micro)
       : width_(width),
         guard_(guard),
         threshold_(threshold),
         threshold2_(threshold2),
         threshold3_(threshold3),
+        num_threads_(num_threads),
         minr_(minr),
         maxr_(maxr),
         range_offset_(range_offset),
-        initial_timestamp_(initial_timestamp_micro),
-        current_timestamp_micro_(current_timestamp_micro) {}
+        initial_timestamp_(initial_timestamp_micro) {}
 
   std::vector<PointT> run(const cv::Mat &raw_scan, const float &res, const std::vector<int64_t> &azimuth_times,
                           const std::vector<double> &azimuth_angles) override;
@@ -62,11 +59,11 @@ class ModifiedCACFAR : public Detector<PointT> {
   double threshold_ = 3.0;
   double threshold2_ = 1.1;
   double threshold3_ = 0.22;
+  int num_threads_ = 1;
   double minr_ = 2.0;
   double maxr_ = 100.0;
   double range_offset_ = -0.31;
   int64_t initial_timestamp_ = 0;
-  int64_t current_timestamp_micro_ = 0;
 };
 
 }  // namespace steam_icp

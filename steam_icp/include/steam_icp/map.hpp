@@ -52,6 +52,8 @@ struct VoxelBlock {
 
   ArrayVector3d points;
 
+  int life_time = 10;
+
  private:
   int num_points_;
 };
@@ -79,6 +81,9 @@ namespace steam_icp {
 
 class Map {
  public:
+  Map() = default;
+  Map(int default_lifetime) : default_lifetime_(default_lifetime) {}
+
   ArrayVector3d pointcloud() const {
     ArrayVector3d points;
     points.reserve(size());
@@ -106,6 +111,24 @@ class Map {
     }
     for (auto &vox : voxels_to_erase) voxel_map_.erase(vox);
   }
+
+  void update_and_filter_lifetimes() {
+    std::vector<Voxel> voxels_to_erase;
+    for (VoxelHashMap::iterator it = voxel_map_.begin(); it != voxel_map_.end(); it++) {
+      auto &voxel_block = (it.value());
+      voxel_block.life_time -= 1;
+      // for (auto &pair : voxel_map_) {
+      //   voxel_map_[pair.first].life_time -= 1;
+      // it->second.life_time -= 1;
+      // if (it->second.life_time <= 0) voxels_to_erase.push_back(it->first);
+      if (voxel_block.life_time <= 0) voxels_to_erase.push_back(it->first);
+    }
+    for (auto &vox : voxels_to_erase) voxel_map_.erase(vox);
+  }
+
+  void setDefaultLifeTime(int default_lifetime) { default_lifetime_ = default_lifetime; }
+
+  void clear() { voxel_map_.clear(); }
 
   void add(const std::vector<Point3D> &points, double voxel_size, int max_num_points_in_voxel,
            double min_distance_points, int min_num_points = 0) {
@@ -142,11 +165,13 @@ class Map {
           }
         }
       }
+      voxel_block.life_time = default_lifetime_;
     } else {
       if (min_num_points <= 0) {
         // Do not add points (avoids polluting the map)
         VoxelBlock block(max_num_points_in_voxel);
         block.AddPoint(point);
+        block.life_time = default_lifetime_;
         voxel_map_[Voxel(kx, ky, kz)] = std::move(block);
       }
     }
@@ -217,6 +242,7 @@ class Map {
 
  private:
   VoxelHashMap voxel_map_;
+  int default_lifetime_ = 10;
 };
 
 }  // namespace steam_icp

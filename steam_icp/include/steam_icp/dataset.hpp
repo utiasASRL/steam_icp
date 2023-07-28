@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "steam_icp/imu.hpp"
 #include "steam_icp/point.hpp"
 #include "steam_icp/trajectory.hpp"
 
@@ -29,6 +30,7 @@ class Sequence {
     double modified_cacfar_threshold = 1.0;
     double modified_cacfar_threshold2 = 0.0;
     double modified_cacfar_threshold3 = 0.09;
+    int modified_cacfar_num_threads = 1;
   };
 
   Sequence(const Options &options) : options_(options) {}

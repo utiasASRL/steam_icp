@@ -10,7 +10,6 @@ void load_radar(const std::string &path, std::vector<int64_t> &timestamps, std::
 
 void load_radar(const cv::Mat &raw_data, std::vector<int64_t> &timestamps, std::vector<double> &azimuths,
                 cv::Mat &fft_data) {
-  const int64_t time_convert = 1000;
   const double encoder_conversion = 2 * M_PI / 5600;
   const uint N = raw_data.rows;
   timestamps = std::vector<int64_t>(N, 0);
@@ -20,7 +19,7 @@ void load_radar(const cv::Mat &raw_data, std::vector<int64_t> &timestamps, std::
   // #pragma omp parallel
   for (uint i = 0; i < N; ++i) {
     const uchar *byteArray = raw_data.ptr<uchar>(i);
-    timestamps[i] = *((int64_t *)(byteArray)) * time_convert;
+    timestamps[i] = *((int64_t *)(byteArray));
     azimuths[i] = *((uint16_t *)(byteArray + 8)) * encoder_conversion;
     // The 10th byte is reserved but unused
     for (uint j = 0; j < range_bins; ++j) {

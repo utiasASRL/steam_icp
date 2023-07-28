@@ -1,11 +1,13 @@
 #include "steam_icp/datasets/boreas_navtech.hpp"
-#include "steam_icp/radar/detector.hpp"
 #include "steam_icp/radar/utils.hpp"
 
+#include <glog/logging.h>
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include "steam_icp/datasets/utils.hpp"
+#include "steam_icp/radar/detector.hpp"
+#include "steam_icp/utils/stopwatch.hpp"
 
 namespace steam_icp {
 
@@ -107,22 +109,27 @@ std::pair<double, std::vector<Point3D>> BoreasNavtechSequence::next() {
   int64_t current_timestamp_micro = std::stoll(filename.substr(0, filename.find(".")));
   const double radar_resolution = current_timestamp_micro > upgrade_time ? 0.04381 : 0.0596;
   const double time_delta_sec = static_cast<double>(current_timestamp_micro - initial_timestamp_) * 1.0e-6;
-  return std::make_pair(time_delta_sec,
-                        readPointCloud(dir_path_ + "/" + filename, current_timestamp_micro, radar_resolution));
+  return std::make_pair(time_delta_sec, readPointCloud(dir_path_ + "/" + filename, radar_resolution));
 }
 
-std::vector<Point3D> BoreasNavtechSequence::readPointCloud(const std::string &path,
-                                                           const int64_t &current_timestamp_micro,
-                                                           const double &radar_resolution) {
+std::vector<Point3D> BoreasNavtechSequence::readPointCloud(const std::string &path, const double &radar_resolution) {
   std::vector<int64_t> azimuth_times;
   std::vector<double> azimuth_angles;
   cv::Mat fft_data;
   load_radar(path, azimuth_times, azimuth_angles, fft_data);
-  ModifiedCACFAR detector = ModifiedCACFAR<Point3D>(
-      options_.modified_cacfar_width, options_.modified_cacfar_guard, options_.modified_cacfar_threshold,
-      options_.modified_cacfar_threshold2, options_.modified_cacfar_threshold3, options_.min_dist_sensor_center,
-      options_.max_dist_sensor_center, options_.radar_range_offset, initial_timestamp_, current_timestamp_micro);
-  return detector.run(fft_data, radar_resolution, azimuth_times, azimuth_angles);
+
+  ModifiedCACFAR<Point3D> detector(options_.modified_cacfar_width, options_.modified_cacfar_guard,
+                                   options_.modified_cacfar_threshold, options_.modified_cacfar_threshold2,
+                                   options_.modified_cacfar_threshold3, options_.modified_cacfar_num_threads,
+                                   options_.min_dist_sensor_center, options_.max_dist_sensor_center,
+                                   options_.radar_range_offset, initial_timestamp_);
+
+  std::unique_ptr<Stopwatch<>> timer = std::make_unique<Stopwatch<>>(false);
+  timer->start();
+  const auto pc = detector.run(fft_data, radar_resolution, azimuth_times, azimuth_angles);
+  timer->stop();
+  LOG(INFO) << "Detector ..................... " << timer->count() << " ms" << std::endl;
+  return pc;
 }
 
 void BoreasNavtechSequence::save(const std::string &path, const Trajectory &trajectory) const {
