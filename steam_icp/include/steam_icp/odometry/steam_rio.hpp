@@ -46,10 +46,12 @@ class SteamRioOdometry : public Odometry {
 
   Trajectory trajectory() override;
 
-  RegistrationSummary registerFrame(const std::pair<double, std::vector<Point3D>> &frame) override;
+  RegistrationSummary registerFrame(
+      const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &frame) override;
 
  private:
-  void initializeTimestamp(int index_frame, const std::pair<double, std::vector<Point3D>> &const_frame);
+  void initializeTimestamp(int index_frame,
+                           const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &const_frame);
   void initializeMotion(int index_frame);
   std::vector<Point3D> initializeFrame(int index_frame, const std::vector<Point3D> &const_frame);
   void updateMap(int index_frame, int update_frame);

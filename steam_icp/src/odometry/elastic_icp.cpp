@@ -159,7 +159,8 @@ ElasticOdometry::~ElasticOdometry() {
 
 Trajectory ElasticOdometry::trajectory() { return trajectory_; }
 
-auto ElasticOdometry::registerFrame(const std::pair<double, std::vector<Point3D>> &const_frame) -> RegistrationSummary {
+auto ElasticOdometry::registerFrame(const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &const_frame)
+    -> RegistrationSummary {
   RegistrationSummary summary;
 
   // add a new frame
@@ -173,7 +174,7 @@ auto ElasticOdometry::registerFrame(const std::pair<double, std::vector<Point3D>
   initializeMotion(index_frame);
 
   //
-  auto frame = initializeFrame(index_frame, const_frame.second);
+  auto frame = initializeFrame(index_frame, std::get<1>(const_frame));
 
   //
   if (index_frame > 0) {
@@ -219,10 +220,11 @@ auto ElasticOdometry::registerFrame(const std::pair<double, std::vector<Point3D>
   return summary;
 }
 
-void ElasticOdometry::initializeTimestamp(int index_frame, const std::pair<double, std::vector<Point3D>> &const_frame) {
+void ElasticOdometry::initializeTimestamp(
+    int index_frame, const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &const_frame) {
   double min_timestamp = std::numeric_limits<double>::max();
   double max_timestamp = std::numeric_limits<double>::min();
-  for (const auto &point : const_frame.second) {
+  for (const auto &point : std::get<1>(const_frame)) {
     if (point.timestamp > max_timestamp) max_timestamp = point.timestamp;
     if (point.timestamp < min_timestamp) min_timestamp = point.timestamp;
   }

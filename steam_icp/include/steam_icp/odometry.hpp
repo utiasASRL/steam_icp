@@ -1,5 +1,6 @@
 #pragma once
 
+#include "steam_icp/imu.hpp"
 #include "steam_icp/map.hpp"
 #include "steam_icp/trajectory.hpp"
 
@@ -68,7 +69,8 @@ class Odometry {
     bool success = true;                                 // Whether the registration was a success
   };
   // Registers a new Frame to the Map with an initial estimate
-  virtual RegistrationSummary registerFrame(const std::pair<double, std::vector<Point3D>> &frame) = 0;
+  virtual RegistrationSummary registerFrame(
+      const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &frame) = 0;
 
  protected:
   Trajectory trajectory_;
@@ -116,3 +118,4 @@ struct OdometryRegister {
 #include "steam_icp/odometry/steam_icp.hpp"
 #include "steam_icp/odometry/steam_lio.hpp"
 #include "steam_icp/odometry/steam_rio.hpp"
+#include "steam_icp/odometry/steam_ro.hpp"

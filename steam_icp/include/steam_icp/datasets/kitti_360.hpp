@@ -11,12 +11,12 @@ class Kitti360Sequence : public Sequence {
   int currFrame() const override { return curr_frame_; }
   int numFrames() const override { return last_frame_ - init_frame_; }
   bool hasNext() const override { return curr_frame_ < last_frame_; }
-  std::pair<double, std::vector<Point3D>> next() override;
+  std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> next() override;
 
   void save(const std::string& path, const Trajectory& trajectory) const override;
 
   bool hasGroundTruth() const override { return has_ground_truth_; }
-  SeqError evaluate(const std::string &path, const Trajectory& trajectory) const override;
+  SeqError evaluate(const std::string& path, const Trajectory& trajectory) const override;
 
  private:
   std::string dir_path_;

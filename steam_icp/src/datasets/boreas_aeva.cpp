@@ -1,5 +1,6 @@
 #include "steam_icp/datasets/boreas_aeva.hpp"
 
+#include <glog/logging.h>
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -224,6 +225,46 @@ BoreasAevaSequence::BoreasAevaSequence(const Options &options) : Sequence(option
   std::sort(filenames_.begin(), filenames_.end());
   initial_timestamp_ = std::stoll(filenames_[0].substr(0, filenames_[0].find(".")));
 
+  const std::string imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu_raw.csv";
+  std::ifstream imu_file(imu_path);
+  Eigen::Matrix3d imu_body_raw_to_applanix, yfwd2xfwd;
+  imu_body_raw_to_applanix << 0, -1, 0, -1, 0, 0, 0, 0, -1;
+  yfwd2xfwd << 0, 1, 0, -1, 0, 0, 0, 0, 1;
+  const std::string time_str = filenames_[0].substr(0, filenames_[0].find("."));
+  if (time_str.size() < 10) throw std::runtime_error("filename does not have enough digits to encode epoch time");
+  filename_to_time_convert_factor_ = 1.0 / pow(10, time_str.size() - 10);
+  const double initial_timestamp_sec = initial_timestamp_ * filename_to_time_convert_factor_;
+  if (imu_file.is_open()) {
+    std::string line;
+    std::getline(imu_file, line);  // header
+    for (; std::getline(imu_file, line);) {
+      if (line.empty()) continue;
+      std::stringstream ss(line);
+      IMUData imu_data;
+      std::string value;
+      std::getline(ss, value, ',');
+      imu_data.timestamp = std::stod(value) - initial_timestamp_sec;
+      std::getline(ss, value, ',');
+      imu_data.ang_vel[2] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.ang_vel[1] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.ang_vel[0] = std::stod(value);
+      // IMU data is transformed into the "robot" frame, coincident with applanix
+      // with x-forwards, y-left, z-up.
+      imu_data.ang_vel = yfwd2xfwd * imu_body_raw_to_applanix * imu_data.ang_vel;
+      std::getline(ss, value, ',');
+      imu_data.lin_acc[2] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.lin_acc[1] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.lin_acc[0] = std::stod(value);
+      imu_data.lin_acc = yfwd2xfwd * imu_body_raw_to_applanix * imu_data.lin_acc;
+      imu_data_vec_.push_back(imu_data);
+    }
+  }
+  LOG(INFO) << "Loaded IMU Data: " << imu_data_vec_.size() << std::endl;
+
   std::string calib_path = options_.root_path + "/" + options_.sequence + "/aeva_calib/";
   if (std::filesystem::exists(calib_path)) {
     getCalibData(calib_path, rt_parts_, azi_ranges_, vel_means_);
@@ -233,7 +274,7 @@ BoreasAevaSequence::BoreasAevaSequence(const Options &options) : Sequence(option
   }
 }
 
-std::pair<double, std::vector<Point3D>> BoreasAevaSequence::next() {
+std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> BoreasAevaSequence::next() {
   if (!hasNext()) throw std::runtime_error("No more frames in sequence");
   int curr_frame = curr_frame_++;
   auto filename = filenames_.at(curr_frame);
@@ -249,7 +290,22 @@ std::pair<double, std::vector<Point3D>> BoreasAevaSequence::next() {
                                options_.max_dist_sensor_center, has_beam_id_);
   if (has_beam_id_) calibrate(rt_parts_, azi_ranges_, vel_means_, points);
 
-  return std::make_pair(time_delta_sec, points);
+  // get IMU data for this pointcloud:
+  double tmin = std::numeric_limits<double>::max();
+  double tmax = std::numeric_limits<double>::min();
+  for (auto &p : points) {
+    if (p.timestamp < tmin) tmin = p.timestamp;
+    if (p.timestamp > tmax) tmax = p.timestamp;
+  }
+  std::vector<IMUData> curr_imu_data_vec;
+  curr_imu_data_vec.reserve(20);
+  for (; curr_imu_idx_ < imu_data_vec_.size(); curr_imu_idx_++) {
+    if (imu_data_vec_[curr_imu_idx_].timestamp >= tmin && imu_data_vec_[curr_imu_idx_].timestamp < tmax)
+      curr_imu_data_vec.emplace_back(imu_data_vec_[curr_imu_idx_]);
+  }
+  curr_imu_data_vec.shrink_to_fit();
+
+  return std::make_tuple(time_delta_sec, points, curr_imu_data_vec);
 }
 
 void BoreasAevaSequence::save(const std::string &path, const Trajectory &trajectory) const {

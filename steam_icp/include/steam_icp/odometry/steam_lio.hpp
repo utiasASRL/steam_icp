@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "steam.hpp"
+#include "steam_icp/evaluators/bias_interpolator.hpp"
 #include "steam_icp/odometry.hpp"
 
 namespace steam_icp {
@@ -43,14 +44,16 @@ class SteamLioOdometry : public Odometry {
 
   Trajectory trajectory() override;
 
-  RegistrationSummary registerFrame(const std::pair<double, std::vector<Point3D>> &frame) override;
+  RegistrationSummary registerFrame(
+      const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &frame) override;
 
  private:
-  void initializeTimestamp(int index_frame, const std::pair<double, std::vector<Point3D>> &const_frame);
+  void initializeTimestamp(int index_frame,
+                           const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &const_frame);
   void initializeMotion(int index_frame);
   std::vector<Point3D> initializeFrame(int index_frame, const std::vector<Point3D> &const_frame);
   void updateMap(int index_frame, int update_frame);
-  bool icp(int index_frame, std::vector<Point3D> &keypoints);
+  bool icp(int index_frame, std::vector<Point3D> &keypoints, const std::vector<IMUData> &imu_data_vec);
 
  private:
   const Options options_;
@@ -61,11 +64,14 @@ class SteamLioOdometry : public Odometry {
   // trajectory variables
   struct TrajectoryVar {
     TrajectoryVar(const steam::traj::Time &t, const steam::se3::SE3StateVar::Ptr &T,
-                  const steam::vspace::VSpaceStateVar<6>::Ptr &w)
-        : time(t), T_rm(T), w_mr_inr(w) {}
+                  const steam::vspace::VSpaceStateVar<6>::Ptr &w, const steam::vspace::VSpaceStateVar<6>::Ptr &wdot,
+                  const steam::vspace::VSpaceStateVar<6>::Ptr &biases)
+        : time(t), T_rm(T), w_mr_inr(w), wdot_mr_inr(wdot), imu_biases(biases) {}
     steam::traj::Time time;
     steam::se3::SE3StateVar::Ptr T_rm;
     steam::vspace::VSpaceStateVar<6>::Ptr w_mr_inr;
+    steam::vspace::VSpaceStateVar<6>::Ptr wdot_mr_inr;
+    steam::vspace::VSpaceStateVar<6>::Ptr imu_biases;
   };
   std::vector<TrajectoryVar> trajectory_vars_;
   size_t to_marginalize_ = 0;

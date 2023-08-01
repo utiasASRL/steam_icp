@@ -11,7 +11,7 @@ class BoreasAevaSequence : public Sequence {
   int currFrame() const override { return curr_frame_; }
   int numFrames() const override { return last_frame_ - init_frame_; }
   bool hasNext() const override { return curr_frame_ < last_frame_; }
-  std::pair<double, std::vector<Point3D>> next() override;
+  std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> next() override;
 
   void save(const std::string& path, const Trajectory& trajectory) const override;
 
@@ -22,6 +22,8 @@ class BoreasAevaSequence : public Sequence {
   std::string dir_path_;
   std::vector<std::string> filenames_;
   int64_t initial_timestamp_;
+  std::vector<IMUData> imu_data_vec_;
+  unsigned curr_imu_idx_ = 0;
   int init_frame_ = 0;
   int curr_frame_ = 0;
   int last_frame_ = std::numeric_limits<int>::max();  // exclusive bound

@@ -186,13 +186,14 @@ KittiRawSequence::KittiRawSequence(const Options &options) : Sequence(options) {
   has_ground_truth_ = ((init_frame_ == 0) && last_frame_ == (LENGTH_SEQUENCE_KITTI[sequence_id_] + 1));
 }
 
-std::pair<double, std::vector<Point3D>> KittiRawSequence::next() {
+std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> KittiRawSequence::next() {
   if (!hasNext()) throw std::runtime_error("No more frames in sequence");
   int curr_frame = curr_frame_++;
   auto filename = dir_path_ + frame_file_name(curr_frame);
   auto pc = readPointCloud(filename, options_.min_dist_sensor_center, options_.max_dist_sensor_center);
   for (auto &point : pc) point.timestamp = (static_cast<double>(curr_frame) + point.alpha_timestamp) / 10.0;
-  return std::make_pair(static_cast<double>(curr_frame) / 10.0, pc);
+  std::vector<IMUData> curr_imu_data_vec;
+  return std::make_tuple(static_cast<double>(curr_frame) / 10.0, pc, curr_imu_data_vec);
 }
 
 void KittiRawSequence::save(const std::string &path, const Trajectory &trajectory) const {

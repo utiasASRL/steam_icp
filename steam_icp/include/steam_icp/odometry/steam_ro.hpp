@@ -7,7 +7,7 @@
 
 namespace steam_icp {
 
-class SteamOdometry : public Odometry {
+class SteamRoOdometry : public Odometry {
  public:
   enum class STEAM_LOSS_FUNC { L2, DCS, CAUCHY, GM };
 
@@ -36,17 +36,22 @@ class SteamOdometry : public Odometry {
     //
     int delay_adding_points = 4;
     bool use_final_state_value = false;
+    // radar-only option
+    double beta = 0.049;  // used for Doppler correction
+    bool voxel_downsample = false;
   };
 
-  SteamOdometry(const Options &options);
-  ~SteamOdometry();
+  SteamRoOdometry(const Options &options);
+  ~SteamRoOdometry();
 
   Trajectory trajectory() override;
 
-  RegistrationSummary registerFrame(const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &frame) override;
+  RegistrationSummary registerFrame(
+      const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &frame) override;
 
  private:
-  void initializeTimestamp(int index_frame, const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &const_frame);
+  void initializeTimestamp(int index_frame,
+                           const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &const_frame);
   void initializeMotion(int index_frame);
   std::vector<Point3D> initializeFrame(int index_frame, const std::vector<Point3D> &const_frame);
   void updateMap(int index_frame, int update_frame);
@@ -72,7 +77,7 @@ class SteamOdometry : public Odometry {
 
   steam::SlidingWindowFilter::Ptr sliding_window_filter_;
 
-  STEAM_ICP_REGISTER_ODOMETRY("STEAM", SteamOdometry);
+  STEAM_ICP_REGISTER_ODOMETRY("STEAMRO", SteamRoOdometry);
 };
 
 }  // namespace steam_icp

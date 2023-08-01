@@ -100,16 +100,82 @@ BoreasNavtechSequence::BoreasNavtechSequence(const Options &options) : Sequence(
   init_frame_ = std::max((int)0, options_.init_frame);
   std::sort(filenames_.begin(), filenames_.end());
   initial_timestamp_ = std::stoll(filenames_[0].substr(0, filenames_[0].find(".")));
+
+  const std::string imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu_raw.csv";
+  std::ifstream imu_file(imu_path);
+  Eigen::Matrix3d imu_body_raw_to_applanix, yfwd2xfwd;
+  imu_body_raw_to_applanix << 0, -1, 0, -1, 0, 0, 0, 0, -1;
+  yfwd2xfwd << 0, 1, 0, -1, 0, 0, 0, 0, 1;
+  const std::string time_str = filenames_[0].substr(0, filenames_[0].find("."));
+  if (time_str.size() < 10) throw std::runtime_error("filename does not have enough digits to encode epoch time");
+  filename_to_time_convert_factor_ = 1.0 / pow(10, time_str.size() - 10);
+  const double initial_timestamp_sec = initial_timestamp_ * filename_to_time_convert_factor_;
+
+  if (imu_file.is_open()) {
+    std::cout << "imu_file open" << std::endl;
+    std::string line;
+    std::getline(imu_file, line);  // header
+    for (; std::getline(imu_file, line);) {
+      if (line.empty()) continue;
+      std::stringstream ss(line);
+      IMUData imu_data;
+      std::string value;
+      std::getline(ss, value, ',');
+      imu_data.timestamp = std::stod(value) - initial_timestamp_sec;
+      std::getline(ss, value, ',');
+      imu_data.ang_vel[2] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.ang_vel[1] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.ang_vel[0] = std::stod(value);
+      // IMU data is transformed into the "robot" frame, coincident with applanix
+      // with x-forwards, y-left, z-up.
+      imu_data.ang_vel = yfwd2xfwd * imu_body_raw_to_applanix * imu_data.ang_vel;
+      std::getline(ss, value, ',');
+      imu_data.lin_acc[2] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.lin_acc[1] = std::stod(value);
+      std::getline(ss, value, ',');
+      imu_data.lin_acc[0] = std::stod(value);
+      imu_data.lin_acc = yfwd2xfwd * imu_body_raw_to_applanix * imu_data.lin_acc;
+      imu_data_vec_.push_back(imu_data);
+    }
+  }
+  LOG(INFO) << "Loaded IMU Data: " << imu_data_vec_.size() << std::endl;
 }
 
-std::pair<double, std::vector<Point3D>> BoreasNavtechSequence::next() {
+std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> BoreasNavtechSequence::next() {
   if (!hasNext()) throw std::runtime_error("No more frames in sequence");
   int curr_frame = curr_frame_++;
   auto filename = filenames_.at(curr_frame);
   int64_t current_timestamp_micro = std::stoll(filename.substr(0, filename.find(".")));
   const double radar_resolution = current_timestamp_micro > upgrade_time ? 0.04381 : 0.0596;
   const double time_delta_sec = static_cast<double>(current_timestamp_micro - initial_timestamp_) * 1.0e-6;
-  return std::make_pair(time_delta_sec, readPointCloud(dir_path_ + "/" + filename, radar_resolution));
+  const auto pc = readPointCloud(dir_path_ + "/" + filename, radar_resolution);
+  // get IMU data for this pointcloud:
+  double tmin = std::numeric_limits<double>::max();
+  double tmax = std::numeric_limits<double>::min();
+  for (auto &p : pc) {
+    if (p.timestamp < tmin) tmin = p.timestamp;
+    if (p.timestamp > tmax) tmax = p.timestamp;
+  }
+  std::vector<IMUData> curr_imu_data_vec;
+  curr_imu_data_vec.reserve(50);
+  for (; curr_imu_idx_ < imu_data_vec_.size(); curr_imu_idx_++) {
+    if (imu_data_vec_[curr_imu_idx_].timestamp < tmin) {
+      continue;
+    } else if (imu_data_vec_[curr_imu_idx_].timestamp >= tmin && imu_data_vec_[curr_imu_idx_].timestamp < tmax) {
+      curr_imu_data_vec.emplace_back(imu_data_vec_[curr_imu_idx_]);
+    } else {
+      break;
+    }
+  }
+  curr_imu_data_vec.shrink_to_fit();
+  std::cout << "tmin " << tmin << " tmax " << tmax << " imu_t(0) " << curr_imu_data_vec.front().timestamp
+            << " imu_t(-1) " << curr_imu_data_vec.back().timestamp << std::endl;
+  LOG(INFO) << "IMU data : " << curr_imu_data_vec.size() << std::endl;
+
+  return std::make_tuple(time_delta_sec, pc, curr_imu_data_vec);
 }
 
 std::vector<Point3D> BoreasNavtechSequence::readPointCloud(const std::string &path, const double &radar_resolution) {
