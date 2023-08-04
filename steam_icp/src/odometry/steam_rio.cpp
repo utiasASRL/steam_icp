@@ -195,7 +195,7 @@ auto SteamRioOdometry::registerFrame(const std::tuple<double, std::vector<Point3
 
     trajectory_[index_frame].end_T_rm_cov = Eigen::Matrix<double, 6, 6>::Identity() * 1e-4;
     trajectory_[index_frame].end_w_mr_inr_cov = Eigen::Matrix<double, 6, 6>::Identity() * 1e-4;
-    trajectory_[index_frame].end_state_cov = Eigen::Matrix<double, 12, 12>::Identity() * 1e-4;
+    trajectory_[index_frame].end_state_cov = Eigen::Matrix<double, 18, 18>::Identity() * 1e-4;
 
     summary.success = true;
   }
@@ -568,6 +568,9 @@ bool SteamRioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
 
     timer[1].second->start();
 
+    Eigen::Matrix3d W = Eigen::Matrix3d::Identity();
+    const auto noise_model = StaticNoiseModel<3>::MakeShared(W, NoiseType::INFORMATION);
+
 #pragma omp parallel for num_threads(options_.num_threads)
     for (int i = 0; i < (int)keypoints.size(); i++) {
       const auto &keypoint = keypoints[i];
@@ -592,8 +595,6 @@ bool SteamRioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
       if (d_vec.transpose() * d_vec > max_pair_d2) continue;
 
       Eigen::Vector3d closest_pt = vector_neighbors[0];
-      Eigen::Matrix3d W = Eigen::Matrix3d::Identity();
-      const auto noise_model = StaticNoiseModel<3>::MakeShared(W, NoiseType::INFORMATION);
 
       const auto &T_ms_intp_eval = T_ms_intp_eval_vec[i];
       auto error_func = [&]() -> Evaluable<Eigen::Matrix<double, 3, 1>>::Ptr {

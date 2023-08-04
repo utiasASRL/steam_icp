@@ -381,6 +381,11 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, num_threads, int);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, delay_adding_points, int);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_final_state_value, bool);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, gravity, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, r_imu_acc, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, r_imu_ang, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p0_imu, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, q_imu, double);
     } else if (options.odometry == "STEAMRIO") {
       auto &steam_icp_options = dynamic_cast<SteamRioOdometry::Options &>(odometry_options);
       prefix = "odometry_options.steam.";
@@ -432,6 +437,11 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, delay_adding_points, int);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_final_state_value, bool);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, beta, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, gravity, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, r_imu_acc, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, r_imu_ang, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p0_imu, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, q_imu, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, voxel_downsample, bool);
     } else if (options.odometry == "STEAMRO") {
       auto &steam_icp_options = dynamic_cast<SteamRoOdometry::Options &>(odometry_options);

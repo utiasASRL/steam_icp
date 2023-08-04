@@ -1,14 +1,14 @@
 /**:
   ros__parameters:
-    log_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steam
-    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steam
+    log_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlio
+    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlio
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
-      odometry: false
+      odometry: true
       raw_points: false
-      sampled_points: false
-      map_points: false
+      sampled_points: true
+      map_points: true
 
     # DATASET OPTIONS ----
     dataset: BoreasVelodyne
@@ -22,15 +22,23 @@
       max_dist_sensor_center: 100.0
 
     # ODOMETRY OPTIONS ----
-    odometry: STEAM
+    odometry: STEAMLIO
     odometry_options:
       debug_print: true
-      debug_path: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steam
+      debug_path: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlio
+      # num_iters_icp: 100
 
       elastic:
         num_threads: 20
 
       steam:
-        qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
+        qc_diag: [1.0e-1, 1.0e-1, 1.0e-1, 1.0e-1, 1.0e-1, 1.0e-1]
         num_threads: 20
+        gravity: -9.8042 #-9.8042
+        r_imu_acc: 0.1
+        r_imu_ang: 0.1
+        p0_imu: 0.1
+        q_imu: 0.0001
+        max_iterations: 5
         verbose: false
+        delay_adding_points: 1

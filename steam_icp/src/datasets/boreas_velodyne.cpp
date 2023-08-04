@@ -245,12 +245,18 @@ std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> BoreasVelodyneSeq
     if (p.timestamp > tmax) tmax = p.timestamp;
   }
   std::vector<IMUData> curr_imu_data_vec;
-  curr_imu_data_vec.reserve(20);
+  curr_imu_data_vec.reserve(50);
   for (; curr_imu_idx_ < imu_data_vec_.size(); curr_imu_idx_++) {
-    if (imu_data_vec_[curr_imu_idx_].timestamp >= tmin && imu_data_vec_[curr_imu_idx_].timestamp < tmax)
+    if (imu_data_vec_[curr_imu_idx_].timestamp < tmin) {
+      continue;
+    } else if (imu_data_vec_[curr_imu_idx_].timestamp >= tmin && imu_data_vec_[curr_imu_idx_].timestamp < tmax) {
       curr_imu_data_vec.emplace_back(imu_data_vec_[curr_imu_idx_]);
+    } else {
+      break;
+    }
   }
   curr_imu_data_vec.shrink_to_fit();
+  LOG(INFO) << "IMU data : " << curr_imu_data_vec.size() << std::endl;
 
   return std::make_tuple(time_delta_sec, pc, curr_imu_data_vec);
 }

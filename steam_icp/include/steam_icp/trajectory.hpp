@@ -68,7 +68,8 @@ struct TrajectoryFrame {
 
   Eigen::Matrix<double, 6, 6> end_T_rm_cov = Eigen::Matrix<double, 6, 6>::Identity();
   Eigen::Matrix<double, 6, 6> end_w_mr_inr_cov = Eigen::Matrix<double, 6, 6>::Identity();
-  Eigen::Matrix<double, 12, 12> end_state_cov = Eigen::Matrix<double, 12, 12>::Identity();
+  Eigen::Matrix<double, 6, 6> end_dw_mr_inr_cov = Eigen::Matrix<double, 6, 6>::Identity();
+  Eigen::Matrix<double, 18, 18> end_state_cov = Eigen::Matrix<double, 18, 18>::Identity();
 
   std::vector<Point3D> points;
 

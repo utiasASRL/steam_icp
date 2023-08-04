@@ -13,50 +13,50 @@ namespace steam_icp {
 
 namespace {
 
-/** \brief Basic solver interface */
-class GaussNewtonIterator {
- public:
-  GaussNewtonIterator(steam::Problem &problem) : problem_(problem), state_vector_(problem.getStateVector()) {}
+// /** \brief Basic solver interface */
+// class GaussNewtonIterator {
+//  public:
+//   GaussNewtonIterator(steam::Problem &problem) : problem_(problem), state_vector_(problem.getStateVector()) {}
 
-  /** \brief Perform one iteration */
-  void iterate() {
-    // The 'left-hand-side' of the Gauss-Newton problem, generally known as the
-    // approximate Hessian matrix (note we only store the upper-triangular
-    // elements)
-    Eigen::SparseMatrix<double> approximate_hessian;
-    // The 'right-hand-side' of the Gauss-Newton problem, generally known as the
-    // gradient vector
-    Eigen::VectorXd gradient_vector;
-    // Construct system of equations
-    problem_.buildGaussNewtonTerms(approximate_hessian, gradient_vector);
-    // Solve system
-    // Perform a Cholesky factorization of the approximate Hessian matrix
-    // Check if the pattern has been initialized
-    if (!pattern_initialized_) {
-      hessian_solver_.analyzePattern(approximate_hessian);
-      pattern_initialized_ = true;
-    }
+//   /** \brief Perform one iteration */
+//   void iterate() {
+//     // The 'left-hand-side' of the Gauss-Newton problem, generally known as the
+//     // approximate Hessian matrix (note we only store the upper-triangular
+//     // elements)
+//     Eigen::SparseMatrix<double> approximate_hessian;
+//     // The 'right-hand-side' of the Gauss-Newton problem, generally known as the
+//     // gradient vector
+//     Eigen::VectorXd gradient_vector;
+//     // Construct system of equations
+//     problem_.buildGaussNewtonTerms(approximate_hessian, gradient_vector);
+//     // Solve system
+//     // Perform a Cholesky factorization of the approximate Hessian matrix
+//     // Check if the pattern has been initialized
+//     if (!pattern_initialized_) {
+//       hessian_solver_.analyzePattern(approximate_hessian);
+//       pattern_initialized_ = true;
+//     }
 
-    // Perform a Cholesky factorization of the approximate Hessian matrix
-    hessian_solver_.factorize(approximate_hessian);
-    if (hessian_solver_.info() != Eigen::Success) throw std::runtime_error("Eigen LLT decomposition failed.");
+//     // Perform a Cholesky factorization of the approximate Hessian matrix
+//     hessian_solver_.factorize(approximate_hessian);
+//     if (hessian_solver_.info() != Eigen::Success) throw std::runtime_error("Eigen LLT decomposition failed.");
 
-    // Solve
-    Eigen::VectorXd perturbation = hessian_solver_.solve(gradient_vector);
+//     // Solve
+//     Eigen::VectorXd perturbation = hessian_solver_.solve(gradient_vector);
 
-    // Apply update
-    state_vector_.lock()->update(perturbation);
-  }
+//     // Apply update
+//     state_vector_.lock()->update(perturbation);
+//   }
 
- private:
-  /** \brief Reference to optimization problem */
-  steam::Problem &problem_;
-  /** \brief Collection of state variables */
-  const steam::StateVector::WeakPtr state_vector_;
+//  private:
+//   /** \brief Reference to optimization problem */
+//   steam::Problem &problem_;
+//   /** \brief Collection of state variables */
+//   const steam::StateVector::WeakPtr state_vector_;
 
-  Eigen::SimplicialLLT<Eigen::SparseMatrix<double>, Eigen::Upper> hessian_solver_;
-  bool pattern_initialized_ = false;
-};
+//   Eigen::SimplicialLLT<Eigen::SparseMatrix<double>, Eigen::Upper> hessian_solver_;
+//   bool pattern_initialized_ = false;
+// };
 
 inline double AngularDistance(const Eigen::Matrix3d &rota, const Eigen::Matrix3d &rotb) {
   double norm = ((rota * rotb.transpose()).trace() - 1) / 2;
@@ -286,7 +286,7 @@ auto SteamOdometry::registerFrame(const std::tuple<double, std::vector<Point3D>,
 
     trajectory_[index_frame].end_T_rm_cov = Eigen::Matrix<double, 6, 6>::Identity() * 1e-4;
     trajectory_[index_frame].end_w_mr_inr_cov = Eigen::Matrix<double, 6, 6>::Identity() * 1e-4;
-    trajectory_[index_frame].end_state_cov = Eigen::Matrix<double, 12, 12>::Identity() * 1e-4;
+    trajectory_[index_frame].end_state_cov = Eigen::Matrix<double, 18, 18>::Identity() * 1e-4;
 
     summary.success = true;
   }
@@ -858,6 +858,9 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
   current_estimate.end_R = curr_end_T_ms.block<3, 3>(0, 0);
   current_estimate.end_t = curr_end_T_ms.block<3, 1>(0, 3);
   // clang-format on
+
+  const auto w = steam_trajectory->getVelocityInterpolator(curr_end_steam_time)->evaluate();
+  std::cout << "w(-1) " << w << std::endl;
 
   timer[0].second->start();
   transform_keypoints();

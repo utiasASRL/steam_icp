@@ -30,7 +30,7 @@
       modified_cacfar_num_threads: 20
 
     # ODOMETRY OPTIONS ----
-    odometry: STEAMRO
+    odometry: STEAMRIO
     odometry_options:
       debug_print: true
       debug_path: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steam
@@ -59,3 +59,8 @@
         voxel_downsample: false
         verbose: false
         max_iterations: 10
+        gravity: -9.8042
+        r_imu_acc: 0.01
+        r_imu_ang: 0.001
+        p0_imu: 0.0001
+        q_imu: 0.0001

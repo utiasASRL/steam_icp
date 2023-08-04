@@ -37,6 +37,11 @@ class SteamLioOdometry : public Odometry {
     //
     int delay_adding_points = 4;
     bool use_final_state_value = false;
+    double gravity = -9.8042;
+    double r_imu_acc = 0.01;
+    double r_imu_ang = 0.001;
+    double p0_imu = 0.0001;
+    double q_imu = 0.0001;
   };
 
   SteamLioOdometry(const Options &options);
@@ -64,14 +69,15 @@ class SteamLioOdometry : public Odometry {
   // trajectory variables
   struct TrajectoryVar {
     TrajectoryVar(const steam::traj::Time &t, const steam::se3::SE3StateVar::Ptr &T,
-                  const steam::vspace::VSpaceStateVar<6>::Ptr &w, const steam::vspace::VSpaceStateVar<6>::Ptr &wdot,
-                  const steam::vspace::VSpaceStateVar<6>::Ptr &biases)
-        : time(t), T_rm(T), w_mr_inr(w), wdot_mr_inr(wdot), imu_biases(biases) {}
+                  const steam::vspace::VSpaceStateVar<6>::Ptr &w, const steam::vspace::VSpaceStateVar<6>::Ptr &dw,
+                  const steam::vspace::VSpaceStateVar<6>::Ptr &b, const steam::imu::GravityStateVar::Ptr &g)
+        : time(t), T_rm(T), w_mr_inr(w), dw_mr_inr(dw), imu_biases(b), gravity(g) {}
     steam::traj::Time time;
     steam::se3::SE3StateVar::Ptr T_rm;
     steam::vspace::VSpaceStateVar<6>::Ptr w_mr_inr;
-    steam::vspace::VSpaceStateVar<6>::Ptr wdot_mr_inr;
+    steam::vspace::VSpaceStateVar<6>::Ptr dw_mr_inr;
     steam::vspace::VSpaceStateVar<6>::Ptr imu_biases;
+    steam::imu::GravityStateVar::Ptr gravity;
   };
   std::vector<TrajectoryVar> trajectory_vars_;
   size_t to_marginalize_ = 0;

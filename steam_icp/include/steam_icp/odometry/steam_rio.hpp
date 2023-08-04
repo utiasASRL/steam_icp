@@ -39,6 +39,11 @@ class SteamRioOdometry : public Odometry {
     // radar-only option
     double beta = 0.049;  // used for Doppler correction
     bool voxel_downsample = false;
+    double gravity = -9.8042;
+    double r_imu_acc = 0.01;
+    double r_imu_ang = 0.001;
+    double p0_imu = 0.0001;
+    double q_imu = 0.0001;
   };
 
   SteamRioOdometry(const Options &options);
