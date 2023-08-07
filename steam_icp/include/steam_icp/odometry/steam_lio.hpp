@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include "steam.hpp"
-#include "steam_icp/evaluators/bias_interpolator.hpp"
+#include "steam/evaluable/imu/bias_interpolator.hpp"
 #include "steam_icp/odometry.hpp"
 
 namespace steam_icp {
@@ -42,6 +42,8 @@ class SteamLioOdometry : public Odometry {
     double r_imu_ang = 0.001;
     double p0_imu = 0.0001;
     double q_imu = 0.0001;
+    // T_mi:
+    Eigen::Matrix<double, 6, 1> qg_diag = Eigen::Matrix<double, 6, 1>::Ones();
   };
 
   SteamLioOdometry(const Options &options);
@@ -70,14 +72,14 @@ class SteamLioOdometry : public Odometry {
   struct TrajectoryVar {
     TrajectoryVar(const steam::traj::Time &t, const steam::se3::SE3StateVar::Ptr &T,
                   const steam::vspace::VSpaceStateVar<6>::Ptr &w, const steam::vspace::VSpaceStateVar<6>::Ptr &dw,
-                  const steam::vspace::VSpaceStateVar<6>::Ptr &b, const steam::imu::GravityStateVar::Ptr &g)
-        : time(t), T_rm(T), w_mr_inr(w), dw_mr_inr(dw), imu_biases(b), gravity(g) {}
+                  const steam::vspace::VSpaceStateVar<6>::Ptr &b, const steam::se3::SE3StateVar::Ptr &T_m_i)
+        : time(t), T_rm(T), w_mr_inr(w), dw_mr_inr(dw), imu_biases(b), T_mi(T_m_i) {}
     steam::traj::Time time;
     steam::se3::SE3StateVar::Ptr T_rm;
     steam::vspace::VSpaceStateVar<6>::Ptr w_mr_inr;
     steam::vspace::VSpaceStateVar<6>::Ptr dw_mr_inr;
     steam::vspace::VSpaceStateVar<6>::Ptr imu_biases;
-    steam::imu::GravityStateVar::Ptr gravity;
+    steam::imu::SE3StateVar::Ptr T_mi;
   };
   std::vector<TrajectoryVar> trajectory_vars_;
   size_t to_marginalize_ = 0;

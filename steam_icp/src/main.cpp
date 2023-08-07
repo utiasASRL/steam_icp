@@ -356,6 +356,16 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
         steam_icp_options.qc_diag << qc_diag[0], qc_diag[1], qc_diag[2], qc_diag[3], qc_diag[4], qc_diag[5];
       LOG(WARNING) << "Parameter " << prefix + "qc_diag"
                    << " = " << steam_icp_options.qc_diag.transpose() << std::endl;
+
+      std::vector<double> qg_diag;
+      ROS2_PARAM_NO_LOG(node, qg_diag, prefix, qg_diag, std::vector<double>);
+      if ((qg_diag.size() != 6) && (qg_diag.size() != 0))
+        throw std::invalid_argument{"Qc diagonal malformed. Must be 6 elements!"};
+      if (qg_diag.size() == 6)
+        steam_icp_options.qg_diag << qg_diag[0], qg_diag[1], qg_diag[2], qg_diag[3], qg_diag[4], qg_diag[5];
+      LOG(WARNING) << "Parameter " << prefix + "qg_diag"
+                   << " = " << steam_icp_options.qg_diag.transpose() << std::endl;
+
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, num_extra_states, int);
 
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, power_planarity, double);

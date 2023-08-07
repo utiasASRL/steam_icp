@@ -11,27 +11,6 @@ namespace steam {
 namespace traj {
 namespace bias {
 
-// class Variable {
-//  public:
-//   using Ptr = std::shared_ptr<Variable>;
-//   using ConstPtr = std::shared_ptr<const Variable>;
-//   using BiasType = Eigen::Matrix<double, 6, 1>;
-//   static Ptr MakeShared(const Time& time, const Evaluable<BiasType>::Ptr& b) {
-//     return std::make_shared<Variable>(time, b);
-//   }
-
-//   Variable(const Time& time, const Evaluable<BiasType>::Ptr& b) : time_(time), b_(b) {}
-
-//   virtual ~Variable() = default;
-
-//   const Time& time() const { return time_; }
-//   const Evaluable<BiasType>::Ptr& bias() const { return b_; }
-
-//  private:
-//   Time time_;
-//   const Evaluable<BiasType>::Ptr b_;
-// };
-
 class BiasInterpolator : public Evaluable<Eigen::Matrix<double, 6, 1>> {
  public:
   using Ptr = std::shared_ptr<BiasInterpolator>;
