@@ -79,7 +79,7 @@ class SteamLioOdometry : public Odometry {
     steam::vspace::VSpaceStateVar<6>::Ptr w_mr_inr;
     steam::vspace::VSpaceStateVar<6>::Ptr dw_mr_inr;
     steam::vspace::VSpaceStateVar<6>::Ptr imu_biases;
-    steam::imu::SE3StateVar::Ptr T_mi;
+    steam::se3::SE3StateVar::Ptr T_mi;
   };
   std::vector<TrajectoryVar> trajectory_vars_;
   size_t to_marginalize_ = 0;

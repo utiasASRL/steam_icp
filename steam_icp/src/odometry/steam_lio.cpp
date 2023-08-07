@@ -534,10 +534,10 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
     if (prev_var.time != Time(trajectory_.at(0).end_timestamp)) throw std::runtime_error{"inconsistent timestamp"};
     {
       Eigen::Matrix<double, 6, 6> init_T_mi_cov = Eigen::Matrix<double, 6, 6>::Zero();
-      init_T_mi_cov.diagonal() = {1.0e-3, 1.0e-3, 1.0e-3, 1.0, 1.0, 1.0e-3};
+      init_T_mi_cov.diagonal() << 1.0e-3, 1.0e-3, 1.0e-3, 1.0, 1.0, 1.0e-3;
       lgmath::se3::Transformation T_mi;
-      auto T_mi_error = SE3ErrorEvaluator(prev_var.T_mi, T_mi);
-      auto noise_model = StaticNoiseModel<6>::MakeShared(init_bias_cov);
+      auto T_mi_error = se3_error(prev_var.T_mi, T_mi);
+      auto noise_model = StaticNoiseModel<6>::MakeShared(init_T_mi_cov);
       auto loss_func = L2LossFunc::MakeShared();
       const auto T_mi_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(T_mi_error, noise_model, loss_func);
       T_mi_prior_cost_terms.emplace_back(T_mi_prior_factor);
@@ -655,7 +655,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
     imu_meas.block<3, 1>(3, 0) = imu_data.ang_vel;
     const auto error_func = imu::imuError(T_rm_intp_eval, w_mr_inr_intp_eval, dw_mr_inr_intp_eval, bias_intp_eval,
                                           T_mi_intp_eval, imu_meas);
-    error_func.setGravity(options_.gravity);
+    error_func->setGravity(options_.gravity);
     const auto cost = WeightedLeastSqCostTerm<6>::MakeShared(error_func, imu_noise_model, imu_loss_func);
     imu_cost_terms.emplace_back(cost);
   }
@@ -676,15 +676,14 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
 
   // Get T_mi prior cost terms
   {
-    const T_mi = lgmath::se3::Transformation();
+    const auto T_mi = lgmath::se3::Transformation();
     Eigen::Matrix<double, 6, 6> T_mi_cov = Eigen::Matrix<double, 6, 6>::Zero();
     T_mi_cov.diagonal() = options_.qc_diag;
     auto noise_model = StaticNoiseModel<6>::MakeShared(T_mi_cov);
     auto loss_func = L2LossFunc::MakeShared();
     size_t i = prev_trajectory_var_index;
     for (; i < trajectory_vars_.size() - 1; i++) {
-      auto T_mi_error =
-          SE3ErrorEvaluator(ComposeInverseEvaluator(trajectory_vars_[i + 1].T_mi, trajectory_vars_[i].T_mi), T_mi);
+      auto T_mi_error = se3_error(compose_rinv(trajectory_vars_[i + 1].T_mi, trajectory_vars_[i].T_mi), T_mi);
       const auto T_mi_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(T_mi_error, noise_model, loss_func);
       T_mi_prior_cost_terms.emplace_back(T_mi_prior_factor);
     }
