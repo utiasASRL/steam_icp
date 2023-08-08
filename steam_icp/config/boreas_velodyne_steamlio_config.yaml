@@ -32,14 +32,14 @@
         num_threads: 20
 
       steam:
-        qc_diag: [1.0e-1, 1.0e-1, 1.0e-1, 1.0e-1, 1.0e-1, 1.0e-1]
+        qc_diag: [1.0e+0, 1.0e+0, 1.0e+0, 1.0e+0, 1.0e+0, 1.0e+0]
         num_threads: 20
         gravity: -9.8042 #-9.8042
         r_imu_acc: 0.1
         r_imu_ang: 0.1
-        p0_imu: 0.1
+        p0_imu: 0.01
         q_imu: 0.0001
         max_iterations: 5
         verbose: false
         delay_adding_points: 1
-        qg_diag: [1.0e-3, 1.0e-3, 1.0e-3, 1.0e-1, 1.0e-1, 1.0e-1]
+        qg_diag: [1.0e-3, 1.0e-3, 1.0e-3, 1.0e-3, 1.0e-3, 1.0e-4]
