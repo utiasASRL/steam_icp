@@ -5,10 +5,10 @@
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
-      odometry: true
+      odometry: false
       raw_points: false
-      sampled_points: true
-      map_points: true
+      sampled_points: false
+      map_points: false
 
     # DATASET OPTIONS ----
     dataset: BoreasVelodyne
@@ -26,20 +26,30 @@
     odometry_options:
       debug_print: true
       debug_path: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlio
-      # num_iters_icp: 100
+      num_iters_icp: 10
 
       elastic:
         num_threads: 20
 
       steam:
-        qc_diag: [1.0e+0, 1.0e+0, 1.0e+0, 1.0e+0, 1.0e+0, 1.0e+0]
+        # qc_diag: [6.15981911e+04, 6.15981911e+04, 3.44526305e+03, 7.38193480e+02, 7.18338482e+02, 9.86612673e+03]
+        # ad_diag: [0.0,         0.0,         0.0,         3.5816432,  6.18327201, 0.0        ]
+        # Note: we train the parameters in the applanix frame but these are in the robot frame...
+        # So, swap x-y and roll-pitch for both qc and ad given the values from the Jupyter notebook.
+        # 7e7 seems too high.
+        qc_diag: [6.41449626e+04, 6.41449626e+04, 3.38093653e+03, 6.81025949e+02, 7.37130201e+02, 7.45392860e+03]
+        ad_diag: [4.04623712e+00, 4.13289201e+00, 4.13150608e+00, 3.89121443e+00, 4.40797118e+00, 4.28210474e+00]
+        # qc_diag: [50.0,50.0,50.0,5.0,5.0,5.0]
+        # ad_diag: [0.0,0.0,0.0,10.0,10.0,10.0]
         num_threads: 20
-        gravity: -9.8042 #-9.8042
-        r_imu_acc: 0.1
-        r_imu_ang: 0.1
+        gravity: -9.8042  #-9.8042
+        r_imu_acc: [0.43000461, 0.33698219, 0.29589244]
+        r_imu_ang: [0.04898588, 0.06860401, 0.04319808]
         p0_imu: 0.01
         q_imu: 0.0001
+        use_imu: false
         max_iterations: 5
         verbose: false
         delay_adding_points: 1
         qg_diag: [1.0e-3, 1.0e-3, 1.0e-3, 1.0e-3, 1.0e-3, 1.0e-4]
+        T_mi_init_only: true

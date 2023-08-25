@@ -357,6 +357,15 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       LOG(WARNING) << "Parameter " << prefix + "qc_diag"
                    << " = " << steam_icp_options.qc_diag.transpose() << std::endl;
 
+      std::vector<double> ad_diag;
+      ROS2_PARAM_NO_LOG(node, ad_diag, prefix, ad_diag, std::vector<double>);
+      if ((ad_diag.size() != 6) && (ad_diag.size() != 0))
+        throw std::invalid_argument{"Qc diagonal malformed. Must be 6 elements!"};
+      if (ad_diag.size() == 6)
+        steam_icp_options.ad_diag << ad_diag[0], ad_diag[1], ad_diag[2], ad_diag[3], ad_diag[4], ad_diag[5];
+      LOG(WARNING) << "Parameter " << prefix + "ad_diag"
+                   << " = " << steam_icp_options.ad_diag.transpose() << std::endl;
+
       std::vector<double> qg_diag;
       ROS2_PARAM_NO_LOG(node, qg_diag, prefix, qg_diag, std::vector<double>);
       if ((qg_diag.size() != 6) && (qg_diag.size() != 0))
@@ -392,10 +401,24 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, delay_adding_points, int);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_final_state_value, bool);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, gravity, double);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, r_imu_acc, double);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, r_imu_ang, double);
+      std::vector<double> r_imu_acc;
+      ROS2_PARAM_NO_LOG(node, r_imu_acc, prefix, r_imu_acc, std::vector<double>);
+      if ((r_imu_acc.size() != 3) && (r_imu_acc.size() != 0))
+        throw std::invalid_argument{"r_imu_acc malformed. Must be 3 elements!"};
+      if (r_imu_acc.size() == 3) steam_icp_options.r_imu_acc << r_imu_acc[0], r_imu_acc[1], r_imu_acc[2];
+      LOG(WARNING) << "Parameter " << prefix + "r_imu_acc"
+                   << " = " << steam_icp_options.r_imu_acc.transpose() << std::endl;
+      std::vector<double> r_imu_ang;
+      ROS2_PARAM_NO_LOG(node, r_imu_ang, prefix, r_imu_ang, std::vector<double>);
+      if ((r_imu_ang.size() != 3) && (r_imu_ang.size() != 0))
+        throw std::invalid_argument{"r_imu_ang malformed. Must be 3 elements!"};
+      if (r_imu_ang.size() == 3) steam_icp_options.r_imu_ang << r_imu_ang[0], r_imu_ang[1], r_imu_ang[2];
+      LOG(WARNING) << "Parameter " << prefix + "r_imu_ang"
+                   << " = " << steam_icp_options.r_imu_ang.transpose() << std::endl;
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p0_imu, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, q_imu, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_imu, bool);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, T_mi_init_only, bool);
     } else if (options.odometry == "STEAMRIO") {
       auto &steam_icp_options = dynamic_cast<SteamRioOdometry::Options &>(odometry_options);
       prefix = "odometry_options.steam.";

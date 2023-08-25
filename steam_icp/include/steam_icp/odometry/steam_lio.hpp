@@ -17,6 +17,7 @@ class SteamLioOdometry : public Odometry {
     Eigen::Matrix<double, 4, 4> T_sr = Eigen::Matrix<double, 4, 4>::Identity();
     // trajectory
     Eigen::Matrix<double, 6, 1> qc_diag = Eigen::Matrix<double, 6, 1>::Ones();
+    Eigen::Matrix<double, 6, 1> ad_diag = Eigen::Matrix<double, 6, 1>::Ones();
     int num_extra_states = 0;
     // p2p
     double power_planarity = 2.0;
@@ -37,11 +38,14 @@ class SteamLioOdometry : public Odometry {
     //
     int delay_adding_points = 4;
     bool use_final_state_value = false;
+    // IMU
     double gravity = -9.8042;
-    double r_imu_acc = 0.01;
-    double r_imu_ang = 0.001;
+    Eigen::Matrix<double, 3, 1> r_imu_acc = Eigen::Matrix<double, 3, 1>::Zero();
+    Eigen::Matrix<double, 3, 1> r_imu_ang = Eigen::Matrix<double, 3, 1>::Zero();
     double p0_imu = 0.0001;
     double q_imu = 0.0001;
+    bool use_imu = true;
+    bool T_mi_init_only = true;
     // T_mi:
     Eigen::Matrix<double, 6, 1> qg_diag = Eigen::Matrix<double, 6, 1>::Ones();
   };
