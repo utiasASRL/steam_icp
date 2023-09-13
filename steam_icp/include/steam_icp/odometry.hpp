@@ -11,6 +11,8 @@ class Odometry {
   using Ptr = std::shared_ptr<Odometry>;
   using ConstPtr = std::shared_ptr<const Odometry>;
 
+  ArrayPoses T_i_r_gt_poses;
+
   struct Options {
     using Ptr = std::shared_ptr<Options>;
     using ConstPtr = std::shared_ptr<const Options>;

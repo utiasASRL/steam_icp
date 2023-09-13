@@ -26,8 +26,8 @@ if __name__ == '__main__':
   data[:, 1:4] = data[:, 1:4] @ raw_to_robot.T
   data[:, 4:] = data[:, 4:] @ raw_to_robot.T
 
-  Rw = np.sqrt(np.std(data[:args.N, 1:4], axis=0)).squeeze()
+  Rw = ((np.std(data[:args.N, 1:4], axis=0))**2).squeeze()
   print('Rw: {}'.format(Rw))
 
-  Ra = np.sqrt(np.std(data[:args.N, 4:], axis=0)).squeeze()
+  Ra = ((np.std(data[:args.N, 4:], axis=0))**2).squeeze()
   print('Ra: {}'.format(Ra))

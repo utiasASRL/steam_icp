@@ -501,10 +501,12 @@ def get_jac_C_alpha(dt: float, add: np.ndarray) -> np.ndarray:
       np.ndarray: Jacobian partial ek / partial alpha
   """
   dim = add.squeeze().shape[0]
-  dC1 = np.zeros((dim, dim))
-  dC2 = np.zeros((dim, dim))
-  dC3 = np.zeros((dim, dim))
+  dC_da = np.zeros((dim, 3 * dim, dim))
+
   for i in range(dim):
+    dC1 = np.zeros((dim, dim))
+    dC2 = np.zeros((dim, dim))
+    dC3 = np.zeros((dim, dim))
     ad = add.squeeze()[i]
     if np.abs(ad) <= 0.05:
       print(
@@ -539,14 +541,14 @@ def get_jac_C_alpha(dt: float, add: np.ndarray) -> np.ndarray:
       dC2[i, i] = (
           -dt2 / 2 + dt3 * ad / 3 - dt4 * ad2 / 8 + dt5 * ad3 / 30 - dt6 * ad4 / 144
       )
-  return np.block(
-    [
-      [dC1],
-      [dC2],
-      [dC3],
-    ]
-  )
-
+    dC_da[i] = np.block(
+      [
+        [dC1],
+        [dC2],
+        [dC3],
+      ]
+    )
+  return dC_da
 
 
 def get_inverse_tf(T):

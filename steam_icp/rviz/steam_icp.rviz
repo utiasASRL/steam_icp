@@ -65,7 +65,7 @@ Visualization Manager:
           Value: true
       Marker Scale: 20
       Name: TF
-      Show Arrows: false
+      Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
@@ -375,7 +375,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 71.77091979980469
+      Distance: 110.65213012695312
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -390,10 +390,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6753982305526733
+      Pitch: 0.6503981947898865
       Target Frame: vehicle
       Value: Orbit (rviz_default_plugins)
-      Yaw: 3.1553969383239746
+      Yaw: 3.2153983116149902
     Saved:
       - Class: rviz_default_plugins/Orbit
         Distance: 130.75164794921875

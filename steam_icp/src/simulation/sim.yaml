@@ -1,0 +1,21 @@
+/**:
+  ros__parameters:
+    log_dir: /home/krb/ASRL/temp/steam_icp/simulation
+    output_dir: /raid/krb/simulation/
+    num_threads: 20
+    verbose: false
+    T_sr: [1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.]
+    imu_rate: 200.0
+    dt_imu: 0.0025
+    min_dist_sensor_center: 0.1
+    max_dist_sensor_center: 200.0
+    noisy_measurements: false
+    lidar_range_std: 0.02
+    r_accel: [0.03792177, 0.01259208, 0.00849714]
+    r_gyro: [5.48885234e-06, 2.38789649e-05, 3.34471102e-06]
+    gravity: -9.8042
+    p0_bias: 0.01
+    q_bias: 0.01
+    qc_diag: [6.18047567e+04, 6.18047567e+04, 3.40402641e+03, 6.13821100e+01, 6.13821100e+01, 9.85316597e+03]
+    ad_diag: [100.11439693, 100.11512779, 100.08909343, 100.07804446, 100.07103628, 100.11791258]
+    x0: [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]

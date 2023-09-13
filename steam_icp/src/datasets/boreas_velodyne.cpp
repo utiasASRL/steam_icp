@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include "steam_icp/datasets/utils.hpp"
+namespace fs = std::filesystem;
 
 namespace steam_icp {
 
@@ -182,8 +183,31 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
   std::sort(filenames_.begin(), filenames_.end());
   initial_timestamp_ = std::stoll(filenames_[0].substr(0, filenames_[0].find(".")));
 
-  const std::string imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu_raw.csv";
+  fs::path root_path{options_.root_path};
+  std::string ground_truth_file = options_.root_path + "/" + options_.sequence + "/applanix/lidar_poses.csv";
+  const auto gt_poses_full = loadPoses(ground_truth_file);
+  const ArrayPoses gt_poses(gt_poses_full.begin() + init_frame_, gt_poses_full.begin() + last_frame_);
+  std::ifstream ifs(root_path / name() / "calib" / "T_applanix_lidar.txt", std::ios::in);
+  Eigen::Matrix4d T_applanix_lidar;
+  for (size_t row = 0; row < 4; row++)
+    for (size_t col = 0; col < 4; col++) ifs >> T_applanix_lidar(row, col);
+  Eigen::Matrix4d T_lidar_applanix = T_applanix_lidar.inverse();
+  Eigen::Matrix4d T_robot_applanix;
+  T_robot_applanix << 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
+  Eigen::Matrix4d T_applanix_robot = T_robot_applanix.inverse();
+  T_i_r_gt_poses.clear();
+  for (auto pose : gt_poses) {
+    T_i_r_gt_poses.push_back(pose * T_lidar_applanix * T_applanix_robot);
+  }
+
+  bool use_sbet_imu = false;
+  bool use_raw_accel_minus_gravity = !use_sbet_imu;
+
+  std::string imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu_raw.csv";
+  if (use_sbet_imu) imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu.csv";
+  std::string accel_path = options_.root_path + "/" + options_.sequence + "/applanix/accel_raw_minus_gravity.csv";
   std::ifstream imu_file(imu_path);
+  std::ifstream acc_file(accel_path);
   Eigen::Matrix3d imu_body_raw_to_applanix, yfwd2xfwd;
   imu_body_raw_to_applanix << 0, -1, 0, -1, 0, 0, 0, 0, -1;
   yfwd2xfwd << 0, 1, 0, -1, 0, 0, 0, 0, 1;
@@ -193,10 +217,15 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
   const double initial_timestamp_sec = initial_timestamp_ * filename_to_time_convert_factor_;
   if (imu_file.is_open()) {
     std::string line;
-    std::getline(imu_file, line);  // header
+    std::string accel_line;
+    std::getline(imu_file, line);        // header
+    std::getline(acc_file, accel_line);  // header
     for (; std::getline(imu_file, line);) {
       if (line.empty()) continue;
+      std::getline(acc_file, accel_line);
+      if (accel_line.empty()) continue;
       std::stringstream ss(line);
+      std::stringstream ss2(accel_line);
       IMUData imu_data;
       std::string value;
       std::getline(ss, value, ',');
@@ -209,14 +238,30 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
       imu_data.ang_vel[0] = std::stod(value);
       // IMU data is transformed into the "robot" frame, coincident with applanix
       // with x-forwards, y-left, z-up.
-      imu_data.ang_vel = yfwd2xfwd * imu_body_raw_to_applanix * imu_data.ang_vel;
+
       std::getline(ss, value, ',');
       imu_data.lin_acc[2] = std::stod(value);
       std::getline(ss, value, ',');
       imu_data.lin_acc[1] = std::stod(value);
       std::getline(ss, value, ',');
       imu_data.lin_acc[0] = std::stod(value);
-      imu_data.lin_acc = yfwd2xfwd * imu_body_raw_to_applanix * imu_data.lin_acc;
+      if (use_sbet_imu) {
+        imu_data.ang_vel = yfwd2xfwd * imu_data.ang_vel;
+        imu_data.lin_acc = yfwd2xfwd * imu_data.lin_acc;
+      } else {
+        imu_data.ang_vel = yfwd2xfwd * imu_body_raw_to_applanix * imu_data.ang_vel;
+        if (use_raw_accel_minus_gravity) {
+          std::getline(ss2, value, ',');
+          std::getline(ss2, value, ',');
+          imu_data.lin_acc[0] = std::stod(value);
+          std::getline(ss2, value, ',');
+          imu_data.lin_acc[1] = std::stod(value);
+          std::getline(ss2, value, ',');
+          imu_data.lin_acc[2] = std::stod(value);
+        } else {
+          imu_data.lin_acc = yfwd2xfwd * imu_body_raw_to_applanix * imu_data.lin_acc;
+        }
+      }
       imu_data_vec_.push_back(imu_data);
     }
   }
@@ -245,7 +290,7 @@ std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> BoreasVelodyneSeq
     if (p.timestamp > tmax) tmax = p.timestamp;
   }
   std::vector<IMUData> curr_imu_data_vec;
-  curr_imu_data_vec.reserve(50);
+  curr_imu_data_vec.reserve(21);
   for (; curr_imu_idx_ < imu_data_vec_.size(); curr_imu_idx_++) {
     if (imu_data_vec_[curr_imu_idx_].timestamp < tmin) {
       continue;
@@ -270,18 +315,57 @@ void BoreasVelodyneSequence::save(const std::string &path, const Trajectory &tra
   }
 
   //
-  const auto filename = path + "/" + options_.sequence + "_poses.txt";
-  std::ofstream posefile(filename);
-  if (!posefile.is_open()) throw std::runtime_error{"failed to open file: " + filename};
-  posefile << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
-  Eigen::Matrix3d R;
-  Eigen::Vector3d t;
-  for (auto &pose : poses) {
-    R = pose.block<3, 3>(0, 0);
-    t = pose.block<3, 1>(0, 3);
-    posefile << R(0, 0) << " " << R(0, 1) << " " << R(0, 2) << " " << t(0) << " " << R(1, 0) << " " << R(1, 1) << " "
-             << R(1, 2) << " " << t(1) << " " << R(2, 0) << " " << R(2, 1) << " " << R(2, 2) << " " << t(2)
-             << std::endl;
+  {
+    const auto filename = path + "/" + options_.sequence + "_poses.txt";
+    std::ofstream posefile(filename);
+    if (!posefile.is_open()) throw std::runtime_error{"failed to open file: " + filename};
+    posefile << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+    Eigen::Matrix3d R;
+    Eigen::Vector3d t;
+    for (auto &pose : poses) {
+      R = pose.block<3, 3>(0, 0);
+      t = pose.block<3, 1>(0, 3);
+      posefile << R(0, 0) << " " << R(0, 1) << " " << R(0, 2) << " " << t(0) << " " << R(1, 0) << " " << R(1, 1) << " "
+               << R(1, 2) << " " << t(1) << " " << R(2, 0) << " " << R(2, 1) << " " << R(2, 2) << " " << t(2)
+               << std::endl;
+    }
+  }
+
+  {
+    const auto filename = path + "/" + options_.sequence + "_debug.txt";
+    std::ofstream posefile(filename);
+    if (!posefile.is_open()) throw std::runtime_error{"failed to open file: " + filename};
+    posefile << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+    for (auto &frame : trajectory) {
+      const auto T = frame.getMidPose();
+      for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+          posefile << T(i, j) << " ";
+        }
+      }
+      for (int i = 0; i < 6; ++i) {
+        posefile << frame.mid_w(i, 0) << " ";
+      }
+      for (int i = 0; i < 6; ++i) {
+        posefile << frame.mid_dw(i, 0) << " ";
+      }
+      for (int i = 0; i < 6; ++i) {
+        posefile << frame.mid_b(i, 0) << " ";
+      }
+      // const auto P = frame.getMidPose();
+      for (int i = 0; i < 18; ++i) {
+        for (int j = 0; j < 18; ++j) {
+          posefile << frame.mid_state_cov(i, j) << " ";
+        }
+      }
+      const auto T_mi = frame.mid_T_mi;
+      for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+          posefile << T_mi(i, j) << " ";
+        }
+      }
+      posefile << std::endl;
+    }
   }
 }
 
@@ -289,7 +373,8 @@ auto BoreasVelodyneSequence::evaluate(const std::string &path, const Trajectory 
   //
   std::string ground_truth_file = options_.root_path + "/" + options_.sequence + "/applanix/lidar_poses.csv";
   const auto gt_poses_full = loadPoses(ground_truth_file);
-  const ArrayPoses gt_poses(gt_poses_full.begin() + init_frame_, gt_poses_full.begin() + last_frame_);
+  int last_frame = std::min(last_frame_, int(init_frame_ + trajectory.size()));
+  const ArrayPoses gt_poses(gt_poses_full.begin() + init_frame_, gt_poses_full.begin() + last_frame);
 
   //
   ArrayPoses poses;

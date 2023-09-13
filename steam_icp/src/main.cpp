@@ -664,6 +664,9 @@ int main(int argc, char **argv) {
     timer.emplace_back("visualization ............... ", std::make_unique<Stopwatch<>>(false));
 
     const auto odometry = Odometry::Get(options.odometry, *options.odometry_options);
+
+    odometry->T_i_r_gt_poses = seq->T_i_r_gt_poses;
+
     bool odometry_success = true;
     int k = 0;
     while (seq->hasNext()) {
@@ -734,6 +737,26 @@ int main(int argc, char **argv) {
         for (size_t i = 0; i < timer.size(); i++) {
           LOG(WARNING) << "Average " << timer[i].first << (timer[i].second->count() / (double)k) << " ms" << std::endl;
         }
+        // transform and save the estimated trajectory
+        seq->save(options.output_dir, odometry->trajectory());
+
+        const auto seq_error = seq->evaluate(options.output_dir, odometry->trajectory());
+        LOG(WARNING) << "Mean RPE : " << seq_error.mean_t_rpe << std::endl;
+        LOG(WARNING) << "Mean RPE 2D : " << seq_error.mean_t_rpe_2d << std::endl;
+        LOG(WARNING) << "Mean APE : " << seq_error.mean_ape << std::endl;
+        LOG(WARNING) << "Max APE : " << seq_error.max_ape << std::endl;
+        LOG(WARNING) << "Mean Local Error : " << seq_error.mean_local_err << std::endl;
+        LOG(WARNING) << "Max Local Error : " << seq_error.max_local_err << std::endl;
+        LOG(WARNING) << "Index Max Local Error : " << seq_error.index_max_local_err << std::endl;
+        // clang-format off
+        LOG(WARNING) << "KITTI Summary : "
+                    << std::fixed << std::setprecision(2) << seq_error.mean_t_rpe_2d << " & "
+                    << std::fixed << std::setprecision(4) << seq_error.mean_r_rpe_2d << " & "
+                    << std::fixed << std::setprecision(2) << seq_error.mean_t_rpe << " & "
+                    << std::fixed << std::setprecision(4) << seq_error.mean_r_rpe << "\\\\" << std::endl;
+        // clang-format on
+        LOG(WARNING) << std::endl;
+
         return 0;
       }
       k++;

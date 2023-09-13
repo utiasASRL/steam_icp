@@ -15,6 +15,8 @@ class Sequence {
   using Ptr = std::shared_ptr<Sequence>;
   using ConstPtr = std::shared_ptr<const Sequence>;
 
+  ArrayPoses T_i_r_gt_poses;
+
   struct Options {
     std::string root_path;
     std::string sequence;
