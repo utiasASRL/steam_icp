@@ -691,10 +691,10 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
     const auto acc_noise_model = StaticNoiseModel<3>::MakeShared(R_acc);
     const auto gyro_noise_model = StaticNoiseModel<3>::MakeShared(R_ang);
     // const auto imu_loss_func = L2LossFunc::MakeShared();
-    // const auto acc_loss_func = CauchyLossFunc::MakeShared(1.0);
-    // const auto gyro_loss_func = CauchyLossFunc::MakeShared(1.0);
-    const auto acc_loss_func = L1LossFunc::MakeShared();
-    const auto gyro_loss_func = L1LossFunc::MakeShared();
+    const auto acc_loss_func = CauchyLossFunc::MakeShared(1.0);
+    const auto gyro_loss_func = CauchyLossFunc::MakeShared(1.0);
+    // const auto acc_loss_func = L1LossFunc::MakeShared();
+    // const auto gyro_loss_func = L1LossFunc::MakeShared();
     for (const auto &imu_data : imu_data_vec) {
       size_t i = prev_trajectory_var_index;
       for (; i < trajectory_vars_.size() - 1; i++) {

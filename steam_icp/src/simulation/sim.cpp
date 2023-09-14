@@ -25,17 +25,15 @@ struct SimulationOptions {
   double lidar_range_std = 0.02;
   // approximated from actual applanix data
   // note: these are covariances
-  Eigen::Matrix<double, 3, 1> r_accel = {0.03792177, 0.01259208, 0.00849714};
-  Eigen::Matrix<double, 3, 1> r_gyro = {5.48885234e-06, 2.38789649e-05, 3.34471102e-06};
+  Eigen::Matrix<double, 3, 1> r_accel = Eigen::Matrix<double, 3, 1>::Ones();
+  Eigen::Matrix<double, 3, 1> r_gyro = Eigen::Matrix<double, 3, 1>::Ones();
   double gravity = -9.8042;
   // todo: simulate bias P0 and Qc
   double p0_bias = 0.01;
   double q_bias = 0.01;
   // learned from Boreas data
-  Eigen::Matrix<double, 6, 1> qc_diag = {6.18047567e+04, 6.18047567e+04, 3.40402641e+03,
-                                         6.13821100e+01, 6.13821100e+01, 9.85316597e+03};
-  Eigen::Matrix<double, 6, 1> ad_diag = {100.11439693, 100.11512779, 100.08909343,
-                                         100.07804446, 100.07103628, 100.11791258};
+  Eigen::Matrix<double, 6, 1> qc_diag = Eigen::Matrix<double, 6, 1>::Ones();
+  Eigen::Matrix<double, 6, 1> ad_diag = Eigen::Matrix<double, 6, 1>::Ones();
   Eigen::Matrix<double, 18, 1> x0 = Eigen::Matrix<double, 18, 1>::Zero();
 };
 
@@ -82,9 +80,8 @@ SimulationOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
 
   std::vector<double> T_sr;
   ROS2_PARAM_NO_LOG(node, T_sr, prefix, T_sr, std::vector<double>);
-  if ((T_sr_vec.size() != 16) && (T_sr_vec.size() != 0))
-    throw std::invalid_argument{"T_sr malformed. Must be 16 elements!"};
-  if (T_sr_vec.size() == 16) {
+  if ((T_sr.size() != 16) && (T_sr.size() != 0)) throw std::invalid_argument{"T_sr malformed. Must be 16 elements!"};
+  if (T_sr.size() == 16) {
     int k = 0;
     for (int i = 0; i < 4; ++i) {
       for (int j = 0; j < 4; ++j) {
@@ -105,23 +102,25 @@ SimulationOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
         x0[14], x0[15], x0[16], x0[17];
   LOG(WARNING) << "Parameter " << prefix + "x0"
                << " = " << options.x0.transpose() << std::endl;
+
+  return options;
 }
 
-int main(int argc, char **argv) {
-  // todo: parameters for singer prior
-  // todo: sample from multidimensional gaussian
-  // todo: create sparse matrix for P_check_inv
-  // todo: sample Gaussian noise vector Don't allow samples outside of 4-sigma (sample from truncated Gaussian)
-  // todo: load VLS128 config parameters
-  // todo: load extrinsics from yaml files
-  // todo: create ordered list of timestamps required by IMU, lidar
-  // todo: step through simulation, generating pointclouds and IMU measurements
-  // todo: save pointclouds as .bin files and imu measurements in same formatted csv file
-  // todo: add options for adding Gaussian noise to the lidar and IMU measurements
+// int main(int argc, char **argv) {
+//   // todo: parameters for singer prior
+//   // todo: sample from multidimensional gaussian
+//   // todo: create sparse matrix for P_check_inv
+//   // todo: sample Gaussian noise vector Don't allow samples outside of 4-sigma (sample from truncated Gaussian)
+//   // todo: load VLS128 config parameters
+//   // todo: load extrinsics from yaml files
+//   // todo: create ordered list of timestamps required by IMU, lidar
+//   // todo: step through simulation, generating pointclouds and IMU measurements
+//   // todo: save pointclouds as .bin files and imu measurements in same formatted csv file
+//   // todo: add options for adding Gaussian noise to the lidar and IMU measurements
 
-  // todo: x0
+//   // todo: x0
 
-  // Simulation Parameters (move to config file)
+//   // Simulation Parameters (move to config file)
 
-  return 0;
-}
+//   return 0;
+// }
