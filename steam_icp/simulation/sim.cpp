@@ -22,17 +22,26 @@ namespace fs = std::filesystem;
 
 #include "steam_icp/point.hpp"
 
-#include <Eigen/Core>
-#include <iostream>
+#include<unistd.h>
 
 const uint64_t VLS128_CHANNEL_TDURATION_NS = 2665;
 const uint64_t VLS128_SEQ_TDURATION_NS = 53300;
 const uint64_t VLS128_FIRING_SEQUENCE_PER_REV = 1876;
 const double AZIMUTH_STEP = 2 * M_PI / VLS128_FIRING_SEQUENCE_PER_REV;
 const double INTER_AZM_STEP = AZIMUTH_STEP / 20;
-// firing sequences per revolution: 1876
 
-using namespace steam_icp;
+// using namespace steam_icp;
+
+namespace simulation {
+
+struct Point3D {
+  Eigen::Vector3d raw_pt;  // Raw point read from the sensor
+  Eigen::Vector3d pt;      // Corrected point taking into account the motion of the sensor during frame acquisition
+  double radial_velocity = 0.0;  // Radial velocity of the point
+  double alpha_timestamp = 0.0;  // Relative timestamp in the frame in [0.0, 1.0]
+  double timestamp = 0.0;        // The absolute timestamp (if applicable)
+  int beam_id = -1;              // The beam id of the point
+};
 
 #define PCL_ADD_FLEXIBLE     \
   union EIGEN_ALIGN16 {      \
@@ -116,6 +125,9 @@ struct SimulationOptions {
   Eigen::Matrix<double, 6, 1> qc_diag = Eigen::Matrix<double, 6, 1>::Ones();
   Eigen::Matrix<double, 6, 1> ad_diag = Eigen::Matrix<double, 6, 1>::Ones();
   Eigen::Matrix<double, 18, 1> x0 = Eigen::Matrix<double, 18, 1>::Zero();
+  std::vector<double> walls = {-100.0, 100.0, -100.0, 100.0, 0.0, 4.0};
+  std::vector<double> intensities = {0.15, 0.30, 0.45, 0.60, 0.75, 0.90};
+  double sleep_delay = 1.0;
 };
 
 #define ROS2_PARAM_NO_LOG(node, receiver, prefix, param, type) \
@@ -148,6 +160,7 @@ SimulationOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
   ROS2_PARAM_CLAUSE(node, options, prefix, gravity, double);
   ROS2_PARAM_CLAUSE(node, options, prefix, p0_bias, double);
   ROS2_PARAM_CLAUSE(node, options, prefix, q_bias, double);
+  ROS2_PARAM_CLAUSE(node, options, prefix, sleep_delay, double);
 
   std::vector<double> r_accel;
   ROS2_PARAM_NO_LOG(node, r_accel, prefix, r_accel, std::vector<double>);
@@ -200,6 +213,13 @@ SimulationOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
   LOG(WARNING) << "Parameter " << prefix + "x0"
                << " = " << options.x0.transpose() << std::endl;
 
+  std::vector<double> walls;
+  ROS2_PARAM_NO_LOG(node, walls, prefix, walls, std::vector<double>);
+  if ((walls.size() != 6) && (walls.size() != 0)) throw std::invalid_argument{"walls malformed. Must be 6 elements!"};
+  if (walls.size() == 6)
+    options.walls = {walls[0], walls[1], walls[2], walls[3], walls[4], walls[5]};
+  LOG(WARNING) << "Parameter " << prefix + "walls"
+               << " = " << walls[0] << walls[1] << walls[2] << walls[3] << walls[4] << walls[5] << std::endl;
   return options;
 }
 
@@ -238,7 +258,25 @@ Eigen::Matrix<double, 128, 3> loadVLS128Config(const std::string &file_path) {
   return output;
 }
 
+}  // namespace simulation
+
+// clang-format off
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+    simulation::PCLPoint3D,
+    // cartesian coordinates
+    (float, x, x)
+    (float, y, y)
+    (float, z, z)
+    // random stuff
+    (float, flex11, flex11)
+    (float, flex12, flex12)
+    (float, flex13, flex13)
+    (float, flex14, flex14))
+// clang-format on
+
 int main(int argc, char **argv) {
+  using namespace simulation;
+
   rclcpp::init(argc, argv);
   auto node = rclcpp::Node::make_shared("simulation");
   auto odometry_publisher = node->create_publisher<nav_msgs::msg::Odometry>("/simulation_odometry", 10);
@@ -281,80 +319,131 @@ int main(int argc, char **argv) {
   const auto lidar_config = loadVLS128Config(options.lidar_config);
   LOG(WARNING) << "lidar config" << std::endl << lidar_config << std::endl;
 
-  // Generate a sorted list of all timestamps in the simulation...
-  uint64_t tns = 0;
-  std::vector<uint64_t> sim_times;
   const uint64_t sim_length_ns = options.sim_length * 1.0e9;
-  while (tns < sim_length_ns) {
-    t += 2.665e-6;
-  }
-
-  t = options.offset_imu;
-  const double dt_imu = 1.0 / options.imu_rate;
-  while (t < sim_length) {
-    sim_times.insert(std::upper_bound(sim_times.begin(), sim_times.end(), t), t);
-    t += dt_imu;
-  }
-
-  LOG(INFO) << "simulation times: " << std::endl;
-  for (auto ts : sim_times) {
-    std::cout << ts << std::endl;
-  }
 
   // TODO: pick a linear and angular jerk, and then step through simulation
-
   uint64_t tns = 0;
-  Eigen::Matrix4d T_ri = Eigen::Matrix4d::Identity();
+  Eigen::Matrix4d T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(options.x0.block<6, 1>(0, 0))).matrix();
   const uint64_t delta_ns = VLS128_FIRING_SEQUENCE_PER_REV * VLS128_SEQ_TDURATION_NS;
   const double delta_s = delta_ns * 1.0e-9;
-  Eigen::Matrix<double, 6, 1> dw = options.x0.block<6, 1>(12, 0);
   Eigen::Matrix<double, 6, 1> w = options.x0.block<6, 1>(6, 0);
+  Eigen::Matrix<double, 6, 1> dw = options.x0.block<6, 1>(12, 0);
+  const double wall_delta = 1.0e-6;
+  LOG(INFO) << "starting simulation..." << std::endl;
   while (tns < sim_length_ns) {
-
-    // build pointcloud
-    uint64_t seq_index
-    
+    std::vector<Point3D> points;
+    points.reserve(VLS128_FIRING_SEQUENCE_PER_REV * 128);
+    LOG(INFO) << "simulation time: " << tns * 1.0e-9 << std::endl;
+#pragma omp declare reduction(merge_points : std::vector<Point3D> : omp_out.insert( \
+        omp_out.end(), omp_in.begin(), omp_in.end()))
+#pragma omp parallel for num_threads(options.num_threads) reduction(merge_points : points)
     for (uint64_t seq_index = 0; seq_index < VLS128_FIRING_SEQUENCE_PER_REV; seq_index++) {
-      // double sensor_azimuth = seq_index * AZIMUTH_STEP;
-      // double sensor_tns = tns + seq_index * VLS128_SEQ_TDURATION_NS;
-
       for (int group = 0; group < 16; group++) {
-
         uint64_t sensor_tns = tns + seq_index * VLS128_SEQ_TDURATION_NS + group * VLS128_CHANNEL_TDURATION_NS;
         double sensor_azimuth = seq_index * AZIMUTH_STEP + group * INTER_AZM_STEP;
         if (group >= 8) {
           sensor_tns += VLS128_CHANNEL_TDURATION_NS;
           sensor_azimuth += INTER_AZM_STEP;
         }
-
+        double sensor_s = sensor_tns * 1.0e-9;
         const double dtg = (sensor_tns - tns) * 1.0e-9;
-        Eigen::Matrix4d T_ri_local = lgmath::se3::Transformation(w * dtg + 0.5 * pow(dtg, 2) * dw).matrix() * T_ri;
+        const Eigen::Matrix4d T_ri_local = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * dtg + 0.5 * pow(dtg, 2) * dw)).matrix() * T_ri;
+        const Eigen::Matrix4d T_si_local = options.T_sr * T_ri_local;
+        const Eigen::Matrix4d T_is_local = T_si_local.inverse();
+        const Eigen::Matrix3d C_is_local = T_is_local.block<3, 3>(0, 0);
+        const Eigen::Vector3d r_si_in_i = T_is_local.block<3, 1>(0, 3);
         
         for (int beam_id = group * 8; beam_id < group * 8 + 8; beam_id++) {
-          const double beam_azimuth = sensor_azimuth - options.lidar_config(beam_id, 1);
-          const double beam_elevation = options.lidar_config(beam_id, 2);
-          // get vehicle position, orientation and compute the beam direction, sensor center.
+          const double beam_azimuth = sensor_azimuth - lidar_config(beam_id, 1);
+          const double beam_elevation = lidar_config(beam_id, 2);
+          Eigen::Vector3d n_s;
+          n_s << std::cos(beam_elevation) * std::cos(beam_azimuth) , std::cos(beam_elevation) * std::sin(beam_azimuth), std::sin(beam_elevation);
+          n_s.normalize();
+          Eigen::Vector3d n_i = C_is_local * n_s;
+          n_i.normalize();
+
+          double rmin = std::numeric_limits<double>::max();
+          double xmin = 0, ymin = 0, zmin = 0;
+          double imin = 0;
           
+          for (int wall = 0; wall < 6; wall++) {
+            double t = 0;
+            if (wall < 2) {
+              if (fabs(n_i(0, 0)) < wall_delta) continue;
+              t = (options.walls[wall] - r_si_in_i(0, 0)) / n_i(0, 0);
+            } else if (wall >= 2 && wall < 4) {
+              if (fabs(n_i(1, 0)) < wall_delta) continue;
+              t = (options.walls[wall] - r_si_in_i(1, 0)) / n_i(1, 0);
+            } else {
+              if (fabs(n_i(2, 0)) < wall_delta) continue;
+              t = (options.walls[wall] - r_si_in_i(2, 0)) / n_i(2, 0);
+            }
+            if (t < 0)
+              continue;
+            const double xw = r_si_in_i(0, 0) + n_i(0, 0) * t;
+            const double yw = r_si_in_i(1, 0) + n_i(1, 0) * t;
+            const double zw = r_si_in_i(2, 0) + n_i(2, 0) * t;
+            // check that point is inside bounds of cube.
+            if (xw < (options.walls[0] - 0.1) || xw > (options.walls[1] + 0.1) || yw < (options.walls[2] - 0.1) || yw > (options.walls[3] + 0.1) || zw < (options.walls[4] - 0.1) || zw > (options.walls[5] + 0.1))
+              continue;
 
+            const double dx = xw - r_si_in_i(0, 0);
+            const double dy = yw - r_si_in_i(1, 0);
+            const double dz = zw - r_si_in_i(2, 0);
+            const double r = std::sqrt(dx * dx + dy * dy + dz * dz);
+            if (r < rmin) {
+              rmin = r;
+              Eigen::Matrix<double, 4, 1> x_i;
+              x_i << xw, yw, zw, 1.0;
+              const Eigen::Matrix<double, 4, 1> x_s = T_si_local * x_i;
+              xmin = x_s(0, 0);
+              ymin = x_s(1, 0);
+              zmin = x_s(2, 0);
+              imin = options.intensities[wall];
+            }
+          }
+          if (xmin != 0 && ymin != 0 && zmin != 0) {
+            Point3D p;
+            p.raw_pt << xmin, ymin, zmin;
+            p.pt << xmin, ymin, zmin;
+            p.radial_velocity = imin;
+            p.alpha_timestamp = 0.0;
+            p.timestamp = sensor_s;
+            points.emplace_back(p);
+          }
         }
-
-
       }
     }
     // publish pointcloud
+    auto raw_points_msg = to_pc2_msg(points, "sensor");
+    raw_points_publisher->publish(raw_points_msg);
     tns += delta_ns;
-    T_ri = lgmath::se3::Transformation(w * delta_s + 0.5 * pow(delta_s, 2) * dw).matrix() * T_ri;
+    T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * delta_s + 0.5 * pow(delta_s, 2) * dw)).matrix() * T_ri;
     w += delta_s * dw;
+    if (!rclcpp::ok()) {
+      LOG(WARNING) << "Shutting down due to ctrl-c." << std::endl;
+      return 0;
+    }
+    LOG(INFO) << "T_ri:" << std::endl << T_ri << std::endl;
+    LOG(INFO) << "w:" << std::endl << w.transpose() << std::endl;
+
+    Eigen::Matrix4d T_ir = T_ri.inverse();
+    nav_msgs::msg::Odometry odometry;
+    odometry.header.frame_id = "map";
+    odometry.pose.pose = tf2::toMsg(Eigen::Affine3d(T_ir));
+    odometry_publisher->publish(odometry);
+    auto T_wr_msg = tf2::eigenToTransform(Eigen::Affine3d(T_ir));
+    T_wr_msg.header.frame_id = "map";
+    T_wr_msg.child_frame_id = "vehicle";
+    tf_bc->sendTransform(T_wr_msg);
+
+    sleep(options.sleep_delay);
   }
 
-  LOG(INFO) << "hello simulation world" << std::endl;
+  
   // [x]: parameters for singer prior 
   // [x]: load VLS128 config parameters
   // [x]: load extrinsics from yaml files
-  // [ ]: create ordered list of timestamps required by IMU, lidar
-  // [ ]: (sample from multidimensional gaussian)
-    // [ ]: create sparse matrix for P_check_inv
-    // [ ]: sample Gaussian noise vector Don't allow samples outside of 4-sigma (sample from truncated Gaussian)
   // [ ]: step through simulation, generating pointclouds and IMU measurements
   // [ ]: save pointclouds as .bin files and imu measurements in same formatted csv file
   // [ ]: add options for adding Gaussian noise to the lidar and IMU measurements
