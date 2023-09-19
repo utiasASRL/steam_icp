@@ -48,6 +48,12 @@ ament_target_dependencies(${PROJECT_NAME}
   pcl_conversions pcl_ros OpenCV
 )
 
+add_executable(simulation simulation/sim.cpp)
+ament_target_dependencies(simulation
+  rclcpp tf2 tf2_ros tf2_eigen nav_msgs
+  pcl_conversions pcl_ros OpenCV
+)
+
 install(
   DIRECTORY include/
   DESTINATION include
@@ -56,6 +62,7 @@ install(
 install(
   TARGETS
   ${PROJECT_NAME}
+  simulation
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

@@ -512,8 +512,8 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
     //
     const auto w_mr_inr_var = VSpaceStateVar<6>::MakeShared(w_mr_inr_intp_eval->evaluate());
     const auto dw_mr_inr_var = VSpaceStateVar<6>::MakeShared(dw_mr_inr_intp_eval->evaluate());
-    std::cout << "w_mr_inr_intp_eval->evaluate() " << w_mr_inr_intp_eval->evaluate().transpose() << std::endl;
-    std::cout << "dw_mr_inr_intp_eval->evaluate() " << dw_mr_inr_intp_eval->evaluate().transpose() << std::endl;
+    LOG(INFO) << "w_mr_inr_intp_eval->evaluate() " << w_mr_inr_intp_eval->evaluate().transpose() << std::endl;
+    LOG(INFO) << "dw_mr_inr_intp_eval->evaluate() " << dw_mr_inr_intp_eval->evaluate().transpose() << std::endl;
     const auto imu_biases_var = VSpaceStateVar<6>::MakeShared(prev_imu_biases);
 
     steam_trajectory->add(knot_steam_time, T_rm_var, w_mr_inr_var, dw_mr_inr_var);
@@ -782,6 +782,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
       }
     }
   }
+
 
   // For the 50 first frames, visit 2 voxels
   const short nb_voxels_visited = index_frame < options_.init_num_frames ? 2 : 1;

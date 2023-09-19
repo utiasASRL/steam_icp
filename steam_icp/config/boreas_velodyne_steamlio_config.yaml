@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
-    log_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlio
-    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlio
+    log_dir: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlio
+    output_dir: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlio
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
@@ -14,7 +14,7 @@
     dataset: BoreasVelodyne
     dataset_options:
       all_sequences: false
-      root_path: /workspace/raid/krb/boreas
+      root_path: /workspace/data1
       sequence: "boreas-2021-09-02-11-42"
       init_frame: 0 # 5675 (highway 7 front image)
       last_frame: 100000 # 5680 (highway 7 front image)
@@ -25,7 +25,7 @@
     odometry: STEAMLIO
     odometry_options:
       debug_print: true
-      debug_path: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlio
+      debug_path: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlio
       num_iters_icp: 10
 
       elastic:

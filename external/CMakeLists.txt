@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.16)
 project(CT_ICP-EXTERNAL)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -35,7 +35,7 @@ ExternalProject_Add(
 	PREFIX Eigen3_ext
 
 	GIT_REPOSITORY  https://gitlab.com/libeigen/eigen
-	GIT_TAG 3.4.0
+	GIT_TAG 3.3.7
 
 	BUILD_ALWAYS OFF
 	INSTALL_DIR ${EXT_INSTALL_DIR}/Eigen3
