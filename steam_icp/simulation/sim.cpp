@@ -258,6 +258,24 @@ Eigen::Matrix<double, 128, 3> loadVLS128Config(const std::string &file_path) {
   return output;
 }
 
+Eigen::Vector3d rot_to_yaw_pitch_roll(Eigen::Matrix3d C) {
+  int i = 2, j = 1, k = 0;
+  double c_y = std::sqrt(C(i, i) * C(i, i) + C(j, i) * C(j, i));
+  double r = 0, p = 0, y = 0;
+  if (c_y > 1.0e-14) {
+    r = std::atan2(C(j, i), C(i, i));
+    p = std::atan2(-C(k, i), c_y);
+    y = std::atan2(C(k, j), C(k, k));
+  } else {
+    r = 0;
+    p = std::atan2(-C(k, i), c_y);
+    y = std::atan2(-C(j, k), C(j, j));
+  }
+  Eigen::Vector3d ypr;
+  ypr << y, p, r;
+  return ypr;
+}
+
 }  // namespace simulation
 
 // clang-format off
@@ -329,11 +347,16 @@ int main(int argc, char **argv) {
   Eigen::Matrix<double, 6, 1> w = options.x0.block<6, 1>(6, 0);
   Eigen::Matrix<double, 6, 1> dw = options.x0.block<6, 1>(12, 0);
   const double wall_delta = 1.0e-6;
+  const uint64_t t0_us = 1695166988000000;  // just pick a random epoch time to conform to the expected format
+  fs::path output_path{options.output_dir};
+  std::ofstream lidar_pose_out(output_path / "applanix" / "lidar_poses.csv", std::ios::out);
+  lidar_pose_out << "GPSTime,easting,northing,altitude,vel_east,vel_north,vel_up,roll,pitch,heading,angvel_z,angvel_y,angvel_x" << std::endl;
   LOG(INFO) << "starting simulation..." << std::endl;
   while (tns < sim_length_ns) {
     std::vector<Point3D> points;
     points.reserve(VLS128_FIRING_SEQUENCE_PER_REV * 128);
     LOG(INFO) << "simulation time: " << tns * 1.0e-9 << std::endl;
+    const double t_mid_s = (tns + delta_ns / 2) * 1.0e-9;
 #pragma omp declare reduction(merge_points : std::vector<Point3D> : omp_out.insert( \
         omp_out.end(), omp_in.begin(), omp_in.end()))
 #pragma omp parallel for num_threads(options.num_threads) reduction(merge_points : points)
@@ -408,12 +431,35 @@ int main(int argc, char **argv) {
             p.pt << xmin, ymin, zmin;
             p.radial_velocity = imin;
             p.alpha_timestamp = 0.0;
-            p.timestamp = sensor_s;
+            p.timestamp = sensor_s - t_mid_s;
             points.emplace_back(p);
           }
         }
       }
     }
+    points.shrink_to_fit();
+
+    // write the pointcloud to file as a binary
+    const uint64_t t_mid_us = (tns + delta_ns / 2) / 1000 + t0_us;
+    std::string fname = std::to_string(t_mid_us) + ".bin";
+    std::ofstream fout(output_path / "lidar" / fname, std::ios::out | std::ios::binary);
+    const size_t fsize = 4;
+    const float dummy = 0.;
+    for (auto &p : points) {
+      const float x = p.pt(0, 0);
+      const float y = p.pt(1, 0);
+      const float z = p.pt(2, 0);
+      const float intensity = p.radial_velocity;
+      const float t = p.timestamp;
+      fout.write((char*)&x, fsize);
+      fout.write((char*)&y, fsize);
+      fout.write((char*)&z, fsize);
+      fout.write((char*)&intensity, fsize);
+      fout.write((char*)&dummy, fsize);
+      fout.write((char*)&t, fsize);
+    }
+    fout.close();
+
     // publish pointcloud
     auto raw_points_msg = to_pc2_msg(points, "sensor");
     raw_points_publisher->publish(raw_points_msg);
@@ -424,10 +470,20 @@ int main(int argc, char **argv) {
       LOG(WARNING) << "Shutting down due to ctrl-c." << std::endl;
       return 0;
     }
-    LOG(INFO) << "T_ri:" << std::endl << T_ri << std::endl;
-    LOG(INFO) << "w:" << std::endl << w.transpose() << std::endl;
+    LOG(INFO) << "T_ri:" << T_ri << std::endl;
+    LOG(INFO) << "w:" << w.transpose() << std::endl;
 
-    Eigen::Matrix4d T_ir = T_ri.inverse();
+    const Eigen::Matrix4d T_ir = T_ri.inverse();
+    const Eigen::Matrix4d T_si = options.T_sr * T_ri;
+    const Eigen::Matrix4d T_is = T_si.inverse();
+    const Eigen::Vector3d v_ri_in_i = T_ir.block<3, 3>(0, 0) * -1 * w.block<3, 1>(0, 0);
+    const Eigen::Vector3d w_si_in_s = options.T_sr.block<3, 3>(0, 0) * -1 * w.block<3, 1>(3, 0);
+    const Eigen::Vector3d ypr = rot_to_yaw_pitch_roll(T_is.block<3, 3>(0, 0));
+    // write pose to groundtruth file:
+    lidar_pose_out << t_mid_us << "," << T_is(0, 3) << "," << T_is(1, 3) << "," 
+      << T_is(2, 3) << "," << v_ri_in_i(0, 0) << "," << v_ri_in_i(1, 0) << "," << v_ri_in_i(2, 0)
+      << "," << ypr(2, 0) << "," << ypr(1, 0) << "," << ypr(0, 0) << "," << w_si_in_s(2, 0) << "," << w_si_in_s(1, 0) << "," << w_si_in_s(0, 0) << std::endl;
+
     nav_msgs::msg::Odometry odometry;
     odometry.header.frame_id = "map";
     odometry.pose.pose = tf2::toMsg(Eigen::Affine3d(T_ir));
@@ -440,17 +496,88 @@ int main(int argc, char **argv) {
     sleep(options.sleep_delay);
   }
 
+  lidar_pose_out.close();
+
+  std::ofstream imu_raw_out(output_path / "applanix" / "imu_raw.csv", std::ios::out);
+  std::ofstream imu_out(output_path / "applanix" / "imu.csv", std::ios::out);
+  std::ofstream accel_raw_out(output_path / "applanix" / "accel_raw_minus_gravity.csv", std::ios::out);
+  std::ofstream gps_out(output_path / "applanix" / "gps_post_process.csv", std::ios::out);
+  imu_raw_out << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+  accel_raw_out << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+  // note: IMU raw needs to be in the body frame.
+  imu_raw_out << "GPSTime,angvel_z,angvel_y,angvel_x,accelz,accely,accelx" << std::endl;
+  accel_raw_out << "GPSTime,accelx,accely,accelz" << std::endl;
+  gps_out << "GPSTime,easting,northing,altitude,vel_east,vel_north,vel_up,roll,pitch,heading,angvel_z,angvel_y,angvel_x,accelz,accely,accelx,latitude,longitude" << std::endl;
+
+  Eigen::Matrix3d imu_body_raw_to_applanix, yfwd2xfwd, xfwd2yfwd;
+  imu_body_raw_to_applanix << 0, -1, 0, -1, 0, 0, 0, 0, -1;
+  yfwd2xfwd << 0, 1, 0, -1, 0, 0, 0, 0, 1;
+  xfwd2yfwd = yfwd2xfwd.inverse();
+  Eigen::Matrix4d T_robot_applanix = Eigen::Matrix4d::Identity();
+  T_robot_applanix.block<3, 3>(0, 0) = yfwd2xfwd;
+  const Eigen::Matrix3d C_robot_body = yfwd2xfwd * imu_body_raw_to_applanix;
+  const Eigen::Matrix3d C_body_robot = C_robot_body.inverse();
+
+  // TODO: step through simulation for IMU measurements
+  // TODO: rotate gravity vector into the sensor frame.
+  const uint64_t delta_imu_ns = 1000000000 / options.imu_rate;
+  const double delta_imu_s = delta_imu_ns * 1.0e-9;
+  Eigen::Vector3d xi_ig;
+  xi_ig << -0.0197052, 0.0285345, 0.;
+  const Eigen::Matrix3d C_ig = lgmath::so3::Rotation(xi_ig).matrix();
+  T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(options.x0.block<6, 1>(0, 0))).matrix();
+  w = options.x0.block<6, 1>(6, 0);
+  dw = options.x0.block<6, 1>(12, 0);
+
+  T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * options.offset_imu + 0.5 * pow(options.offset_imu, 2) * dw)).matrix() * T_ri;
+  w += options.offset_imu * dw;
+
+  const uint64_t t0_ns = t0_us * 1000;
+  Eigen::Vector3d g;
+  g << 0, 0, -9.8042;
+  tns = options.offset_imu * 1.0e9;
+  while (tns < sim_length_ns) {
+    // simulate fake IMU measurements
+    const double ts = (tns + t0_ns) * 1.0e-9;
+    // accel raw without gravity (in robot frame)
+    Eigen::Vector3d accel_body = dw.block<3, 1>(0, 0) * -1;
+    accel_raw_out << ts << "," << accel_body(0, 0) << "," << accel_body(1, 0) << "," << accel_body(2, 0) << std::endl;
+    // accel raw with gravity (in body frame)
+    accel_body = C_body_robot * (dw.block<3, 1>(0, 0) * -1 - T_ri.block<3, 3>(0, 0) * C_ig * g);
+    Eigen::Vector3d gyro_body = C_body_robot * w.block<3, 1>(3, 0) * -1;
+    imu_raw_out << ts << "," << gyro_body(2, 0) << "," << gyro_body(1, 0) << "," << gyro_body(0, 0) << "," << accel_body(2, 0) << "," << accel_body(1, 0) << "," << accel_body(0, 0) << std::endl;
+
+    const Eigen::Vector3d accel_app = xfwd2yfwd * dw.block<3, 1>(0, 0) * -1;
+    const Eigen::Vector3d gyro_app = xfwd2yfwd * w.block<3, 1>(3, 0) * -1;
+
+    imu_out << ts << "," << gyro_app(2, 0) << "," << gyro_app(1, 0) << "," << gyro_app(0, 0) << "," << accel_app(2, 0) << "," << accel_app(1, 0) << "," << accel_app(0, 0) << std::endl;
+
+    const Eigen::Matrix4d T_ir = T_ri.inverse();
+    const Eigen::Vector3d v_ri_in_i = T_ir.block<3, 3>(0, 0) * -1 * w.block<3, 1>(0, 0);
+    const Eigen::Matrix4d T_ia = T_ir * T_robot_applanix;
+    const Eigen::Vector3d ypr = rot_to_yaw_pitch_roll(T_ia.block<3, 3>(0, 0));
+    // write pose to groundtruth file:
+    gps_out << ts << "," << T_ia(0, 3) << "," << T_ia(1, 3) << "," 
+      << T_ia(2, 3) << "," << v_ri_in_i(0, 0) << "," << v_ri_in_i(1, 0) << "," << v_ri_in_i(2, 0)
+      << "," << ypr(2, 0) << "," << ypr(1, 0) << "," << ypr(0, 0) << "," << gyro_app(2, 0) << "," << gyro_app(1, 0) << "," << gyro_app(0, 0)
+      << "," << accel_app(2, 0) << "," << accel_app(1, 0) << "," << accel_app(0, 0) << std::endl;
+
+    tns += delta_imu_ns;
+    T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * delta_imu_s + 0.5 * pow(delta_imu_s, 2) * dw)).matrix() * T_ri;
+    w += delta_imu_s * dw;
+  }
   
+  accel_raw_out.close();
+  imu_raw_out.close();
+  gps_out.close();
+  imu_out.close();
+
   // [x]: parameters for singer prior 
   // [x]: load VLS128 config parameters
   // [x]: load extrinsics from yaml files
-  // [ ]: step through simulation, generating pointclouds and IMU measurements
-  // [ ]: save pointclouds as .bin files and imu measurements in same formatted csv file
+  // [x]: step through simulation, generating pointclouds and IMU measurements
+  // [x]: save pointclouds as .bin files and imu measurements in same formatted csv file
   // [ ]: add options for adding Gaussian noise to the lidar and IMU measurements
-
-  // todo: x0
-
-  // Simulation Parameters (move to config file)
 
   return 0;
 }

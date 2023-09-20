@@ -15,7 +15,7 @@
     dataset_options:
       all_sequences: false
       root_path: /workspace/data1
-      sequence: "boreas-2021-09-02-11-42"
+      sequence: "simulation" #"boreas-2021-09-02-11-42"
       init_frame: 0 # 5675 (highway 7 front image)
       last_frame: 100000 # 5680 (highway 7 front image)
       min_dist_sensor_center: 5.0
