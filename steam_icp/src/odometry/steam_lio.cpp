@@ -747,8 +747,8 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
       // const auto cost = WeightedLeastSqCostTerm<6>::MakeShared(error_func, imu_noise_model, imu_loss_func);
       // imu_cost_terms.emplace_back(cost);
 
-      // const auto acc_cost = WeightedLeastSqCostTerm<3>::MakeShared(acc_error_func, acc_noise_model, acc_loss_func);
-      // imu_cost_terms.emplace_back(acc_cost);
+      const auto acc_cost = WeightedLeastSqCostTerm<3>::MakeShared(acc_error_func, acc_noise_model, acc_loss_func);
+      imu_cost_terms.emplace_back(acc_cost);
       const auto gyro_cost = WeightedLeastSqCostTerm<3>::MakeShared(gyro_error_func, gyro_noise_model, gyro_loss_func);
       imu_cost_terms.emplace_back(gyro_cost);
     }

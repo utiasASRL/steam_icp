@@ -125,6 +125,7 @@ struct SimulationOptions {
   Eigen::Matrix<double, 6, 1> qc_diag = Eigen::Matrix<double, 6, 1>::Ones();
   Eigen::Matrix<double, 6, 1> ad_diag = Eigen::Matrix<double, 6, 1>::Ones();
   Eigen::Matrix<double, 18, 1> x0 = Eigen::Matrix<double, 18, 1>::Zero();
+  double accel_ramp_time = 0.3;
   std::vector<double> walls = {-100.0, 100.0, -100.0, 100.0, 0.0, 4.0};
   std::vector<double> intensities = {0.15, 0.30, 0.45, 0.60, 0.75, 0.90};
   double sleep_delay = 1.0;
@@ -161,6 +162,7 @@ SimulationOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
   ROS2_PARAM_CLAUSE(node, options, prefix, p0_bias, double);
   ROS2_PARAM_CLAUSE(node, options, prefix, q_bias, double);
   ROS2_PARAM_CLAUSE(node, options, prefix, sleep_delay, double);
+  ROS2_PARAM_CLAUSE(node, options, prefix, accel_ramp_time, double);
 
   std::vector<double> r_accel;
   ROS2_PARAM_NO_LOG(node, r_accel, prefix, r_accel, std::vector<double>);
@@ -345,13 +347,15 @@ int main(int argc, char **argv) {
   const uint64_t delta_ns = VLS128_FIRING_SEQUENCE_PER_REV * VLS128_SEQ_TDURATION_NS;
   const double delta_s = delta_ns * 1.0e-9;
   Eigen::Matrix<double, 6, 1> w = options.x0.block<6, 1>(6, 0);
-  Eigen::Matrix<double, 6, 1> dw = options.x0.block<6, 1>(12, 0);
+  Eigen::Matrix<double, 6, 1> dw = Eigen::Matrix<double, 6, 1>::Zero();
   const double wall_delta = 1.0e-6;
   const uint64_t t0_us = 1695166988000000;  // just pick a random epoch time to conform to the expected format
   fs::path output_path{options.output_dir};
   std::ofstream lidar_pose_out(output_path / "applanix" / "lidar_poses.csv", std::ios::out);
+  lidar_pose_out << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
   lidar_pose_out << "GPSTime,easting,northing,altitude,vel_east,vel_north,vel_up,roll,pitch,heading,angvel_z,angvel_y,angvel_x" << std::endl;
   LOG(INFO) << "starting simulation..." << std::endl;
+  int pc_index = 0;
   while (tns < sim_length_ns) {
     std::vector<Point3D> points;
     points.reserve(VLS128_FIRING_SEQUENCE_PER_REV * 128);
@@ -463,9 +467,23 @@ int main(int argc, char **argv) {
     // publish pointcloud
     auto raw_points_msg = to_pc2_msg(points, "sensor");
     raw_points_publisher->publish(raw_points_msg);
-    tns += delta_ns;
-    T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * delta_s + 0.5 * pow(delta_s, 2) * dw)).matrix() * T_ri;
-    w += delta_s * dw;
+    tns += (delta_ns / 2);
+    T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * (delta_s / 2) + 0.5 * pow((delta_s / 2), 2) * dw)).matrix() * T_ri;
+    w += (delta_s / 2) * dw;
+    // ramp up the acceleration using constant jerk at the beginning
+    if (pc_index > 2) {
+      const auto dw_desired = options.x0.block<6, 1>(12, 0);
+      for (int dim = 0; dim < 6; ++dim) {
+        if (fabs(dw(dim, 0)) < fabs(dw_desired(dim, 0))) {
+          dw(dim, 0) += dw_desired(dim, 0) * ((delta_s / 2) / options.accel_ramp_time);
+          if (dw_desired(dim, 0) <= 0) {
+            dw(dim, 0) = std::max(dw(dim, 0), dw_desired(dim, 0));
+          } else {
+            dw(dim, 0) = std::min(dw(dim, 0), dw_desired(dim, 0));
+          }
+        }
+      }
+    }
     if (!rclcpp::ok()) {
       LOG(WARNING) << "Shutting down due to ctrl-c." << std::endl;
       return 0;
@@ -493,7 +511,27 @@ int main(int argc, char **argv) {
     T_wr_msg.child_frame_id = "vehicle";
     tf_bc->sendTransform(T_wr_msg);
 
+
+    tns += (delta_ns / 2);
+    T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * (delta_s / 2) + 0.5 * pow((delta_s / 2), 2) * dw)).matrix() * T_ri;
+    w += (delta_s / 2) * dw;
+    // ramp up the acceleration using constant jerk at the beginning
+    if (pc_index > 2) {
+      const auto dw_desired = options.x0.block<6, 1>(12, 0);
+      for (int dim = 0; dim < 6; ++dim) {
+        if (fabs(dw(dim, 0)) < fabs(dw_desired(dim, 0))) {
+          dw(dim, 0) += dw_desired(dim, 0) * ((delta_s / 2) / options.accel_ramp_time);
+          if (dw_desired(dim, 0) <= 0) {
+            dw(dim, 0) = std::max(dw(dim, 0), dw_desired(dim, 0));
+          } else {
+            dw(dim, 0) = std::min(dw(dim, 0), dw_desired(dim, 0));
+          }
+        }
+      }
+    }
+
     sleep(options.sleep_delay);
+    pc_index++;
   }
 
   lidar_pose_out.close();
@@ -503,7 +541,9 @@ int main(int argc, char **argv) {
   std::ofstream accel_raw_out(output_path / "applanix" / "accel_raw_minus_gravity.csv", std::ios::out);
   std::ofstream gps_out(output_path / "applanix" / "gps_post_process.csv", std::ios::out);
   imu_raw_out << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+  imu_out << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
   accel_raw_out << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+  gps_out << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
   // note: IMU raw needs to be in the body frame.
   imu_raw_out << "GPSTime,angvel_z,angvel_y,angvel_x,accelz,accely,accelx" << std::endl;
   accel_raw_out << "GPSTime,accelx,accely,accelz" << std::endl;
@@ -525,9 +565,10 @@ int main(int argc, char **argv) {
   Eigen::Vector3d xi_ig;
   xi_ig << -0.0197052, 0.0285345, 0.;
   const Eigen::Matrix3d C_ig = lgmath::so3::Rotation(xi_ig).matrix();
+  LOG(INFO) << "C_ig: " << C_ig << std::endl;
   T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(options.x0.block<6, 1>(0, 0))).matrix();
   w = options.x0.block<6, 1>(6, 0);
-  dw = options.x0.block<6, 1>(12, 0);
+  dw = Eigen::Matrix<double, 6, 1>::Zero();
 
   T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * options.offset_imu + 0.5 * pow(options.offset_imu, 2) * dw)).matrix() * T_ri;
   w += options.offset_imu * dw;
@@ -562,9 +603,25 @@ int main(int argc, char **argv) {
       << "," << ypr(2, 0) << "," << ypr(1, 0) << "," << ypr(0, 0) << "," << gyro_app(2, 0) << "," << gyro_app(1, 0) << "," << gyro_app(0, 0)
       << "," << accel_app(2, 0) << "," << accel_app(1, 0) << "," << accel_app(0, 0) << std::endl;
 
-    tns += delta_imu_ns;
+    
     T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * delta_imu_s + 0.5 * pow(delta_imu_s, 2) * dw)).matrix() * T_ri;
     w += delta_imu_s * dw;
+
+    if (tns >= 3 * delta_ns) {
+      const auto dw_desired = options.x0.block<6, 1>(12, 0);
+      for (int dim = 0; dim < 6; ++dim) {
+        if (fabs(dw(dim, 0)) < fabs(dw_desired(dim, 0))) {
+          dw(dim, 0) += dw_desired(dim, 0) * (delta_imu_s / options.accel_ramp_time);
+          if (dw_desired(dim, 0) <= 0) {
+            dw(dim, 0) = std::max(dw(dim, 0), dw_desired(dim, 0));
+          } else {
+            dw(dim, 0) = std::min(dw(dim, 0), dw_desired(dim, 0));
+          }
+        }
+      }
+    }
+    tns += delta_imu_ns;
+
   }
   
   accel_raw_out.close();
