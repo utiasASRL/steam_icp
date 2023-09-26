@@ -22,7 +22,9 @@ namespace fs = std::filesystem;
 
 #include "steam_icp/point.hpp"
 
-#include<unistd.h>
+#include <unistd.h>
+#include <unsupported/Eigen/MatrixFunctions>
+#include <random>
 
 const uint64_t VLS128_CHANNEL_TDURATION_NS = 2665;
 const uint64_t VLS128_SEQ_TDURATION_NS = 53300;
@@ -113,8 +115,6 @@ struct SimulationOptions {
   double sim_length = 5.0;
   // approximate from spec sheet of velodyne
   double lidar_range_std = 0.02;
-  // approximated from actual applanix data
-  // note: these are covariances
   Eigen::Matrix<double, 3, 1> r_accel = Eigen::Matrix<double, 3, 1>::Ones();
   Eigen::Matrix<double, 3, 1> r_gyro = Eigen::Matrix<double, 3, 1>::Ones();
   double gravity = -9.8042;
@@ -129,6 +129,9 @@ struct SimulationOptions {
   std::vector<double> walls = {-100.0, 100.0, -100.0, 100.0, 0.0, 4.0};
   std::vector<double> intensities = {0.15, 0.30, 0.45, 0.60, 0.75, 0.90};
   double sleep_delay = 1.0;
+  std::vector<double> v_freqs;
+  std::vector<double> v_amps;
+  double ax = 2.0;
 };
 
 #define ROS2_PARAM_NO_LOG(node, receiver, prefix, param, type) \
@@ -163,6 +166,7 @@ SimulationOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
   ROS2_PARAM_CLAUSE(node, options, prefix, q_bias, double);
   ROS2_PARAM_CLAUSE(node, options, prefix, sleep_delay, double);
   ROS2_PARAM_CLAUSE(node, options, prefix, accel_ramp_time, double);
+  ROS2_PARAM_CLAUSE(node, options, prefix, ax, double);
 
   std::vector<double> r_accel;
   ROS2_PARAM_NO_LOG(node, r_accel, prefix, r_accel, std::vector<double>);
@@ -222,6 +226,23 @@ SimulationOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
     options.walls = {walls[0], walls[1], walls[2], walls[3], walls[4], walls[5]};
   LOG(WARNING) << "Parameter " << prefix + "walls"
                << " = " << walls[0] << walls[1] << walls[2] << walls[3] << walls[4] << walls[5] << std::endl;
+
+  std::vector<double> v_freqs;
+  ROS2_PARAM_NO_LOG(node, v_freqs, prefix, v_freqs, std::vector<double>);
+  if ((v_freqs.size() != 6) && (v_freqs.size() != 0)) throw std::invalid_argument{"v_freqs malformed. Must be 6 elements!"};
+  if (v_freqs.size() == 6)
+    options.v_freqs = {v_freqs[0], v_freqs[1], v_freqs[2], v_freqs[3], v_freqs[4], v_freqs[5]};
+  LOG(WARNING) << "Parameter " << prefix + "v_freqs"
+               << " = " << v_freqs[0] << v_freqs[1] << v_freqs[2] << v_freqs[3] << v_freqs[4] << v_freqs[5] << std::endl;
+
+  std::vector<double> v_amps;
+  ROS2_PARAM_NO_LOG(node, v_amps, prefix, v_amps, std::vector<double>);
+  if ((v_amps.size() != 6) && (v_amps.size() != 0)) throw std::invalid_argument{"v_amps malformed. Must be 6 elements!"};
+  if (v_amps.size() == 6)
+    options.v_amps = {v_amps[0], v_amps[1], v_amps[2], v_amps[3], v_amps[4], v_amps[5]};
+  LOG(WARNING) << "Parameter " << prefix + "v_amps"
+               << " = " << v_amps[0] << v_amps[1] << v_amps[2] << v_amps[3] << v_amps[4] << v_amps[5] << std::endl;
+
   return options;
 }
 
@@ -324,12 +345,17 @@ int main(int argc, char **argv) {
 
   // Read parameters
   auto options = loadOptions(node);
+  std::mt19937 rg;
+  std::normal_distribution n_lidar{0.0, options.lidar_range_std};
+  std::normal_distribution n_accel{0.0, options.r_accel(0, 0)};
+  std::normal_distribution n_gyro{0.0, options.r_gyro(0, 0)};
+
 
   // Publish sensor vehicle transformations
-    auto T_rs_msg = tf2::eigenToTransform(Eigen::Affine3d(options.T_sr.inverse()));
-    T_rs_msg.header.frame_id = "vehicle";
-    T_rs_msg.child_frame_id = "sensor";
-    tf_static_bc->sendTransform(T_rs_msg);
+  auto T_rs_msg = tf2::eigenToTransform(Eigen::Affine3d(options.T_sr.inverse()));
+  T_rs_msg.header.frame_id = "vehicle";
+  T_rs_msg.child_frame_id = "sensor";
+  tf_static_bc->sendTransform(T_rs_msg);
 
   // Build the Output_dir
   LOG(WARNING) << "Creating directory " << options.output_dir << std::endl;
@@ -341,13 +367,19 @@ int main(int argc, char **argv) {
 
   const uint64_t sim_length_ns = options.sim_length * 1.0e9;
 
-  // TODO: pick a linear and angular jerk, and then step through simulation
+  // TODO: create a sine wave on each axis in body frame
+  const auto &v_freqs = options.v_freqs;
+  const auto &v_amps = options.v_amps;
+  const double &ax = options.ax;
+
+  // Pick a linear and angular jerk, and then step through simulation
   uint64_t tns = 0;
   Eigen::Matrix4d T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(options.x0.block<6, 1>(0, 0))).matrix();
   const uint64_t delta_ns = VLS128_FIRING_SEQUENCE_PER_REV * VLS128_SEQ_TDURATION_NS;
   const double delta_s = delta_ns * 1.0e-9;
-  Eigen::Matrix<double, 6, 1> w = options.x0.block<6, 1>(6, 0);
+  Eigen::Matrix<double, 6, 1> w = Eigen::Matrix<double, 6, 1>::Zero();
   Eigen::Matrix<double, 6, 1> dw = Eigen::Matrix<double, 6, 1>::Zero();
+  
   const double wall_delta = 1.0e-6;
   const uint64_t t0_us = 1695166988000000;  // just pick a random epoch time to conform to the expected format
   fs::path output_path{options.output_dir};
@@ -361,9 +393,18 @@ int main(int argc, char **argv) {
     points.reserve(VLS128_FIRING_SEQUENCE_PER_REV * 128);
     LOG(INFO) << "simulation time: " << tns * 1.0e-9 << std::endl;
     const double t_mid_s = (tns + delta_ns / 2) * 1.0e-9;
-#pragma omp declare reduction(merge_points : std::vector<Point3D> : omp_out.insert( \
-        omp_out.end(), omp_in.begin(), omp_in.end()))
-#pragma omp parallel for num_threads(options.num_threads) reduction(merge_points : points)
+    const double t_end_s = (tns + delta_ns) * 1.0e-9;
+// #pragma omp declare reduction(merge_points : std::vector<Point3D> : omp_out.insert( \
+//         omp_out.end(), omp_in.begin(), omp_in.end()))
+// #pragma omp parallel for num_threads(options.num_threads) reduction(merge_points : points)
+    Eigen::Matrix4d T_ri_local = T_ri;
+    uint64_t sensor_tns_prev = tns;
+    double min_diff_t_mid_s = std::numeric_limits<double>::max();
+    uint64_t t_mid_min_ns = 0;
+    Eigen::Matrix4d T_ri_mid_min = T_ri;
+    double min_diff_t_end_s = std::numeric_limits<double>::max();
+    uint64_t t_end_min_ns = 0;
+    Eigen::Matrix4d T_ri_end_min = T_ri;
     for (uint64_t seq_index = 0; seq_index < VLS128_FIRING_SEQUENCE_PER_REV; seq_index++) {
       for (int group = 0; group < 16; group++) {
         uint64_t sensor_tns = tns + seq_index * VLS128_SEQ_TDURATION_NS + group * VLS128_CHANNEL_TDURATION_NS;
@@ -373,8 +414,41 @@ int main(int argc, char **argv) {
           sensor_azimuth += INTER_AZM_STEP;
         }
         double sensor_s = sensor_tns * 1.0e-9;
-        const double dtg = (sensor_tns - tns) * 1.0e-9;
-        const Eigen::Matrix4d T_ri_local = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * dtg + 0.5 * pow(dtg, 2) * dw)).matrix() * T_ri;
+
+        if (sensor_tns > 2 * delta_ns) {
+          for (int j = 0; j < 6; ++j) {
+            if (j == 0) {
+              w(j, 0) = -ax * (sensor_s - 2 * delta_s);
+              dw(j, 0) = -ax;
+            } else {
+              w(j, 0) = -v_amps[j] * std::sin(v_freqs[j] * (sensor_s - 2 * delta_s) * (2 * M_PI));
+              dw(j, 0) = (-v_amps[j] * v_freqs[j] * (2 * M_PI) ) * std::cos(v_freqs[j] * (sensor_s - 2 * delta_s) * (2 * M_PI));
+            }
+          }
+        }
+        const double dtg = (sensor_tns - sensor_tns_prev) * 1.0e-9;
+        T_ri_local = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * dtg + 0.5 * dtg * dtg * dw)).matrix() * T_ri_local;
+        // check orthogonality of C_ri:
+        Eigen::Matrix3d C_ri = T_ri_local.block<3, 3>(0, 0);
+        const double orthog_error = fabs((C_ri * C_ri.transpose()).squaredNorm() - 3.0);
+        if (orthog_error > 1e-6) {
+          // Reproject onto SO(3) if we stray too far
+          LOG(INFO) << "reprojecting, error: " << orthog_error << std::endl;
+          T_ri_local.block<3, 3>(0, 0) = Eigen::Matrix3d(Eigen::Matrix3d((C_ri * C_ri.transpose()).inverse().sqrt()) * C_ri);
+        }
+
+        if (fabs(sensor_s - t_mid_s) < min_diff_t_mid_s) {
+          min_diff_t_mid_s = fabs(sensor_s - t_mid_s);
+          t_mid_min_ns = sensor_tns;
+          T_ri_mid_min = T_ri_local;
+        }
+
+        if (fabs(sensor_s - t_end_s) < min_diff_t_end_s) {
+          min_diff_t_end_s = fabs(sensor_s - t_end_s);
+          t_end_min_ns = sensor_tns;
+          T_ri_end_min = T_ri_local;
+        }
+
         const Eigen::Matrix4d T_si_local = options.T_sr * T_ri_local;
         const Eigen::Matrix4d T_is_local = T_si_local.inverse();
         const Eigen::Matrix3d C_is_local = T_is_local.block<3, 3>(0, 0);
@@ -433,12 +507,16 @@ int main(int argc, char **argv) {
             Point3D p;
             p.raw_pt << xmin, ymin, zmin;
             p.pt << xmin, ymin, zmin;
+            if (options.noisy_measurements) {
+              p.raw_pt += n_s * n_lidar(rg);
+            }
             p.radial_velocity = imin;
             p.alpha_timestamp = 0.0;
             p.timestamp = sensor_s - t_mid_s;
             points.emplace_back(p);
           }
         }
+        sensor_tns_prev = sensor_tns;
       }
     }
     points.shrink_to_fit();
@@ -467,23 +545,27 @@ int main(int argc, char **argv) {
     // publish pointcloud
     auto raw_points_msg = to_pc2_msg(points, "sensor");
     raw_points_publisher->publish(raw_points_msg);
-    tns += (delta_ns / 2);
-    T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * (delta_s / 2) + 0.5 * pow((delta_s / 2), 2) * dw)).matrix() * T_ri;
-    w += (delta_s / 2) * dw;
-    // ramp up the acceleration using constant jerk at the beginning
-    if (pc_index > 2) {
-      const auto dw_desired = options.x0.block<6, 1>(12, 0);
-      for (int dim = 0; dim < 6; ++dim) {
-        if (fabs(dw(dim, 0)) < fabs(dw_desired(dim, 0))) {
-          dw(dim, 0) += dw_desired(dim, 0) * ((delta_s / 2) / options.accel_ramp_time);
-          if (dw_desired(dim, 0) <= 0) {
-            dw(dim, 0) = std::max(dw(dim, 0), dw_desired(dim, 0));
+
+    if (min_diff_t_mid_s != 0) {
+      const int64_t dtns = tns + (delta_ns / 2) - t_mid_min_ns;
+      if (t_mid_min_ns > 2 * delta_ns) {
+        for (int j = 0; j < 6; ++j) {
+          if (j == 0) {
+            w(j, 0) = -ax * (t_mid_min_ns * 1.0e-9 - 2 * delta_s);
+            dw(j, 0) = -ax;
           } else {
-            dw(dim, 0) = std::min(dw(dim, 0), dw_desired(dim, 0));
+            w(j, 0) = -v_amps[j] * std::sin(v_freqs[j] * (t_mid_min_ns * 1.0e-9 - 2 * delta_s) * (2 * M_PI));
+            dw(j, 0) = (-v_amps[j] * v_freqs[j] * (2 * M_PI) ) * std::cos(v_freqs[j] * (t_mid_min_ns * 1.0e-9 - 2 * delta_s) * (2 * M_PI));
           }
         }
       }
+      double dtg = dtns * 1.0e-9;
+      T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * dtg + 0.5 * dtg * dtg * dw)).matrix() * T_ri_mid_min;
+    } else {
+      T_ri = T_ri_mid_min;
     }
+    tns += (delta_ns / 2);
+
     if (!rclcpp::ok()) {
       LOG(WARNING) << "Shutting down due to ctrl-c." << std::endl;
       return 0;
@@ -494,6 +576,17 @@ int main(int argc, char **argv) {
     const Eigen::Matrix4d T_ir = T_ri.inverse();
     const Eigen::Matrix4d T_si = options.T_sr * T_ri;
     const Eigen::Matrix4d T_is = T_si.inverse();
+    if (t_mid_s > 2 * delta_s) {
+      for (int j = 0; j < 6; ++j) {
+        if (j == 0) {
+          w(j, 0) = -ax * (t_mid_s - 2 * delta_s);
+          dw(j, 0) = -ax;
+        } else {
+          w(j, 0) = -v_amps[j] * std::sin(v_freqs[j] * (t_mid_s - 2 * delta_s) * (2 * M_PI));
+          dw(j, 0) = (-v_amps[j] * v_freqs[j] * (2 * M_PI) ) * std::cos(v_freqs[j] * (t_mid_s - 2 * delta_s) * (2 * M_PI));
+        }
+      }
+    }
     const Eigen::Vector3d v_ri_in_i = T_ir.block<3, 3>(0, 0) * -1 * w.block<3, 1>(0, 0);
     const Eigen::Vector3d w_si_in_s = options.T_sr.block<3, 3>(0, 0) * -1 * w.block<3, 1>(3, 0);
     const Eigen::Vector3d ypr = rot_to_yaw_pitch_roll(T_is.block<3, 3>(0, 0));
@@ -511,24 +604,43 @@ int main(int argc, char **argv) {
     T_wr_msg.child_frame_id = "vehicle";
     tf_bc->sendTransform(T_wr_msg);
 
-
-    tns += (delta_ns / 2);
-    T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * (delta_s / 2) + 0.5 * pow((delta_s / 2), 2) * dw)).matrix() * T_ri;
-    w += (delta_s / 2) * dw;
-    // ramp up the acceleration using constant jerk at the beginning
-    if (pc_index > 2) {
-      const auto dw_desired = options.x0.block<6, 1>(12, 0);
-      for (int dim = 0; dim < 6; ++dim) {
-        if (fabs(dw(dim, 0)) < fabs(dw_desired(dim, 0))) {
-          dw(dim, 0) += dw_desired(dim, 0) * ((delta_s / 2) / options.accel_ramp_time);
-          if (dw_desired(dim, 0) <= 0) {
-            dw(dim, 0) = std::max(dw(dim, 0), dw_desired(dim, 0));
+    if (min_diff_t_end_s != 0) {
+      const int64_t dtns = tns + (delta_ns / 2) - t_end_min_ns;
+      if (t_end_min_ns > 2 * delta_ns) {
+        for (int j = 0; j < 6; ++j) {
+          if (j == 0) {
+            w(j, 0) = -ax * (t_end_min_ns * 1.0e-9 - 2 * delta_s);
+            dw(j, 0) = -ax;
           } else {
-            dw(dim, 0) = std::min(dw(dim, 0), dw_desired(dim, 0));
+            w(j, 0) = -v_amps[j] * std::sin(v_freqs[j] * (t_end_min_ns * 1.0e-9 - 2 * delta_s) * (2 * M_PI));
+            dw(j, 0) = (-v_amps[j] * v_freqs[j] * (2 * M_PI) ) * std::cos(v_freqs[j] * (t_end_min_ns * 1.0e-9 - 2 * delta_s) * (2 * M_PI));
           }
         }
       }
+      double dtg = dtns * 1.0e-9;
+      T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * dtg + 0.5 * dtg * dtg * dw)).matrix() * T_ri_end_min;
+    } else {
+      T_ri = T_ri_end_min;
     }
+    tns += (delta_ns / 2);
+    // T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * (delta_s / 2) + 0.5 * pow((delta_s / 2), 2) * dw)).matrix() * T_ri;
+    // T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * dt2 + 0.5 * dw * dt2_2 + (1 / 12) * lgmath::se3::curly_hat(dw) * w * dt2_3 + (1 / 240) * lgmath::se3::curly_hat(dw) * lgmath::se3::curly_hat(dw) * w * dt2_5)).matrix() * T_ri;
+
+    // w += (delta_s / 2) * dw;
+    // ramp up the acceleration using constant jerk at the beginning
+    // if (pc_index > 2) {
+    //   const auto dw_desired = options.x0.block<6, 1>(12, 0);
+    //   for (int dim = 0; dim < 6; ++dim) {
+    //     if (fabs(dw(dim, 0)) < fabs(dw_desired(dim, 0))) {
+    //       dw(dim, 0) += dw_desired(dim, 0) * ((delta_s / 2) / options.accel_ramp_time);
+    //       if (dw_desired(dim, 0) <= 0) {
+    //         dw(dim, 0) = std::max(dw(dim, 0), dw_desired(dim, 0));
+    //       } else {
+    //         dw(dim, 0) = std::min(dw(dim, 0), dw_desired(dim, 0));
+    //       }
+    //     }
+    //   }
+    // }
 
     sleep(options.sleep_delay);
     pc_index++;
@@ -567,25 +679,46 @@ int main(int argc, char **argv) {
   const Eigen::Matrix3d C_ig = lgmath::so3::Rotation(xi_ig).matrix();
   LOG(INFO) << "C_ig: " << C_ig << std::endl;
   T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(options.x0.block<6, 1>(0, 0))).matrix();
-  w = options.x0.block<6, 1>(6, 0);
+  tns = 0;
+  w = Eigen::Matrix<double, 6, 1>::Zero();
   dw = Eigen::Matrix<double, 6, 1>::Zero();
 
   T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * options.offset_imu + 0.5 * pow(options.offset_imu, 2) * dw)).matrix() * T_ri;
-  w += options.offset_imu * dw;
 
   const uint64_t t0_ns = t0_us * 1000;
   Eigen::Vector3d g;
   g << 0, 0, -9.8042;
   tns = options.offset_imu * 1.0e9;
   while (tns < sim_length_ns) {
+    if (tns > 2 * delta_ns) {
+      for (int j = 0; j < 6; ++j) {
+        if (j == 0) {
+          w(j, 0) = -ax * (tns * 1.0e-9 - 2 * delta_s);
+          dw(j, 0) = -ax;
+        } else {
+          w(j, 0) = -v_amps[j] * std::sin(v_freqs[j] * (tns * 1.0e-9 - 2 * delta_s) * (2 * M_PI));
+          dw(j, 0) = (-v_amps[j] * v_freqs[j] * (2 * M_PI) ) * std::cos(v_freqs[j] * (tns * 1.0e-9 - 2 * delta_s) * (2 * M_PI));
+        }
+      }
+    }
     // simulate fake IMU measurements
     const double ts = (tns + t0_ns) * 1.0e-9;
+
+    Eigen::Vector3d accel_raw = dw.block<3, 1>(0, 0) * -1;
+    Eigen::Vector3d gyro_raw = w.block<3, 1>(3, 0) * -1;
+    if (options.noisy_measurements) {
+      for (int j = 0; j < 3; ++j) {
+        accel_raw(j, 0) += n_accel(rg);
+        gyro_raw(j, 0) += n_gyro(rg);
+      }
+    }
+
     // accel raw without gravity (in robot frame)
-    Eigen::Vector3d accel_body = dw.block<3, 1>(0, 0) * -1;
+    Eigen::Vector3d accel_body = accel_raw;
     accel_raw_out << ts << "," << accel_body(0, 0) << "," << accel_body(1, 0) << "," << accel_body(2, 0) << std::endl;
     // accel raw with gravity (in body frame)
-    accel_body = C_body_robot * (dw.block<3, 1>(0, 0) * -1 - T_ri.block<3, 3>(0, 0) * C_ig * g);
-    Eigen::Vector3d gyro_body = C_body_robot * w.block<3, 1>(3, 0) * -1;
+    accel_body = C_body_robot * (accel_raw - T_ri.block<3, 3>(0, 0) * C_ig * g);
+    Eigen::Vector3d gyro_body = C_body_robot * gyro_raw;
     imu_raw_out << ts << "," << gyro_body(2, 0) << "," << gyro_body(1, 0) << "," << gyro_body(0, 0) << "," << accel_body(2, 0) << "," << accel_body(1, 0) << "," << accel_body(0, 0) << std::endl;
 
     const Eigen::Vector3d accel_app = xfwd2yfwd * dw.block<3, 1>(0, 0) * -1;
@@ -605,23 +738,31 @@ int main(int argc, char **argv) {
 
     
     T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * delta_imu_s + 0.5 * pow(delta_imu_s, 2) * dw)).matrix() * T_ri;
-    w += delta_imu_s * dw;
-
-    if (tns >= 3 * delta_ns) {
-      const auto dw_desired = options.x0.block<6, 1>(12, 0);
-      for (int dim = 0; dim < 6; ++dim) {
-        if (fabs(dw(dim, 0)) < fabs(dw_desired(dim, 0))) {
-          dw(dim, 0) += dw_desired(dim, 0) * (delta_imu_s / options.accel_ramp_time);
-          if (dw_desired(dim, 0) <= 0) {
-            dw(dim, 0) = std::max(dw(dim, 0), dw_desired(dim, 0));
-          } else {
-            dw(dim, 0) = std::min(dw(dim, 0), dw_desired(dim, 0));
-          }
-        }
-      }
+    // check orthogonality of C_ri:
+    Eigen::Matrix3d C_ri = T_ri.block<3, 3>(0, 0);
+    const double orthog_error = fabs((C_ri * C_ri.transpose()).squaredNorm() - 3.0);
+    if (orthog_error > 1e-6) {
+      // Reproject onto SO(3) if we stray too far
+      LOG(INFO) << "reprojecting, error: " << orthog_error << std::endl;
+      T_ri.block<3, 3>(0, 0) = Eigen::Matrix3d(Eigen::Matrix3d((C_ri * C_ri.transpose()).inverse().sqrt()) * C_ri);
     }
-    tns += delta_imu_ns;
 
+    // w += delta_imu_s * dw;
+
+    // if (tns >= 3 * delta_ns) {
+    //   const auto dw_desired = options.x0.block<6, 1>(12, 0);
+    //   for (int dim = 0; dim < 6; ++dim) {
+    //     if (fabs(dw(dim, 0)) < fabs(dw_desired(dim, 0))) {
+    //       dw(dim, 0) += dw_desired(dim, 0) * (delta_imu_s / options.accel_ramp_time);
+    //       if (dw_desired(dim, 0) <= 0) {
+    //         dw(dim, 0) = std::max(dw(dim, 0), dw_desired(dim, 0));
+    //       } else {
+    //         dw(dim, 0) = std::min(dw(dim, 0), dw_desired(dim, 0));
+    //       }
+    //     }
+    //   }
+    // }
+    tns += delta_imu_ns;
   }
   
   accel_raw_out.close();

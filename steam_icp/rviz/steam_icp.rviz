@@ -71,13 +71,12 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          {}
-        vehicle:
-          sensor:
-            {}
+          vehicle:
+            sensor:
+              {}
       Update Interval: 0
       Value: true
-    - Angle Tolerance: 0.20000000298023224
+    - Angle Tolerance: 0.009999999776482582
       Class: rviz_default_plugins/Odometry
       Covariance:
         Orientation:
@@ -97,7 +96,7 @@ Visualization Manager:
       Enabled: true
       Keep: 2000
       Name: Odometry
-      Position Tolerance: 1
+      Position Tolerance: 0.009999999776482582
       Shape:
         Alpha: 1
         Axes Length: 2
@@ -181,7 +180,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /steam_icp_sampled
-      Use Fixed Frame: true
+      Use Fixed Frame: false
       Use rainbow: true
       Value: true
     - Alpha: 0.5
@@ -345,7 +344,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 0.75
+      Max Intensity: 0.8999999761581421
       Min Color: 0; 0; 0
       Min Intensity: 0.15000000596046448
       Name: PointCloud2
@@ -367,7 +366,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
-    Fixed Frame: sensor
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -410,25 +409,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 382.5281982421875
+      Distance: 105.77207946777344
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: 3.960448741912842
+        Y: -3.4731216430664062
+        Z: -0.9771227240562439
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3603977859020233
+      Pitch: 0.7747958898544312
       Target Frame: vehicle
       Value: Orbit (rviz_default_plugins)
-      Yaw: 4.870401859283447
+      Yaw: 3.0217444896698
     Saved:
       - Class: rviz_default_plugins/Orbit
         Distance: 130.75164794921875
