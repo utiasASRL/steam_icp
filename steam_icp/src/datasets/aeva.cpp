@@ -116,15 +116,17 @@ AevaSequence::AevaSequence(const Options &options) : Sequence(options) {
   init_frame_ = std::max(0, options_.init_frame);
 }
 
-std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> AevaSequence::next() {
+DataFrame AevaSequence::next() {
   if (!hasNext()) throw std::runtime_error("No more frames in sequence");
   int curr_frame = curr_frame_++;
   auto filename = filenames_.at(curr_frame);
+  DataFrame frame;
   auto timestamp = timestamps_.at(curr_frame);
-  const auto pc = readPointCloud(dir_path_ + "/" + filename, timestamp, options_.min_dist_sensor_center,
-                                 options_.max_dist_sensor_center);
-  std::vector<IMUData> curr_imu_data_vec;
-  return std::make_tuple(timestamp, pc, curr_imu_data_vec);
+  frame.timestamp = timestamp;
+  frame.pointcloud = readPointCloud(dir_path_ + "/" + filename, timestamp, options_.min_dist_sensor_center,
+                                    options_.max_dist_sensor_center);
+
+  return frame;
 }
 
 void AevaSequence::save(const std::string &path, const Trajectory &trajectory) const {

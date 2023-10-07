@@ -274,7 +274,7 @@ BoreasAevaSequence::BoreasAevaSequence(const Options &options) : Sequence(option
   }
 }
 
-std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> BoreasAevaSequence::next() {
+DataFrame BoreasAevaSequence::next() {
   if (!hasNext()) throw std::runtime_error("No more frames in sequence");
   int curr_frame = curr_frame_++;
   auto filename = filenames_.at(curr_frame);
@@ -311,7 +311,12 @@ std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> BoreasAevaSequenc
   curr_imu_data_vec.shrink_to_fit();
   LOG(INFO) << "IMU data : " << curr_imu_data_vec.size() << std::endl;
 
-  return std::make_tuple(time_delta_sec, points, curr_imu_data_vec);
+  DataFrame frame;
+  frame.timestamp = time_delta_sec;
+  frame.pointcloud = points;
+  frame.imu_data_vec = curr_imu_data_vec;
+
+  return frame;
 }
 
 void BoreasAevaSequence::save(const std::string &path, const Trajectory &trajectory) const {

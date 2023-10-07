@@ -144,38 +144,40 @@ BoreasNavtechSequence::BoreasNavtechSequence(const Options &options) : Sequence(
   LOG(INFO) << "Loaded IMU Data: " << imu_data_vec_.size() << std::endl;
 }
 
-std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> BoreasNavtechSequence::next() {
+DataFrame BoreasNavtechSequence::next() {
   if (!hasNext()) throw std::runtime_error("No more frames in sequence");
   int curr_frame = curr_frame_++;
   auto filename = filenames_.at(curr_frame);
   int64_t current_timestamp_micro = std::stoll(filename.substr(0, filename.find(".")));
   const double radar_resolution = current_timestamp_micro > upgrade_time ? 0.04381 : 0.0596;
+  DataFrame frame;
   const double time_delta_sec = static_cast<double>(current_timestamp_micro - initial_timestamp_) * 1.0e-6;
-  const auto pc = readPointCloud(dir_path_ + "/" + filename, radar_resolution);
+  frame.timestamp = time_delta_sec;
+  frame.pointcloud = readPointCloud(dir_path_ + "/" + filename, radar_resolution);
   // get IMU data for this pointcloud:
   double tmin = std::numeric_limits<double>::max();
   double tmax = std::numeric_limits<double>::min();
-  for (auto &p : pc) {
+  for (auto &p : frame.pointcloud) {
     if (p.timestamp < tmin) tmin = p.timestamp;
     if (p.timestamp > tmax) tmax = p.timestamp;
   }
-  std::vector<IMUData> curr_imu_data_vec;
-  curr_imu_data_vec.reserve(50);
+
+  frame.imu_data_vec.reserve(50);
   for (; curr_imu_idx_ < imu_data_vec_.size(); curr_imu_idx_++) {
     if (imu_data_vec_[curr_imu_idx_].timestamp < tmin) {
       continue;
     } else if (imu_data_vec_[curr_imu_idx_].timestamp >= tmin && imu_data_vec_[curr_imu_idx_].timestamp < tmax) {
-      curr_imu_data_vec.emplace_back(imu_data_vec_[curr_imu_idx_]);
+      frame.imu_data_vec.emplace_back(imu_data_vec_[curr_imu_idx_]);
     } else {
       break;
     }
   }
-  curr_imu_data_vec.shrink_to_fit();
-  std::cout << "tmin " << tmin << " tmax " << tmax << " imu_t(0) " << curr_imu_data_vec.front().timestamp
-            << " imu_t(-1) " << curr_imu_data_vec.back().timestamp << std::endl;
-  LOG(INFO) << "IMU data : " << curr_imu_data_vec.size() << std::endl;
+  frame.imu_data_vec.shrink_to_fit();
+  std::cout << "tmin " << tmin << " tmax " << tmax << " imu_t(0) " << frame.imu_data_vec.front().timestamp
+            << " imu_t(-1) " << frame.imu_data_vec.back().timestamp << std::endl;
+  LOG(INFO) << "IMU data : " << frame.imu_data_vec.size() << std::endl;
 
-  return std::make_tuple(time_delta_sec, pc, curr_imu_data_vec);
+  return frame;
 }
 
 std::vector<Point3D> BoreasNavtechSequence::readPointCloud(const std::string &path, const double &radar_resolution) {

@@ -4,8 +4,10 @@
 #include <string>
 #include <vector>
 
+#include "steam_icp/dataframe.hpp"
 #include "steam_icp/imu.hpp"
 #include "steam_icp/point.hpp"
+#include "steam_icp/pose.hpp"
 #include "steam_icp/trajectory.hpp"
 
 namespace steam_icp {
@@ -45,7 +47,7 @@ class Sequence {
     throw std::runtime_error("set random initial frame not supported");
   };
   virtual bool hasNext() const = 0;
-  virtual std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> next() = 0;
+  virtual DataFrame next() = 0;
   virtual bool withRandomAccess() const { return false; }
   virtual std::vector<Point3D> frame(size_t /* index */) const {
     throw std::runtime_error("random access not supported");

@@ -42,12 +42,18 @@ class SteamLioOdometry : public Odometry {
     double gravity = -9.8042;
     Eigen::Matrix<double, 3, 1> r_imu_acc = Eigen::Matrix<double, 3, 1>::Zero();
     Eigen::Matrix<double, 3, 1> r_imu_ang = Eigen::Matrix<double, 3, 1>::Zero();
-    double p0_imu = 0.0001;
-    double q_imu = 0.0001;
+    Eigen::Matrix<double, 6, 1> r_pose = Eigen::Matrix<double, 6, 1>::Zero();
+    double p0_bias_accel = 0.0001;
+    double q_bias_accel = 0.0001;
+    double p0_bias_gyro = 0.0001;
+    double q_bias_gyro = 0.0001;
     bool use_imu = true;
     bool T_mi_init_only = true;
     // T_mi:
     Eigen::Matrix<double, 6, 1> qg_diag = Eigen::Matrix<double, 6, 1>::Ones();
+    Eigen::Matrix<double, 6, 1> p0_pose = Eigen::Matrix<double, 6, 1>::Ones();
+    Eigen::Matrix<double, 6, 1> p0_vel = Eigen::Matrix<double, 6, 1>::Ones();
+    Eigen::Matrix<double, 6, 1> p0_accel = Eigen::Matrix<double, 6, 1>::Ones();
   };
 
   SteamLioOdometry(const Options &options);
@@ -55,16 +61,15 @@ class SteamLioOdometry : public Odometry {
 
   Trajectory trajectory() override;
 
-  RegistrationSummary registerFrame(
-      const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &frame) override;
+  RegistrationSummary registerFrame(const DataFrame &frame) override;
 
  private:
-  void initializeTimestamp(int index_frame,
-                           const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &const_frame);
+  void initializeTimestamp(int index_frame, const DataFrame &const_frame);
   void initializeMotion(int index_frame);
   std::vector<Point3D> initializeFrame(int index_frame, const std::vector<Point3D> &const_frame);
   void updateMap(int index_frame, int update_frame);
-  bool icp(int index_frame, std::vector<Point3D> &keypoints, const std::vector<IMUData> &imu_data_vec);
+  bool icp(int index_frame, std::vector<Point3D> &keypoints, const std::vector<IMUData> &imu_data_vec,
+           const std::vector<PoseData> &pose_data_vec);
 
  private:
   const Options options_;

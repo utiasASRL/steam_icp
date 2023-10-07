@@ -17,7 +17,7 @@
       root_path: /workspace/data1
       sequence: "simulation" #"boreas-2021-09-02-11-42"
       init_frame: 0 # 5675 (highway 7 front image)
-      last_frame: 50 # 5680 (highway 7 front image)
+      last_frame: 200 # 5680 (highway 7 front image)
       min_dist_sensor_center: 5.0
       max_dist_sensor_center: 100.0
 
@@ -44,10 +44,18 @@
 
         # sim:
         ad_diag: [0.0, 0.0, 0.0, 100.07804446, 100.07103628, 100.11791258]
-        qc_diag: [1.0e+05, 1.0e+05, 1.0e+05, 1.0e+03, 1.0e+03, 1.0e+03]
-        r_imu_acc: [0.43000461, 0.33698219, 0.29589244]
-        r_imu_ang: [0.04898588, 0.06860401, 0.04319808]
-        q_imu: 0.01
+        qc_diag: [2.7e+2, 2.7e+2, 2.7e+2, 1.4e+03, 1.4e+03, 1.4e+03]
+        r_imu_acc: [0.00038025, 0.00038025, 0.00038025]
+        r_imu_ang: [0.0001, 0.0001, 0.0001]
+        q_bias_accel: 1.0e-10
+        p0_bias_accel: 1.0e-2
+        q_bias_gyro: 1.0e-10
+        p0_bias_gyro: 1.0e-2
+        r_pose: [0.000625,0.000625,0.000625,0.000076154,0.000076154,0.000076154]
+        p0_pose: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4]
+        p0_vel: [1.0e-1, 1.0e-1, 1.0e-1, 1.0e-4, 1.0e-4, 1.0e-4]
+        p0_accel: [1.0e+0, 1.0e+0, 1.0e+0, 1.0e-1, 1.0e-1, 1.0e-1]
+        # ****************
 
         # qc_diag: [50.0,50.0,50.0,5.0,5.0,5.0]
         # ad_diag: [0.0,0.0,0.0,10.0,10.0,10.0]
@@ -57,11 +65,13 @@
         # r_imu_ang: [0.04898588, 0.06860401, 0.04319808]
         # r_imu_acc: [0.03418968, 0.01292128, 0.00767178]
         # r_imu_ang: [5.75866815e-06, 2.21540004e-05, 3.48544315e-06]
-        p0_imu: 0.01
-        # q_imu: 0.01
+        # p0_bias_accel: 0.01
+        # q_bias_accel: 0.01
+        # p0_bias_gyro: 0.01
+        # q_bias_gyro: 0.01
         use_imu: true
         max_iterations: 5
-        verbose: false
+        verbose: true
         delay_adding_points: 1
         qg_diag: [1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6]
         T_mi_init_only: true

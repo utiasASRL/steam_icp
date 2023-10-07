@@ -138,8 +138,7 @@ Trajectory SteamRoOdometry::trajectory() {
   return trajectory_;
 }
 
-auto SteamRoOdometry::registerFrame(const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &const_frame)
-    -> RegistrationSummary {
+auto SteamRoOdometry::registerFrame(const DataFrame &const_frame) -> RegistrationSummary {
   RegistrationSummary summary;
 
   // add a new frame
@@ -153,7 +152,7 @@ auto SteamRoOdometry::registerFrame(const std::tuple<double, std::vector<Point3D
   initializeMotion(index_frame);
 
   //
-  auto frame = initializeFrame(index_frame, std::get<1>(const_frame));
+  auto frame = initializeFrame(index_frame, const_frame.pointcloud);
 
   //
   if (index_frame > 0) {
@@ -231,18 +230,17 @@ auto SteamRoOdometry::registerFrame(const std::tuple<double, std::vector<Point3D
   return summary;
 }
 
-void SteamRoOdometry::initializeTimestamp(
-    int index_frame, const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &const_frame) {
+void SteamRoOdometry::initializeTimestamp(int index_frame, const DataFrame &const_frame) {
   double min_timestamp = std::numeric_limits<double>::max();
   double max_timestamp = std::numeric_limits<double>::min();
-  for (const auto &point : std::get<1>(const_frame)) {
+  for (const auto &point : const_frame.pointcloud) {
     if (point.timestamp > max_timestamp) max_timestamp = point.timestamp;
     if (point.timestamp < min_timestamp) min_timestamp = point.timestamp;
   }
   trajectory_[index_frame].begin_timestamp = min_timestamp;
   trajectory_[index_frame].end_timestamp = max_timestamp;
   // purpose: eval trajectory at the exact file stamp to match ground truth
-  trajectory_[index_frame].setEvalTime(std::get<0>(const_frame));
+  trajectory_[index_frame].setEvalTime(const_frame.timestamp);
 }
 
 void SteamRoOdometry::initializeMotion(int index_frame) {

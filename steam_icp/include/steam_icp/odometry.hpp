@@ -1,7 +1,9 @@
 #pragma once
 
+#include "steam_icp/dataframe.hpp"
 #include "steam_icp/imu.hpp"
 #include "steam_icp/map.hpp"
+#include "steam_icp/pose.hpp"
 #include "steam_icp/trajectory.hpp"
 
 namespace steam_icp {
@@ -71,8 +73,7 @@ class Odometry {
     bool success = true;                                 // Whether the registration was a success
   };
   // Registers a new Frame to the Map with an initial estimate
-  virtual RegistrationSummary registerFrame(
-      const std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> &frame) = 0;
+  virtual RegistrationSummary registerFrame(const DataFrame &frame) = 0;
 
  protected:
   Trajectory trajectory_;

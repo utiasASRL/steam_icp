@@ -205,8 +205,10 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
 
   std::string imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu_raw.csv";
   if (use_sbet_imu) imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu.csv";
+  std::string pose_meas_path = options_.root_path + "/" + options_.sequence + "/applanix/lidar_pose_meas.csv";
   std::string accel_path = options_.root_path + "/" + options_.sequence + "/applanix/accel_raw_minus_gravity.csv";
   std::ifstream imu_file(imu_path);
+  std::ifstream pose_meas_file(pose_meas_path);
   std::ifstream acc_file(accel_path);
   Eigen::Matrix3d imu_body_raw_to_applanix, yfwd2xfwd;
   imu_body_raw_to_applanix << 0, -1, 0, -1, 0, 0, 0, 0, -1;
@@ -265,10 +267,31 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
       imu_data_vec_.push_back(imu_data);
     }
   }
+  if (pose_meas_file.is_open()) {
+    std::string line;
+    std::getline(pose_meas_file, line);  // header
+    for (; std::getline(pose_meas_file, line);) {
+      if (line.empty()) continue;
+      std::stringstream ss(line);
+      std::string value;
+      std::getline(ss, value, ',');
+      PoseData pose_data;
+      pose_data.timestamp = std::stod(value) - initial_timestamp_sec;
+      pose_data.pose = Eigen::Matrix4d::Identity();
+      for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 4; ++j) {
+          std::getline(ss, value, ',');
+          pose_data.pose(i, j) = std::stod(value);
+        }
+      }
+      pose_data_vec_.push_back(pose_data);
+    }
+  }
   LOG(INFO) << "Loaded IMU Data: " << imu_data_vec_.size() << std::endl;
+  LOG(INFO) << "Loaded Pose Meas Data: " << pose_data_vec_.size() << std::endl;
 }
 
-std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> BoreasVelodyneSequence::next() {
+DataFrame BoreasVelodyneSequence::next() {
   if (!hasNext()) throw std::runtime_error("No more frames in sequence");
   int curr_frame = curr_frame_++;
   auto filename = filenames_.at(curr_frame);
@@ -276,34 +299,46 @@ std::tuple<double, std::vector<Point3D>, std::vector<IMUData>> BoreasVelodyneSeq
   // filenames are epoch times --> at least 9 digits to encode the seconds
   if (time_str.size() < 10) throw std::runtime_error("filename does not have enough digits to encode epoch time");
   filename_to_time_convert_factor_ = 1.0 / pow(10, time_str.size() - 10);
+  DataFrame frame;
   int64_t time_delta = std::stoll(time_str) - initial_timestamp_;
   double time_delta_sec = static_cast<double>(time_delta) * filename_to_time_convert_factor_;
+  frame.timestamp = time_delta_sec;
   const auto precision_time_file = options_.root_path + "/" + options_.sequence + "/lidar_times/" + filename;
-  const auto pc = readPointCloud(dir_path_ + "/" + filename, precision_time_file, time_delta_sec,
-                                 options_.min_dist_sensor_center, options_.max_dist_sensor_center);
+  frame.pointcloud = readPointCloud(dir_path_ + "/" + filename, precision_time_file, time_delta_sec,
+                                    options_.min_dist_sensor_center, options_.max_dist_sensor_center);
 
   // get IMU data for this pointcloud:
   double tmin = std::numeric_limits<double>::max();
   double tmax = std::numeric_limits<double>::min();
-  for (auto &p : pc) {
+  for (auto &p : frame.pointcloud) {
     if (p.timestamp < tmin) tmin = p.timestamp;
     if (p.timestamp > tmax) tmax = p.timestamp;
   }
-  std::vector<IMUData> curr_imu_data_vec;
-  curr_imu_data_vec.reserve(21);
+  frame.imu_data_vec.reserve(21);
   for (; curr_imu_idx_ < imu_data_vec_.size(); curr_imu_idx_++) {
     if (imu_data_vec_[curr_imu_idx_].timestamp < tmin) {
       continue;
     } else if (imu_data_vec_[curr_imu_idx_].timestamp >= tmin && imu_data_vec_[curr_imu_idx_].timestamp < tmax) {
-      curr_imu_data_vec.emplace_back(imu_data_vec_[curr_imu_idx_]);
+      frame.imu_data_vec.emplace_back(imu_data_vec_[curr_imu_idx_]);
     } else {
       break;
     }
   }
-  curr_imu_data_vec.shrink_to_fit();
-  LOG(INFO) << "IMU data : " << curr_imu_data_vec.size() << std::endl;
+  for (; curr_pose_meas_idx_ < pose_data_vec_.size(); curr_pose_meas_idx_++) {
+    const auto pose_time = pose_data_vec_[curr_pose_meas_idx_].timestamp;
+    if (pose_time < tmin) {
+      continue;
+    } else if (pose_time >= tmin && pose_time < tmax) {
+      frame.pose_data_vec.emplace_back(pose_data_vec_[curr_pose_meas_idx_]);
+    } else {
+      break;
+    }
+  }
 
-  return std::make_tuple(time_delta_sec, pc, curr_imu_data_vec);
+  frame.imu_data_vec.shrink_to_fit();
+  LOG(INFO) << "IMU data : " << frame.imu_data_vec.size() << std::endl;
+  LOG(INFO) << "Pose data : " << frame.pose_data_vec.size() << std::endl;
+  return frame;
 }
 
 void BoreasVelodyneSequence::save(const std::string &path, const Trajectory &trajectory) const {
