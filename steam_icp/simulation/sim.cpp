@@ -136,6 +136,7 @@ struct SimulationOptions {
   double pose_meas_trans_sigma = 0.1;
   double pose_meas_rot_sigma_degs = 5.0;
   double pose_rate = 10.0;
+  Eigen::Matrix<double, 3, 1> xi_ig = Eigen::Matrix<double, 3, 1>::Zero();
 };
 
 #define ROS2_PARAM_NO_LOG(node, receiver, prefix, param, type) \
@@ -257,6 +258,13 @@ SimulationOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
   if (biases.size() == 6) options.biases = {biases[0], biases[1], biases[2], biases[3], biases[4], biases[5]};
   LOG(WARNING) << "Parameter " << prefix + "biases"
                << " = " << biases[0] << biases[1] << biases[2] << biases[3] << biases[4] << biases[5] << std::endl;
+
+  std::vector<double> xi_ig;
+  ROS2_PARAM_NO_LOG(node, xi_ig, prefix, xi_ig, std::vector<double>);
+  if ((xi_ig.size() != 3) && (xi_ig.size() != 0)) throw std::invalid_argument{"xi_ig malformed. Must be 3 elements!"};
+  if (xi_ig.size() == 3) options.xi_ig << xi_ig[0], xi_ig[1], xi_ig[2];
+  LOG(WARNING) << "Parameter " << prefix + "xi_ig"
+               << " = " << xi_ig[0] << xi_ig[1] << xi_ig[2] << std::endl;
 
   return options;
 }
@@ -709,9 +717,7 @@ int main(int argc, char **argv) {
   // TODO: rotate gravity vector into the sensor frame.
   const uint64_t delta_imu_ns = 1000000000 / options.imu_rate;
   const double delta_imu_s = delta_imu_ns * 1.0e-9;
-  Eigen::Vector3d xi_ig;
-  xi_ig << -0.0197052, 0.0285345, 0.;
-  const Eigen::Matrix3d C_ig = lgmath::so3::Rotation(xi_ig).matrix();
+  const Eigen::Matrix3d C_ig = lgmath::so3::Rotation(options.xi_ig).matrix();
   LOG(INFO) << "C_ig: " << C_ig << std::endl;
   T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(options.x0.block<6, 1>(0, 0))).matrix();
   tns = 0;

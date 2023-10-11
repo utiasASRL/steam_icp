@@ -44,8 +44,10 @@ class SteamLioOdometry : public Odometry {
     Eigen::Matrix<double, 3, 1> r_imu_ang = Eigen::Matrix<double, 3, 1>::Zero();
     Eigen::Matrix<double, 6, 1> r_pose = Eigen::Matrix<double, 6, 1>::Zero();
     double p0_bias_accel = 0.0001;
+    double pk_bias_accel = 0.0001;
     double q_bias_accel = 0.0001;
     double p0_bias_gyro = 0.0001;
+    double pk_bias_gyro = 0.0001;
     double q_bias_gyro = 0.0001;
     bool use_imu = true;
     bool T_mi_init_only = true;
@@ -54,6 +56,11 @@ class SteamLioOdometry : public Odometry {
     Eigen::Matrix<double, 6, 1> p0_pose = Eigen::Matrix<double, 6, 1>::Ones();
     Eigen::Matrix<double, 6, 1> p0_vel = Eigen::Matrix<double, 6, 1>::Ones();
     Eigen::Matrix<double, 6, 1> p0_accel = Eigen::Matrix<double, 6, 1>::Ones();
+    Eigen::Matrix<double, 6, 1> T_mi_init_cov = Eigen::Matrix<double, 6, 1>::Ones();
+    Eigen::Matrix<double, 6, 1> T_mi_prior_cov = Eigen::Matrix<double, 6, 1>::Ones();
+    Eigen::Matrix<double, 6, 1> xi_ig = Eigen::Matrix<double, 6, 1>::Ones();
+    bool use_T_mi_prior_after_init = false;
+    bool use_bias_prior_after_init = false;
   };
 
   SteamLioOdometry(const Options &options);
@@ -65,6 +72,7 @@ class SteamLioOdometry : public Odometry {
 
  private:
   void initializeTimestamp(int index_frame, const DataFrame &const_frame);
+  Eigen::Matrix<double, 6, 1> initialize_gravity(const std::vector<IMUData> &imu_data_vec);
   void initializeMotion(int index_frame);
   std::vector<Point3D> initializeFrame(int index_frame, const std::vector<Point3D> &const_frame);
   void updateMap(int index_frame, int update_frame);

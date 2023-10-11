@@ -350,7 +350,7 @@ def get_jac_Qk_alpha(dt: float, add: np.ndarray, qcd: np.ndarray) -> np.ndarray:
           - adi3
       )
 
-      dQ33[i, i] = qc * 0.5 * expon2 * adi2 + dt * expon2 * adi - 0.5 * adi2
+      dQ33[i, i] = qc * (0.5 * expon2 * adi2 + dt * expon2 * adi - 0.5 * adi2)
 
     dQda[i] = np.block(
       [
@@ -360,6 +360,15 @@ def get_jac_Qk_alpha(dt: float, add: np.ndarray, qcd: np.ndarray) -> np.ndarray:
       ]
     )
   return dQda
+
+def get_jac_Q_sigma(qcd: np.ndarray) -> np.ndarray:
+  dim = qcd.squeeze().shape[0]
+  dQdsigma = np.zeros((dim, 3 * dim, 3 * dim))
+  for i in range(dim):
+    dQdsigma[i, i, i] = 1
+    dQdsigma[i, dim + i, dim + i] = 1
+    dQdsigma[i, 2 * dim + i, 2 * dim + i] = 1
+  return dQdsigma
 
 def get_jac_Qk_sigma(qcd: np.ndarray) -> np.ndarray:
   dim = qcd.squeeze().shape[0]

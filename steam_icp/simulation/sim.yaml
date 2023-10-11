@@ -11,7 +11,7 @@
     offset_imu: 0.0025
     min_dist_sensor_center: 0.1
     max_dist_sensor_center: 200.0
-    noisy_measurements: false
+    noisy_measurements: true
     sim_length: 20.0
     lidar_range_std: 0.02
     r_accel: [0.0195, 0.0195, 0.0195]
@@ -30,7 +30,8 @@
     v_freqs : [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
     v_amps : [1.0, 1.0, 1.0, 0.5, 0.5, 0.5]
     ax: 3.0
-    biases: [0.05, 0.05, 0.05, 0.05, 0.05, 0.05]  #b_ax, b_ay, b_az, b_wx, b_wy, b_wz
+    biases: [0.0, 0.0, 0.0, 0.05, 0.05, 0.05]  #b_ax, b_ay, b_az, b_wx, b_wy, b_wz
     pose_meas_trans_sigma: 0.025
     pose_meas_rot_sigma_degs: 0.5
     pose_rate: 1000.0
+    xi_ig: [-0.0197052, 0.0285345, 0.]

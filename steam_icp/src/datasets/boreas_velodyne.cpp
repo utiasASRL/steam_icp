@@ -201,7 +201,7 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
   }
 
   bool use_sbet_imu = false;
-  bool use_raw_accel_minus_gravity = !use_sbet_imu;
+  bool use_raw_accel_minus_gravity = false;
 
   std::string imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu_raw.csv";
   if (use_sbet_imu) imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu.csv";

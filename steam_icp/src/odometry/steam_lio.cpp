@@ -248,6 +248,11 @@ auto SteamLioOdometry::registerFrame(const DataFrame &const_frame) -> Registrati
     const auto end_T_mi_var = SE3StateVar::MakeShared(T_mi);
     trajectory_vars_.emplace_back(end_steam_time, end_T_rm_var, end_w_mr_inr_var, end_dw_mr_inr_var, end_imu_biases,
                                   end_T_mi_var);
+
+    Eigen::Matrix<double, 6, 1> xi_mi = initialize_gravity(const_frame.imu_data_vec);
+    begin_T_mi_var->update(xi_mi);
+    end_T_mi_var->update(xi_mi);
+
     to_marginalize_ = 1;  /// The first state is not added to the filter
 
     Eigen::Matrix<double, 6, 6> P0_pose = Eigen::Matrix<double, 6, 6>::Identity();
@@ -428,6 +433,63 @@ void SteamLioOdometry::updateMap(int index_frame, int update_frame) {
   map_.remove(location, kMaxDistance);
 }
 
+Eigen::Matrix<double, 6, 1> SteamLioOdometry::initialize_gravity(const std::vector<IMUData> &imu_data_vec) {
+  using namespace steam;
+  using namespace steam::se3;
+  using namespace steam::traj;
+  using namespace steam::vspace;
+  using namespace steam::imu;
+
+  std::vector<BaseCostTerm::ConstPtr> cost_terms;
+  cost_terms.reserve(imu_data_vec.size());
+  Eigen::Matrix<double, 3, 3> R = Eigen::Matrix<double, 3, 3>::Identity();
+  R.diagonal() = options_.r_imu_acc;
+  const auto noise_model = StaticNoiseModel<3>::MakeShared(R);
+  // const auto loss_func = CauchyLossFunc::MakeShared(1.0);
+  const auto loss_func = L2LossFunc::MakeShared();
+  const auto T_rm_init = SE3StateVar::MakeShared(lgmath::se3::Transformation());
+  lgmath::se3::Transformation T_mi;
+  const auto T_mi_var = SE3StateVar::MakeShared(T_mi);
+  T_rm_init->locked() = true;
+  Eigen::Matrix<double, 6, 1> b_zero = Eigen::Matrix<double, 6, 1>::Zero();
+  Eigen::Matrix<double, 6, 1> dw_zero = Eigen::Matrix<double, 6, 1>::Zero();
+  const auto bias = VSpaceStateVar<6>::MakeShared(b_zero);
+  const auto dw_mr_inr = VSpaceStateVar<6>::MakeShared(dw_zero);
+  bias->locked() = true;
+  dw_mr_inr->locked() = true;
+  for (const auto &imu_data : imu_data_vec) {
+    const auto acc_error_func = imu::AccelerationError(T_rm_init, dw_mr_inr, bias, T_mi_var, imu_data.lin_acc);
+    acc_error_func->setGravity(options_.gravity);
+    const auto acc_cost = WeightedLeastSqCostTerm<3>::MakeShared(acc_error_func, noise_model, loss_func);
+    cost_terms.emplace_back(acc_cost);
+  }
+
+  {
+    Eigen::Matrix<double, 6, 6> init_T_mi_cov = Eigen::Matrix<double, 6, 6>::Zero();
+    init_T_mi_cov.diagonal() = options_.T_mi_init_cov;
+    lgmath::se3::Transformation T_mi_zero;
+    auto T_mi_error = se3_error(T_mi_var, T_mi_zero);
+    auto noise_model = StaticNoiseModel<6>::MakeShared(init_T_mi_cov);
+    auto loss_func = L2LossFunc::MakeShared();
+    const auto T_mi_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(T_mi_error, noise_model, loss_func);
+    cost_terms.emplace_back(T_mi_prior_factor);
+  }
+
+  // Solve
+  OptimizationProblem problem;
+  for (const auto &cost : cost_terms) problem.addCostTerm(cost);
+  problem.addStateVariable(T_mi_var);
+  GaussNewtonSolver::Params params;
+  params.verbose = options_.verbose;
+  params.max_iterations = (unsigned int)options_.max_iterations;
+  GaussNewtonSolver solver(problem, params);
+  solver.optimize();
+  LOG(INFO) << "Initialization, T_mi:" << std::endl
+            << T_mi_var->value().matrix() << std::endl
+            << "vec: " << T_mi_var->value().vec() << std::endl;
+  return T_mi_var->value().vec();
+}
+
 bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, const std::vector<IMUData> &imu_data_vec,
                            const std::vector<PoseData> &pose_data_vec) {
   using namespace steam;
@@ -461,11 +523,13 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
   Eigen::Matrix<double, 6, 1> prev_imu_biases = trajectory_vars_.back().imu_biases->value();
   lgmath::se3::Transformation prev_T_mi = trajectory_vars_.back().T_mi->value();
 
-  Eigen::Matrix4d T_i_r_gt = T_i_r_gt_poses[index_frame];
-  T_i_r_gt.block<3, 1>(0, 3) = Eigen::Matrix<double, 3, 1>::Zero();
-  Eigen::Matrix4d T_mi_gt_mat = Eigen::Matrix4d((T_i_r_gt * prev_T_rm.matrix()).inverse());
-  // Eigen::Matrix4d T_mi_gt_mat = Eigen::Matrix4d((T_i_r_gt).inverse());
-  bool use_T_mi_gt = true;
+  // Eigen::Matrix4d T_i_r_gt = T_i_r_gt_poses[index_frame];
+  // T_i_r_gt.block<3, 1>(0, 3) = Eigen::Matrix<double, 3, 1>::Zero();
+  // Eigen::Matrix4d T_mi_gt_mat = Eigen::Matrix4d((T_i_r_gt * prev_T_rm.matrix()).inverse());
+
+  Eigen::Matrix4d T_mi_gt_mat = lgmath::se3::Transformation(options_.xi_ig).matrix();
+
+  bool use_T_mi_gt = false;
   T_mi_gt_mat.block<3, 1>(0, 3) = Eigen::Matrix<double, 3, 1>::Zero();
   lgmath::se3::Transformation T_mi_gt = lgmath::se3::Transformation(T_mi_gt_mat);
   std::cout << "T_mi_gt:" << std::endl;
@@ -485,6 +549,9 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
     steam_state_vars.emplace_back(prev_imu_biases_var);
     if (!use_T_mi_gt) {
       if (!options_.T_mi_init_only || index_frame == 1) steam_state_vars.emplace_back(prev_T_mi_var);
+      // if (index_frame == 1) {
+      //   prev_T_mi_var->update(initialize_gravity(imu_data_vec));
+      // }
     } else {
       prev_T_mi_var->update(lgmath::se3::Transformation(T_mi_gt).vec());
       std::cout << "prev_T_mi_var->value()" << std::endl;
@@ -577,34 +644,53 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
   }
 
   if (options_.use_imu) {
-    {
-      if (index_frame == 1) {
-        Eigen::Matrix<double, 6, 1> b_zero = Eigen::Matrix<double, 6, 1>::Ones() * 0.0;
-        const auto &prev_var = trajectory_vars_.at(prev_trajectory_var_index);
-        // add a prior to imu bias at the beginning
-        Eigen::Matrix<double, 6, 6> init_bias_cov = Eigen::Matrix<double, 6, 6>::Identity();
-        init_bias_cov.block<3, 3>(0, 0) = Eigen::Matrix<double, 3, 3>::Identity() * options_.p0_bias_accel;
-        init_bias_cov.block<3, 3>(3, 3) = Eigen::Matrix<double, 3, 3>::Identity() * options_.p0_bias_gyro;
-        auto bias_error = vspace::vspace_error<6>(prev_var.imu_biases, b_zero);
-        auto noise_model = StaticNoiseModel<6>::MakeShared(init_bias_cov);
-        auto loss_func = L2LossFunc::MakeShared();
-        const auto bias_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(bias_error, noise_model, loss_func);
-        imu_prior_cost_terms.emplace_back(bias_prior_factor);
-      }
+    if (index_frame == 1) {
+      Eigen::Matrix<double, 6, 1> b_zero = Eigen::Matrix<double, 6, 1>::Ones() * 0.0;
+      const auto &prev_var = trajectory_vars_.at(prev_trajectory_var_index);
+      // add a prior to imu bias at the beginning
+      Eigen::Matrix<double, 6, 6> init_bias_cov = Eigen::Matrix<double, 6, 6>::Identity();
+      init_bias_cov.block<3, 3>(0, 0) = Eigen::Matrix<double, 3, 3>::Identity() * options_.p0_bias_accel;
+      init_bias_cov.block<3, 3>(3, 3) = Eigen::Matrix<double, 3, 3>::Identity() * options_.p0_bias_gyro;
+      auto bias_error = vspace::vspace_error<6>(prev_var.imu_biases, b_zero);
+      auto noise_model = StaticNoiseModel<6>::MakeShared(init_bias_cov);
+      auto loss_func = L2LossFunc::MakeShared();
+      const auto bias_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(bias_error, noise_model, loss_func);
+      imu_prior_cost_terms.emplace_back(bias_prior_factor);
+    } else if (options_.use_bias_prior_after_init) {
+      Eigen::Matrix<double, 6, 1> b_zero = Eigen::Matrix<double, 6, 1>::Ones() * 0.0;
+      const auto &prev_var = trajectory_vars_.at(prev_trajectory_var_index);
+      // add a prior to imu bias at the beginning
+      Eigen::Matrix<double, 6, 6> bias_cov = Eigen::Matrix<double, 6, 6>::Identity();
+      bias_cov.block<3, 3>(0, 0) = Eigen::Matrix<double, 3, 3>::Identity() * options_.pk_bias_accel;
+      bias_cov.block<3, 3>(3, 3) = Eigen::Matrix<double, 3, 3>::Identity() * options_.pk_bias_gyro;
+      auto bias_error = vspace::vspace_error<6>(prev_var.imu_biases, b_zero);
+      auto noise_model = StaticNoiseModel<6>::MakeShared(bias_cov);
+      auto loss_func = L2LossFunc::MakeShared();
+      const auto bias_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(bias_error, noise_model, loss_func);
+      imu_prior_cost_terms.emplace_back(bias_prior_factor);
     }
-
-    if (!options_.T_mi_init_only || index_frame == 1) {
-      if (!use_T_mi_gt) {
-        const auto &prev_var = trajectory_vars_.at(prev_trajectory_var_index);
-        Eigen::Matrix<double, 6, 6> init_T_mi_cov = Eigen::Matrix<double, 6, 6>::Zero();
-        init_T_mi_cov.diagonal() << 1.0e-3, 1.0e-3, 1.0e-3, 0.1, 0.1, 1.0e-4;
-        lgmath::se3::Transformation T_mi;
-        auto T_mi_error = se3_error(prev_var.T_mi, T_mi);
-        auto noise_model = StaticNoiseModel<6>::MakeShared(init_T_mi_cov);
-        auto loss_func = L2LossFunc::MakeShared();
-        const auto T_mi_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(T_mi_error, noise_model, loss_func);
-        T_mi_prior_cost_terms.emplace_back(T_mi_prior_factor);
-      }
+    if (index_frame == 1 && !use_T_mi_gt) {
+      const auto &prev_var = trajectory_vars_.at(prev_trajectory_var_index);
+      Eigen::Matrix<double, 6, 6> init_T_mi_cov = Eigen::Matrix<double, 6, 6>::Zero();
+      init_T_mi_cov.diagonal() = options_.T_mi_init_cov;
+      lgmath::se3::Transformation T_mi = prev_var.T_mi->value();
+      std::cout << "T_mi(0)" << std::endl << T_mi.matrix() << std::endl;
+      auto T_mi_error = se3_error(prev_var.T_mi, T_mi);
+      auto noise_model = StaticNoiseModel<6>::MakeShared(init_T_mi_cov);
+      auto loss_func = L2LossFunc::MakeShared();
+      const auto T_mi_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(T_mi_error, noise_model, loss_func);
+      T_mi_prior_cost_terms.emplace_back(T_mi_prior_factor);
+    }
+    if (!options_.T_mi_init_only && !use_T_mi_gt && options_.use_T_mi_prior_after_init) {
+      const auto &prev_var = trajectory_vars_.at(prev_trajectory_var_index);
+      Eigen::Matrix<double, 6, 6> T_mi_cov = Eigen::Matrix<double, 6, 6>::Zero();
+      T_mi_cov.diagonal() = options_.T_mi_prior_cov;
+      lgmath::se3::Transformation T_mi;
+      auto T_mi_error = se3_error(prev_var.T_mi, T_mi);
+      auto noise_model = StaticNoiseModel<6>::MakeShared(T_mi_cov);
+      auto loss_func = L2LossFunc::MakeShared();
+      const auto T_mi_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(T_mi_error, noise_model, loss_func);
+      T_mi_prior_cost_terms.emplace_back(T_mi_prior_factor);
     }
   }
 
@@ -694,35 +780,35 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
   }
 
   // get pose meas cost terms (debug only)
-  {
-    pose_meas_cost_terms.reserve(pose_data_vec.size());
-    Eigen::Matrix<double, 6, 6> R_pose = Eigen::Matrix<double, 6, 6>::Zero();
-    R_pose.diagonal() = options_.r_pose;
-    const auto pose_noise_model = StaticNoiseModel<6>::MakeShared(R_pose);
-    const auto pose_loss_func = CauchyLossFunc::MakeShared(1.0);
+  // {
+  //   pose_meas_cost_terms.reserve(pose_data_vec.size());
+  //   Eigen::Matrix<double, 6, 6> R_pose = Eigen::Matrix<double, 6, 6>::Zero();
+  //   R_pose.diagonal() = options_.r_pose;
+  //   const auto pose_noise_model = StaticNoiseModel<6>::MakeShared(R_pose);
+  //   const auto pose_loss_func = CauchyLossFunc::MakeShared(1.0);
 
-    for (const auto &pose_data : pose_data_vec) {
-      size_t i = prev_trajectory_var_index;
-      for (; i < trajectory_vars_.size() - 1; i++) {
-        if (pose_data.timestamp >= trajectory_vars_[i].time.seconds() &&
-            pose_data.timestamp < trajectory_vars_[i + 1].time.seconds())
-          break;
-      }
-      if (pose_data.timestamp < trajectory_vars_[i].time.seconds() ||
-          pose_data.timestamp >= trajectory_vars_[i + 1].time.seconds())
-        throw std::runtime_error("pose stamp not within knot times");
+  //   for (const auto &pose_data : pose_data_vec) {
+  //     size_t i = prev_trajectory_var_index;
+  //     for (; i < trajectory_vars_.size() - 1; i++) {
+  //       if (pose_data.timestamp >= trajectory_vars_[i].time.seconds() &&
+  //           pose_data.timestamp < trajectory_vars_[i + 1].time.seconds())
+  //         break;
+  //     }
+  //     if (pose_data.timestamp < trajectory_vars_[i].time.seconds() ||
+  //         pose_data.timestamp >= trajectory_vars_[i + 1].time.seconds())
+  //       throw std::runtime_error("pose stamp not within knot times");
 
-      const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(Time(pose_data.timestamp));
-      const auto T_ms_intp_eval = inverse(compose(T_sr_var_, T_rm_intp_eval));
+  //     const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(Time(pose_data.timestamp));
+  //     const auto T_ms_intp_eval = inverse(compose(T_sr_var_, T_rm_intp_eval));
 
-      lgmath::se3::Transformation T;
-      const auto T_sm_meas = SE3StateVar::MakeShared(lgmath::se3::Transformation(pose_data.pose));
-      T_sm_meas->locked() = true;
-      auto pose_error = se3_error(compose(T_ms_intp_eval, T_sm_meas), T);
-      const auto pose_cost = WeightedLeastSqCostTerm<6>::MakeShared(pose_error, pose_noise_model, pose_loss_func);
-      pose_meas_cost_terms.emplace_back(pose_cost);
-    }
-  }
+  //     lgmath::se3::Transformation T;
+  //     const auto T_sm_meas = SE3StateVar::MakeShared(lgmath::se3::Transformation(pose_data.pose));
+  //     T_sm_meas->locked() = true;
+  //     auto pose_error = se3_error(compose(T_ms_intp_eval, T_sm_meas), T);
+  //     const auto pose_cost = WeightedLeastSqCostTerm<6>::MakeShared(pose_error, pose_noise_model, pose_loss_func);
+  //     pose_meas_cost_terms.emplace_back(pose_cost);
+  //   }
+  // }
 
   // Get IMU cost terms
   if (options_.use_imu) {
@@ -889,90 +975,87 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
 
     timer[1].second->start();
 
-    /*
-    #pragma omp parallel for num_threads(options_.num_threads)
-        for (int i = 0; i < (int)keypoints.size(); i++) {
-          const auto &keypoint = keypoints[i];
-          const auto &pt_keypoint = keypoint.pt;
+#pragma omp parallel for num_threads(options_.num_threads)
+    for (int i = 0; i < (int)keypoints.size(); i++) {
+      const auto &keypoint = keypoints[i];
+      const auto &pt_keypoint = keypoint.pt;
 
-          if (innerloop_time) inner_timer[0].second->start();
+      if (innerloop_time) inner_timer[0].second->start();
 
-          // Neighborhood search
-          ArrayVector3d vector_neighbors =
-              map_.searchNeighbors(pt_keypoint, nb_voxels_visited, options_.size_voxel_map,
-    options_.max_number_neighbors);
+      // Neighborhood search
+      ArrayVector3d vector_neighbors =
+          map_.searchNeighbors(pt_keypoint, nb_voxels_visited, options_.size_voxel_map, options_.max_number_neighbors);
 
-          if (innerloop_time) inner_timer[0].second->stop();
+      if (innerloop_time) inner_timer[0].second->stop();
 
-          if ((int)vector_neighbors.size() < kMinNumNeighbors) {
-            continue;
+      if ((int)vector_neighbors.size() < kMinNumNeighbors) {
+        continue;
+      }
+
+      if (innerloop_time) inner_timer[1].second->start();
+
+      // Compute normals from neighbors
+      auto neighborhood = compute_neighborhood_distribution(vector_neighbors);
+
+      const double planarity_weight = std::pow(neighborhood.a2D, options_.power_planarity);
+      const double weight = planarity_weight;
+
+      if (innerloop_time) inner_timer[1].second->stop();
+
+      if (innerloop_time) inner_timer[2].second->start();
+
+      const double dist_to_plane = std::abs((keypoint.pt - vector_neighbors[0]).transpose() * neighborhood.normal);
+      double max_dist_to_plane = options_.p2p_max_dist;
+      bool use_p2p = (dist_to_plane < max_dist_to_plane);
+      if (use_p2p) {
+        Eigen::Vector3d closest_pt = vector_neighbors[0];
+        Eigen::Vector3d closest_normal = weight * neighborhood.normal;
+        /// \note query and reference point
+        ///   const auto qry_pt = keypoint.raw_pt;
+        ///   const auto ref_pt = closest_pt;
+        Eigen::Matrix3d W = (closest_normal * closest_normal.transpose() + 1e-5 * Eigen::Matrix3d::Identity());
+        const auto noise_model = StaticNoiseModel<3>::MakeShared(W, NoiseType::INFORMATION);
+
+        // const auto &T_ms_intp_eval = T_ms_intp_eval_vec[i];
+        // const auto error_func = p2p::p2pError(T_ms_intp_eval, closest_pt, keypoint.raw_pt);
+
+        const auto error_func = [&]() -> p2p::P2PErrorEvaluator::Ptr {
+          if (use_T_ms_p2p) {
+            const auto &T_ms_intp_eval = T_ms_intp_eval_vec[i];
+            return p2p::p2pError(T_ms_intp_eval, closest_pt, keypoint.raw_pt);
+          } else {
+            const auto &T_sm_intp_eval = T_sm_intp_eval_vec[i];
+            return p2p::p2pError(T_sm_intp_eval, keypoint.raw_pt, closest_pt);
           }
+        }();
 
-          if (innerloop_time) inner_timer[1].second->start();
-
-          // Compute normals from neighbors
-          auto neighborhood = compute_neighborhood_distribution(vector_neighbors);
-
-          const double planarity_weight = std::pow(neighborhood.a2D, options_.power_planarity);
-          const double weight = planarity_weight;
-
-          if (innerloop_time) inner_timer[1].second->stop();
-
-          if (innerloop_time) inner_timer[2].second->start();
-
-          const double dist_to_plane = std::abs((keypoint.pt - vector_neighbors[0]).transpose() * neighborhood.normal);
-          double max_dist_to_plane = options_.p2p_max_dist;
-          bool use_p2p = (dist_to_plane < max_dist_to_plane);
-          if (use_p2p) {
-            Eigen::Vector3d closest_pt = vector_neighbors[0];
-            Eigen::Vector3d closest_normal = weight * neighborhood.normal;
-            /// \note query and reference point
-            ///   const auto qry_pt = keypoint.raw_pt;
-            ///   const auto ref_pt = closest_pt;
-            Eigen::Matrix3d W = (closest_normal * closest_normal.transpose() + 1e-5 * Eigen::Matrix3d::Identity());
-            const auto noise_model = StaticNoiseModel<3>::MakeShared(W, NoiseType::INFORMATION);
-
-            // const auto &T_ms_intp_eval = T_ms_intp_eval_vec[i];
-            // const auto error_func = p2p::p2pError(T_ms_intp_eval, closest_pt, keypoint.raw_pt);
-
-            const auto error_func = [&]() -> p2p::P2PErrorEvaluator::Ptr {
-              if (use_T_ms_p2p) {
-                const auto &T_ms_intp_eval = T_ms_intp_eval_vec[i];
-                return p2p::p2pError(T_ms_intp_eval, closest_pt, keypoint.raw_pt);
-              } else {
-                const auto &T_sm_intp_eval = T_sm_intp_eval_vec[i];
-                return p2p::p2pError(T_sm_intp_eval, keypoint.raw_pt, closest_pt);
-              }
-            }();
-
-            const auto loss_func = [this]() -> BaseLossFunc::Ptr {
-              switch (options_.p2p_loss_func) {
-                case STEAM_LOSS_FUNC::L2:
-                  return L2LossFunc::MakeShared();
-                case STEAM_LOSS_FUNC::DCS:
-                  return DcsLossFunc::MakeShared(options_.p2p_loss_sigma);
-                case STEAM_LOSS_FUNC::CAUCHY:
-                  return CauchyLossFunc::MakeShared(options_.p2p_loss_sigma);
-                case STEAM_LOSS_FUNC::GM:
-                  return GemanMcClureLossFunc::MakeShared(options_.p2p_loss_sigma);
-                default:
-                  return nullptr;
-              }
+        const auto loss_func = [this]() -> BaseLossFunc::Ptr {
+          switch (options_.p2p_loss_func) {
+            case STEAM_LOSS_FUNC::L2:
+              return L2LossFunc::MakeShared();
+            case STEAM_LOSS_FUNC::DCS:
+              return DcsLossFunc::MakeShared(options_.p2p_loss_sigma);
+            case STEAM_LOSS_FUNC::CAUCHY:
+              return CauchyLossFunc::MakeShared(options_.p2p_loss_sigma);
+            case STEAM_LOSS_FUNC::GM:
+              return GemanMcClureLossFunc::MakeShared(options_.p2p_loss_sigma);
+            default:
               return nullptr;
-            }();
-
-            const auto cost = WeightedLeastSqCostTerm<3>::MakeShared(error_func, noise_model, loss_func);
-
-    #pragma omp critical(odometry_cost_term)
-            {
-              meas_cost_terms.emplace_back(cost);
-              number_keypoints_used++;
-            }
           }
+          return nullptr;
+        }();
 
-          if (innerloop_time) inner_timer[2].second->stop();
+        const auto cost = WeightedLeastSqCostTerm<3>::MakeShared(error_func, noise_model, loss_func);
+
+#pragma omp critical(odometry_cost_term)
+        {
+          meas_cost_terms.emplace_back(cost);
+          number_keypoints_used++;
         }
-    */
+      }
+
+      if (innerloop_time) inner_timer[2].second->stop();
+    }
 
     for (const auto &cost : meas_cost_terms) problem.addCostTerm(cost);
     for (const auto &cost : imu_cost_terms) problem.addCostTerm(cost);
@@ -982,12 +1065,12 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
 
     timer[1].second->stop();
 
-    // if (number_keypoints_used < options_.min_number_keypoints) {
-    //   LOG(ERROR) << "[CT_ICP]Error : not enough keypoints selected in ct-icp !" << std::endl;
-    //   LOG(ERROR) << "[CT_ICP]Number_of_residuals : " << number_keypoints_used << std::endl;
-    //   icp_success = false;
-    //   break;
-    // }
+    if (number_keypoints_used < options_.min_number_keypoints) {
+      LOG(ERROR) << "[CT_ICP]Error : not enough keypoints selected in ct-icp !" << std::endl;
+      LOG(ERROR) << "[CT_ICP]Number_of_residuals : " << number_keypoints_used << std::endl;
+      icp_success = false;
+      break;
+    }
 
     timer[2].second->start();
 

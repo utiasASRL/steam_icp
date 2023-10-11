@@ -402,6 +402,34 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       LOG(WARNING) << "Parameter " << prefix + "p0_accel"
                    << " = " << steam_icp_options.p0_accel.transpose() << std::endl;
 
+      std::vector<double> T_mi_init_cov;
+      ROS2_PARAM_NO_LOG(node, T_mi_init_cov, prefix, T_mi_init_cov, std::vector<double>);
+      if ((T_mi_init_cov.size() != 6) && (T_mi_init_cov.size() != 0))
+        throw std::invalid_argument{"T_mi_init_cov diagonal malformed. Must be 6 elements!"};
+      if (T_mi_init_cov.size() == 6)
+        steam_icp_options.T_mi_init_cov << T_mi_init_cov[0], T_mi_init_cov[1], T_mi_init_cov[2], T_mi_init_cov[3],
+            T_mi_init_cov[4], T_mi_init_cov[5];
+      LOG(WARNING) << "Parameter " << prefix + "T_mi_init_cov"
+                   << " = " << steam_icp_options.T_mi_init_cov.transpose() << std::endl;
+
+      std::vector<double> T_mi_prior_cov;
+      ROS2_PARAM_NO_LOG(node, T_mi_prior_cov, prefix, T_mi_prior_cov, std::vector<double>);
+      if ((T_mi_prior_cov.size() != 6) && (T_mi_prior_cov.size() != 0))
+        throw std::invalid_argument{"T_mi_prior_cov diagonal malformed. Must be 6 elements!"};
+      if (T_mi_prior_cov.size() == 6)
+        steam_icp_options.T_mi_prior_cov << T_mi_prior_cov[0], T_mi_prior_cov[1], T_mi_prior_cov[2], T_mi_prior_cov[3],
+            T_mi_prior_cov[4], T_mi_prior_cov[5];
+      LOG(WARNING) << "Parameter " << prefix + "T_mi_prior_cov"
+                   << " = " << steam_icp_options.T_mi_prior_cov.transpose() << std::endl;
+
+      std::vector<double> xi_ig;
+      ROS2_PARAM_NO_LOG(node, xi_ig, prefix, xi_ig, std::vector<double>);
+      if ((xi_ig.size() != 6) && (xi_ig.size() != 0))
+        throw std::invalid_argument{"xi_ig diagonal malformed. Must be 6 elements!"};
+      if (xi_ig.size() == 6) steam_icp_options.xi_ig << xi_ig[0], xi_ig[1], xi_ig[2], xi_ig[3], xi_ig[4], xi_ig[5];
+      LOG(WARNING) << "Parameter " << prefix + "xi_ig"
+                   << " = " << steam_icp_options.xi_ig.transpose() << std::endl;
+
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, num_extra_states, int);
 
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, power_planarity, double);
@@ -453,11 +481,14 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
                    << " = " << steam_icp_options.r_pose.transpose() << std::endl;
 
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p0_bias_accel, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, pk_bias_accel, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, q_bias_accel, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p0_bias_gyro, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, pk_bias_gyro, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, q_bias_gyro, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_imu, bool);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, T_mi_init_only, bool);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_T_mi_prior_after_init, bool);
     } else if (options.odometry == "STEAMRIO") {
       auto &steam_icp_options = dynamic_cast<SteamRioOdometry::Options &>(odometry_options);
       prefix = "odometry_options.steam.";
