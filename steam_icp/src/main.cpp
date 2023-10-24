@@ -500,9 +500,24 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       LOG(WARNING) << "Parameter " << prefix + "r_pose"
                    << " = " << steam_icp_options.r_pose.transpose() << std::endl;
 
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p0_bias_accel, double);
+      std::vector<double> p0_bias_accel;
+      ROS2_PARAM_NO_LOG(node, p0_bias_accel, prefix, p0_bias_accel, std::vector<double>);
+      if ((p0_bias_accel.size() != 3) && (p0_bias_accel.size() != 0))
+        throw std::invalid_argument{"p0_bias_accel malformed. Must be 3 elements!"};
+      if (p0_bias_accel.size() == 3)
+        steam_icp_options.p0_bias_accel << p0_bias_accel[0], p0_bias_accel[1], p0_bias_accel[2];
+      LOG(WARNING) << "Parameter " << prefix + "p0_bias_accel"
+                   << " = " << steam_icp_options.p0_bias_accel.transpose() << std::endl;
+
+      std::vector<double> q_bias_accel;
+      ROS2_PARAM_NO_LOG(node, q_bias_accel, prefix, q_bias_accel, std::vector<double>);
+      if ((q_bias_accel.size() != 3) && (q_bias_accel.size() != 0))
+        throw std::invalid_argument{"q_bias_accel malformed. Must be 3 elements!"};
+      if (q_bias_accel.size() == 3) steam_icp_options.q_bias_accel << q_bias_accel[0], q_bias_accel[1], q_bias_accel[2];
+      LOG(WARNING) << "Parameter " << prefix + "q_bias_accel"
+                   << " = " << steam_icp_options.q_bias_accel.transpose() << std::endl;
+
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, pk_bias_accel, double);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, q_bias_accel, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p0_bias_gyro, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, pk_bias_gyro, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, q_bias_gyro, double);

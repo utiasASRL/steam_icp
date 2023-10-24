@@ -43,9 +43,9 @@ class SteamLioOdometry : public Odometry {
     Eigen::Matrix<double, 3, 1> r_imu_acc = Eigen::Matrix<double, 3, 1>::Zero();
     Eigen::Matrix<double, 3, 1> r_imu_ang = Eigen::Matrix<double, 3, 1>::Zero();
     Eigen::Matrix<double, 6, 1> r_pose = Eigen::Matrix<double, 6, 1>::Zero();
-    double p0_bias_accel = 0.0001;
+    Eigen::Matrix<double, 3, 1> p0_bias_accel = Eigen::Matrix<double, 3, 1>::Zero();
     double pk_bias_accel = 0.0001;
-    double q_bias_accel = 0.0001;
+    Eigen::Matrix<double, 3, 1> q_bias_accel = Eigen::Matrix<double, 3, 1>::Ones();
     double p0_bias_gyro = 0.0001;
     double pk_bias_gyro = 0.0001;
     double q_bias_gyro = 0.0001;
@@ -87,6 +87,9 @@ class SteamLioOdometry : public Odometry {
 
   // steam variables
   steam::se3::SE3StateVar::Ptr T_sr_var_ = nullptr;  // robot to sensor transformation as a steam variable
+
+  Eigen::MatrixXd P0_inv_ = Eigen::Matrix<double, 18, 18>::Zero();
+  Eigen::MatrixXd Qk_inv_ = Eigen::Matrix<double, 18, 18>::Zero();
 
   // trajectory variables
   struct TrajectoryVar {
