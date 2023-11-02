@@ -1,8 +1,20 @@
 import numpy as np
 import numpy.linalg as npla
-import os
-import os.path as osp
-import argparse
+
+def ns_to_sec(tns: int) -> float:
+    return tns * 1.0e-9
+
+
+def sec_to_ns(ts: float) -> int:
+    return int(ts * 1.0e9)
+
+
+def hz_to_ns(hz: int) -> int:
+    return int(1e9 / hz)
+
+
+def hz_to_sec(hz: int) -> float:
+    return ns_to_sec(hz_to_ns(hz))
 
 # GPSTime,easting,northing,altitude,vel_east,vel_north,vel_up,roll,pitch,heading,angvel_z,angvel_y,angvel_x,accelz,accely,accelx,latitude,longitude
 
@@ -668,53 +680,3 @@ def posOrientToRot(heading, pitch, roll):
   R[2, 1] = sphi * ctheta
   R[2, 2] = cphi * ctheta
   return R
-
-if __name__ == '__main__':
-  parser = argparse.ArgumentParser()
-  parser.add_argument('--root', type=str, help='path to boreas-2021-...', default='/workspace/raid/krb/boreas/boreas-2021-09-02-11-42')
-  args = parser.parse_args()
-
-  with open(osp.join(args.root, 'applanix', 'gps_post_process.csv')) as f:
-    f.readline()
-    lines = f.readlines()
-  data = []
-  for line in lines:
-    data.append([float(x) for x in line.rstrip().split(',')])
-  data = np.array(data)
-  data = data[:, [0, 3, 2, 1, 6, 5, 4]]  # z,y,x --> x,y,z
-  # imu_body_raw_to_applanix = np.array([0, -1, 0, -1, 0, 0, 0, 0, -1]).reshape(3, 3)
-  yfwd2xfwd = np.array([0, 1, 0, -1, 0, 0, 0, 0, 1]).reshape(3, 3)
-  # raw_to_robot = yfwd2xfwd @ imu_body_raw_to_applanix
-  raw_to_robot = yfwd2xfwd
-  # raw to robot
-  data[:, 1:4] = data[:, 1:4] @ raw_to_robot.T
-  data[:, 4:] = data[:, 4:] @ raw_to_robot.T
-
-  Rw = np.sqrt(np.std(data[:args.N, 1:4], axis=0)).squeeze()
-  print('Rw: {}'.format(Rw))
-
-  Ra = np.sqrt(np.std(data[:args.N, 4:], axis=0)).squeeze()
-  print('Ra: {}'.format(Ra))
-
-  # TODO: load in Poses, Velocities, Accelerations from SBET
-
-  errs = []
-  dt = 1.0 / SBET_RATE
-  Ak = get_tran_wnoj(dt)
-  Delta_k_inv = get_qinv_wnoj(dt, 1)
-  # for seed in tqdm(range(100000, 100100)):
-  # TODO: use multiple training sequences to get better estimate of Qc
-  # for _ in data:
-  #     states = simulator.forward(seed)[0]
-  e = []
-  for i in range(states.shape[0] - 1):
-      e.append(states[i + 1, :].reshape(3, 1) - Ak @ states[i, :].reshape(3, 1))
-  errs += e
-
-  qc = 0
-  s = 0
-  for e in errs:
-      s += e.T @ Delta_k_inv @ e
-  qc = s / (3 * len(errs))
-  print('WNOJ qc trained on data:')
-  print(qc)

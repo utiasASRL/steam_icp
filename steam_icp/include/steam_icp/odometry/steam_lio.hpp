@@ -5,6 +5,7 @@
 #include "steam.hpp"
 #include "steam/evaluable/imu/bias_interpolator.hpp"
 #include "steam_icp/odometry.hpp"
+#include "steam_icp/p2p.hpp"
 
 namespace steam_icp {
 
