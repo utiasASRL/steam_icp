@@ -4,8 +4,8 @@
 
 #include "steam.hpp"
 #include "steam/evaluable/imu/bias_interpolator.hpp"
+#include "steam/problem/cost_term/p2p_super_cost_term.hpp"
 #include "steam_icp/odometry.hpp"
-#include "steam_icp/p2p.hpp"
 
 namespace steam_icp {
 
@@ -59,12 +59,9 @@ class SteamLioOdometry : public Odometry {
     Eigen::Matrix<double, 6, 1> p0_accel = Eigen::Matrix<double, 6, 1>::Ones();
     Eigen::Matrix<double, 6, 1> T_mi_init_cov = Eigen::Matrix<double, 6, 1>::Ones();
     Eigen::Matrix<double, 6, 1> T_mi_prior_cov = Eigen::Matrix<double, 6, 1>::Ones();
-    Eigen::Matrix<double, 6, 1> T_sr_init_cov = Eigen::Matrix<double, 6, 1>::Ones();
-    Eigen::Matrix<double, 6, 1> q_T_sr_diag = Eigen::Matrix<double, 6, 1>::Ones();
     Eigen::Matrix<double, 6, 1> xi_ig = Eigen::Matrix<double, 6, 1>::Ones();
     bool use_T_mi_prior_after_init = false;
     bool use_bias_prior_after_init = false;
-    bool estimate_T_sr = false;
   };
 
   SteamLioOdometry(const Options &options);
@@ -98,14 +95,13 @@ class SteamLioOdometry : public Odometry {
                   const steam::vspace::VSpaceStateVar<6>::Ptr &w, const steam::vspace::VSpaceStateVar<6>::Ptr &dw,
                   const steam::vspace::VSpaceStateVar<6>::Ptr &b, const steam::se3::SE3StateVar::Ptr &T_m_i,
                   const steam::se3::SE3StateVar::Ptr &T_s_r)
-        : time(t), T_rm(T), w_mr_inr(w), dw_mr_inr(dw), imu_biases(b), T_mi(T_m_i), T_sr(T_s_r) {}
+        : time(t), T_rm(T), w_mr_inr(w), dw_mr_inr(dw), imu_biases(b), T_mi(T_m_i) {}
     steam::traj::Time time;
     steam::se3::SE3StateVar::Ptr T_rm;
     steam::vspace::VSpaceStateVar<6>::Ptr w_mr_inr;
     steam::vspace::VSpaceStateVar<6>::Ptr dw_mr_inr;
     steam::vspace::VSpaceStateVar<6>::Ptr imu_biases;
     steam::se3::SE3StateVar::Ptr T_mi;
-    steam::se3::SE3StateVar::Ptr T_sr;
   };
   std::vector<TrajectoryVar> trajectory_vars_;
   size_t to_marginalize_ = 0;
