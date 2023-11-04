@@ -93,8 +93,7 @@ class SteamLioOdometry : public Odometry {
   struct TrajectoryVar {
     TrajectoryVar(const steam::traj::Time &t, const steam::se3::SE3StateVar::Ptr &T,
                   const steam::vspace::VSpaceStateVar<6>::Ptr &w, const steam::vspace::VSpaceStateVar<6>::Ptr &dw,
-                  const steam::vspace::VSpaceStateVar<6>::Ptr &b, const steam::se3::SE3StateVar::Ptr &T_m_i,
-                  const steam::se3::SE3StateVar::Ptr &T_s_r)
+                  const steam::vspace::VSpaceStateVar<6>::Ptr &b, const steam::se3::SE3StateVar::Ptr &T_m_i)
         : time(t), T_rm(T), w_mr_inr(w), dw_mr_inr(dw), imu_biases(b), T_mi(T_m_i) {}
     steam::traj::Time time;
     steam::se3::SE3StateVar::Ptr T_rm;

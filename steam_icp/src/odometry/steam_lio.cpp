@@ -236,9 +236,8 @@ auto SteamLioOdometry::registerFrame(const DataFrame &const_frame) -> Registrati
     const auto begin_dw_mr_inr_var = VSpaceStateVar<6>::MakeShared(dw_mr_inr);
     const auto begin_imu_biases = VSpaceStateVar<6>::MakeShared(b_zero);
     const auto begin_T_mi_var = SE3StateVar::MakeShared(T_mi);
-    const auto begin_T_sr_var = SE3StateVar::MakeShared(T_sr);
     trajectory_vars_.emplace_back(begin_steam_time, begin_T_rm_var, begin_w_mr_inr_var, begin_dw_mr_inr_var,
-                                  begin_imu_biases, begin_T_mi_var, begin_T_sr_var);
+                                  begin_imu_biases, begin_T_mi_var);
 
     // the end of current scan (this is the first state that could be optimized)
     const double end_time = trajectory_[index_frame].end_timestamp;
@@ -248,9 +247,8 @@ auto SteamLioOdometry::registerFrame(const DataFrame &const_frame) -> Registrati
     const auto end_dw_mr_inr_var = VSpaceStateVar<6>::MakeShared(dw_mr_inr);
     const auto end_imu_biases = VSpaceStateVar<6>::MakeShared(b_zero);
     const auto end_T_mi_var = SE3StateVar::MakeShared(T_mi);
-    const auto end_T_sr_var = SE3StateVar::MakeShared(T_sr);
     trajectory_vars_.emplace_back(end_steam_time, end_T_rm_var, end_w_mr_inr_var, end_dw_mr_inr_var, end_imu_biases,
-                                  end_T_mi_var, end_T_sr_var);
+                                  end_T_mi_var);
 
     Eigen::Matrix<double, 6, 1> xi_mi = initialize_gravity(const_frame.imu_data_vec);
     begin_T_mi_var->update(xi_mi);
@@ -528,7 +526,6 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
   lgmath::se3::Transformation prev_T_rm = trajectory_vars_.back().T_rm->value();
   Eigen::Matrix<double, 6, 1> prev_imu_biases = trajectory_vars_.back().imu_biases->value();
   lgmath::se3::Transformation prev_T_mi = trajectory_vars_.back().T_mi->value();
-  lgmath::se3::Transformation prev_T_sr = trajectory_vars_.back().T_sr->value();
 
   // Eigen::Matrix4d T_i_r_gt = T_i_r_gt_poses[index_frame];
   // T_i_r_gt.block<3, 1>(0, 3) = Eigen::Matrix<double, 3, 1>::Zero();
@@ -786,10 +783,11 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
   // std::vector<Evaluable<const_vel::Interface::PoseType>::ConstPtr> T_sm_intp_eval_vec;
   // bool use_T_ms_p2p = true;
 
-  std::set<double> unique_point_times;
+  std::set<double> unique_point_times_;
   for (const auto &keypoint : keypoints) {
-    unique_point_times.insert(keypoint.timestamp);
+    unique_point_times_.insert(keypoint.timestamp);
   }
+  std::vector<double> unique_point_times(unique_point_times_.begin(), unique_point_times_.end());
   for (const auto &ts : unique_point_times) {
     const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(Time(ts));
     const auto T_mr_intp_eval = inverse(T_rm_intp_eval);
@@ -986,23 +984,6 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
     }
   }
 
-  // T_sr prior cost terms
-  {
-    if (options_.estimate_T_sr) {
-      const auto T_sr = lgmath::se3::Transformation();
-      Eigen::Matrix<double, 6, 6> T_sr_cov = Eigen::Matrix<double, 6, 6>::Zero();
-      T_sr_cov.diagonal() = options_.q_T_sr_diag;
-      auto noise_model = StaticNoiseModel<6>::MakeShared(T_sr_cov);
-      auto loss_func = L2LossFunc::MakeShared();
-      size_t i = prev_trajectory_var_index;
-      for (; i < trajectory_vars_.size() - 1; i++) {
-        auto T_sr_error = se3_error(compose_rinv(trajectory_vars_[i + 1].T_sr, trajectory_vars_[i].T_sr), T_sr);
-        const auto T_sr_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(T_sr_error, noise_model, loss_func);
-        T_sr_prior_cost_terms.emplace_back(T_sr_prior_factor);
-      }
-    }
-  }
-
   // For the 50 first frames, visit 2 voxels
   const short nb_voxels_visited = index_frame < options_.init_num_frames ? 2 : 1;
   const int kMinNumNeighbors = options_.min_number_neighbors;
@@ -1025,10 +1006,13 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
   auto transform_keypoints = [&]() {
     std::map<double, Eigen::Matrix4d> T_mr_cache_map;
 #pragma omp parallel for num_threads(options_.num_threads)
-    for (const auto &ts : unique_point_times) {
+    for (int i = 0; i < unique_point_times.size(); i++) {
+      // for (const auto &ts : unique_point_times) {
+      const auto &ts = unique_point_times[i];
       const auto &T_mr_intp_eval = T_mr_intp_eval_map[ts];
       const Eigen::Matrix4d T_mr = T_mr_intp_eval->value().matrix();
-#pragma omp critical { T_mr_cache_map[ts] = T_mr; }
+#pragma omp critical
+      T_mr_cache_map[ts] = T_mr;
     }
 #pragma omp parallel for num_threads(options_.num_threads)
     for (int i = 0; i < (int)keypoints.size(); i++) {
@@ -1046,7 +1030,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
 
   auto p2p_options = P2PSuperCostTerm::Options();
   p2p_options.num_threads = options_.num_threads;
-  p2p_options.p2p_loss_sigma = options_.p2p_loss_func;
+  p2p_options.p2p_loss_sigma = options_.p2p_loss_sigma;
   p2p_options.T_sr = options_.T_sr;
   if (options_.p2p_loss_func == SteamLioOdometry::STEAM_LOSS_FUNC::L2)
     p2p_options.p2p_loss_func = P2PSuperCostTerm::LOSS_FUNC::L2;
@@ -1068,6 +1052,8 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
     keypoint.raw_pt = T_rs_mat.block<3, 3>(0, 0) * keypoint.raw_pt + T_rs_mat.block<3, 1>(0, 3);
   }
   timer[0].second->stop();
+
+  std::vector<P2PMatch> p2p_matches;
 
   //
   for (int iter(0); iter < options_.num_iters_icp; iter++) {
@@ -1092,11 +1078,8 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
 
     // meas_cost_terms.clear();
     // meas_cost_terms.reserve(keypoints.size());
-    std::vector<P2PMatch> p2p_matches;
+    p2p_matches.clear();
     p2p_matches.reserve(keypoints.size());
-
-    // #pragma omp declare reduction(merge_meas : std::vector<BaseCostTerm::ConstPtr> : omp_out.insert( \
-//         omp_out.end(), omp_in.begin(), omp_in.end()))
 
 #pragma omp declare reduction( \
         merge_matches : std::vector<P2PMatch> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
@@ -1184,7 +1167,6 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
     for (const auto &cost : pose_meas_cost_terms) problem.addCostTerm(cost);
     for (const auto &cost : imu_prior_cost_terms) problem.addCostTerm(cost);
     for (const auto &cost : T_mi_prior_cost_terms) problem.addCostTerm(cost);
-    for (const auto &cost : T_sr_prior_cost_terms) problem.addCostTerm(cost);
     problem.addCostTerm(p2p_super_cost_term);
 
     timer[1].second->stop();
@@ -1316,7 +1298,6 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
   for (const auto &imu_cost : imu_cost_terms) sliding_window_filter_->addCostTerm(imu_cost);
   for (const auto &imu_prior_cost : imu_prior_cost_terms) sliding_window_filter_->addCostTerm(imu_prior_cost);
   for (const auto &T_mi_prior_cost : T_mi_prior_cost_terms) sliding_window_filter_->addCostTerm(T_mi_prior_cost);
-  for (const auto &T_sr_prior_cost : T_sr_prior_cost_terms) sliding_window_filter_->addCostTerm(T_sr_prior_cost);
   sliding_window_filter_->addCostTerm(p2p_super_cost_term);
 
   //
@@ -1355,7 +1336,6 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
   current_estimate.setMidPose(mid_T_ms);
 
   // Debug Code (stuff to plot)
-  // const auto AdT_sr = lgmath::se3::tranAd(options_.T_sr);
   current_estimate.mid_w = /*-1 * AdT_sr **/ steam_trajectory->getVelocityInterpolator(curr_mid_steam_time)->value();
   current_estimate.mid_dw = /*-1 * AdT_sr **/ steam_trajectory->getAccelerationInterpolator(curr_mid_steam_time)->value();
   current_estimate.mid_T_mi = trajectory_vars_[prev_trajectory_var_index].T_mi->value().matrix();
