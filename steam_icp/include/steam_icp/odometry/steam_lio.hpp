@@ -5,6 +5,7 @@
 #include "steam.hpp"
 #include "steam/evaluable/imu/bias_interpolator.hpp"
 #include "steam/problem/cost_term/p2p_super_cost_term.hpp"
+#include "steam/solver/gauss_newton_solver_nva.hpp"
 #include "steam_icp/odometry.hpp"
 
 namespace steam_icp {
@@ -85,9 +86,6 @@ class SteamLioOdometry : public Odometry {
 
   // steam variables
   steam::se3::SE3StateVar::Ptr T_sr_var_ = nullptr;  // robot to sensor transformation as a steam variable
-
-  Eigen::MatrixXd P0_inv_ = Eigen::Matrix<double, 18, 18>::Zero();
-  Eigen::MatrixXd Qk_inv_ = Eigen::Matrix<double, 18, 18>::Zero();
 
   // trajectory variables
   struct TrajectoryVar {
