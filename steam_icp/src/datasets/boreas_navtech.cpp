@@ -118,7 +118,7 @@ BoreasNavtechSequence::BoreasNavtechSequence(const Options &options) : Sequence(
     for (; std::getline(imu_file, line);) {
       if (line.empty()) continue;
       std::stringstream ss(line);
-      IMUData imu_data;
+      steam::IMUData imu_data;
       std::string value;
       std::getline(ss, value, ',');
       imu_data.timestamp = std::stod(value) - initial_timestamp_sec;

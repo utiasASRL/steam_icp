@@ -449,6 +449,12 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
                      << "CAUCHY";
       }
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p2p_loss_sigma, double);
+
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, acc_loss_func, std::string);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, acc_loss_sigma, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, gyro_loss_func, std::string);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, gyro_loss_sigma, double);
+
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, verbose, bool);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, max_iterations, int);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, num_threads, int);

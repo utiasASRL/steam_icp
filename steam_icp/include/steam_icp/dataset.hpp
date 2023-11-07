@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "steam/problem/cost_term/imu_super_cost_term.hpp"
 #include "steam_icp/dataframe.hpp"
-#include "steam_icp/imu.hpp"
 #include "steam_icp/point.hpp"
 #include "steam_icp/pose.hpp"
 #include "steam_icp/trajectory.hpp"

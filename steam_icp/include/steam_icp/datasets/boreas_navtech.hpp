@@ -22,7 +22,7 @@ class BoreasNavtechSequence : public Sequence {
   std::string dir_path_;
   std::vector<std::string> filenames_;
   int64_t initial_timestamp_;
-  std::vector<IMUData> imu_data_vec_;
+  std::vector<steam::IMUData> imu_data_vec_;
   unsigned curr_imu_idx_ = 0;
   int init_frame_ = 0;
   int curr_frame_ = 0;

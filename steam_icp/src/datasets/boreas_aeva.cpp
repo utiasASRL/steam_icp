@@ -240,7 +240,7 @@ BoreasAevaSequence::BoreasAevaSequence(const Options &options) : Sequence(option
     for (; std::getline(imu_file, line);) {
       if (line.empty()) continue;
       std::stringstream ss(line);
-      IMUData imu_data;
+      steam::IMUData imu_data;
       std::string value;
       std::getline(ss, value, ',');
       imu_data.timestamp = std::stod(value) - initial_timestamp_sec;
@@ -297,7 +297,7 @@ DataFrame BoreasAevaSequence::next() {
     if (p.timestamp < tmin) tmin = p.timestamp;
     if (p.timestamp > tmax) tmax = p.timestamp;
   }
-  std::vector<IMUData> curr_imu_data_vec;
+  std::vector<steam::IMUData> curr_imu_data_vec;
   curr_imu_data_vec.reserve(50);
   for (; curr_imu_idx_ < imu_data_vec_.size(); curr_imu_idx_++) {
     if (imu_data_vec_[curr_imu_idx_].timestamp < tmin) {

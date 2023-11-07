@@ -479,7 +479,7 @@ void SteamLioOdometry::updateMap(int index_frame, int update_frame) {
   map_.remove(location, kMaxDistance);
 }
 
-Eigen::Matrix<double, 6, 1> SteamLioOdometry::initialize_gravity(const std::vector<IMUData> &imu_data_vec) {
+Eigen::Matrix<double, 6, 1> SteamLioOdometry::initialize_gravity(const std::vector<steam::IMUData> &imu_data_vec) {
   using namespace steam;
   using namespace steam::se3;
   using namespace steam::traj;
@@ -539,7 +539,8 @@ Eigen::Matrix<double, 6, 1> SteamLioOdometry::initialize_gravity(const std::vect
   return T_mi_var->value().vec();
 }
 
-bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, const std::vector<IMUData> &imu_data_vec,
+bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
+                           const std::vector<steam::IMUData> &imu_data_vec,
                            const std::vector<PoseData> &pose_data_vec) {
   using namespace steam;
   using namespace steam::se3;
@@ -871,8 +872,34 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
   //   }
   // }
 
+  auto imu_options = IMUSuperCostTerm::Options();
+  imu_options.num_threads = options_.num_threads;
+  imu_options.acc_loss_sigma = options_.acc_loss_sigma;
+  if (options_.acc_loss_func == "L2") imu_options.acc_loss_func = IMUSuperCostTerm::LOSS_FUNC::L2;
+  if (options_.acc_loss_func == "DCS") imu_options.acc_loss_func = IMUSuperCostTerm::LOSS_FUNC::DCS;
+  if (options_.acc_loss_func == "CAUCHY") imu_options.acc_loss_func = IMUSuperCostTerm::LOSS_FUNC::CAUCHY;
+  if (options_.acc_loss_func == "GM") imu_options.acc_loss_func = IMUSuperCostTerm::LOSS_FUNC::GM;
+  imu_options.gyro_loss_sigma = options_.gyro_loss_sigma;
+  if (options_.gyro_loss_func == "L2") imu_options.gyro_loss_func = IMUSuperCostTerm::LOSS_FUNC::L2;
+  if (options_.gyro_loss_func == "DCS") imu_options.gyro_loss_func = IMUSuperCostTerm::LOSS_FUNC::DCS;
+  if (options_.gyro_loss_func == "CAUCHY") imu_options.gyro_loss_func = IMUSuperCostTerm::LOSS_FUNC::CAUCHY;
+  if (options_.gyro_loss_func == "GM") imu_options.gyro_loss_func = IMUSuperCostTerm::LOSS_FUNC::GM;
+  imu_options.gravity(2, 0) = options_.gravity;
+  imu_options.r_imu_acc = options_.r_imu_acc;
+  imu_options.r_imu_ang = options_.r_imu_ang;
+
+  const auto imu_super_cost_term = IMUSuperCostTerm::MakeShared(
+      steam_trajectory, prev_steam_time, knot_times.back(), trajectory_vars_[prev_trajectory_var_index].imu_biases,
+      trajectory_vars_[prev_trajectory_var_index + 1].imu_biases, trajectory_vars_[prev_trajectory_var_index].T_mi,
+      trajectory_vars_[prev_trajectory_var_index + 1].T_mi, imu_options);
+
   // Get IMU cost terms
   if (options_.use_imu) {
+    auto &imu_data_vec_ = imu_super_cost_term->get();
+    imu_data_vec_ = imu_data_vec;
+    imu_super_cost_term->init();
+
+    /*
     imu_cost_terms.reserve(imu_data_vec.size());
     Eigen::Matrix<double, 3, 3> R_acc = Eigen::Matrix<double, 3, 3>::Identity();
     R_acc.diagonal() = options_.r_imu_acc;
@@ -967,6 +994,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
       const auto gyro_cost = WeightedLeastSqCostTerm<3>::MakeShared(gyro_error_func, gyro_noise_model, gyro_loss_func);
       imu_cost_terms.emplace_back(gyro_cost);
     }
+    */
 
     // Get IMU prior cost terms
     {
@@ -1098,8 +1126,6 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
     // meas_cost_terms.reserve(keypoints.size());
     p2p_matches.clear();
     p2p_matches.reserve(keypoints.size());
-    // p2p_super_cost_term->clear();
-    // p2p_super_cost_term->reserve(keypoints.size());
 
 #pragma omp declare reduction( \
         merge_matches : std::vector<P2PMatch> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
@@ -1188,6 +1214,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
     for (const auto &cost : imu_prior_cost_terms) problem.addCostTerm(cost);
     for (const auto &cost : T_mi_prior_cost_terms) problem.addCostTerm(cost);
     problem.addCostTerm(p2p_super_cost_term);
+    problem.addCostTerm(imu_super_cost_term);
 
     timer[1].second->stop();
 
@@ -1322,6 +1349,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
   for (const auto &imu_prior_cost : imu_prior_cost_terms) sliding_window_filter_->addCostTerm(imu_prior_cost);
   for (const auto &T_mi_prior_cost : T_mi_prior_cost_terms) sliding_window_filter_->addCostTerm(T_mi_prior_cost);
   sliding_window_filter_->addCostTerm(p2p_super_cost_term);
+  sliding_window_filter_->addCostTerm(imu_super_cost_term);
 
   //
   LOG(INFO) << "number of variables: " << sliding_window_filter_->getNumberOfVariables() << std::endl;

@@ -4,6 +4,7 @@
 
 #include "steam.hpp"
 #include "steam/evaluable/imu/bias_interpolator.hpp"
+#include "steam/problem/cost_term/imu_super_cost_term.hpp"
 #include "steam/problem/cost_term/p2p_super_cost_term.hpp"
 #include "steam/solver/gauss_newton_solver_nva.hpp"
 #include "steam_icp/odometry.hpp"
@@ -63,6 +64,10 @@ class SteamLioOdometry : public Odometry {
     Eigen::Matrix<double, 6, 1> xi_ig = Eigen::Matrix<double, 6, 1>::Ones();
     bool use_T_mi_prior_after_init = false;
     bool use_bias_prior_after_init = false;
+    std::string acc_loss_func = "CAUCHY";
+    double acc_loss_sigma = 1.0;
+    std::string gyro_loss_func = "L2";
+    double gyro_loss_sigma = 1.0;
   };
 
   SteamLioOdometry(const Options &options);
@@ -74,11 +79,11 @@ class SteamLioOdometry : public Odometry {
 
  private:
   void initializeTimestamp(int index_frame, const DataFrame &const_frame);
-  Eigen::Matrix<double, 6, 1> initialize_gravity(const std::vector<IMUData> &imu_data_vec);
+  Eigen::Matrix<double, 6, 1> initialize_gravity(const std::vector<steam::IMUData> &imu_data_vec);
   void initializeMotion(int index_frame);
   std::vector<Point3D> initializeFrame(int index_frame, const std::vector<Point3D> &const_frame);
   void updateMap(int index_frame, int update_frame);
-  bool icp(int index_frame, std::vector<Point3D> &keypoints, const std::vector<IMUData> &imu_data_vec,
+  bool icp(int index_frame, std::vector<Point3D> &keypoints, const std::vector<steam::IMUData> &imu_data_vec,
            const std::vector<PoseData> &pose_data_vec);
 
  private:

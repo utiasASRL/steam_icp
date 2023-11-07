@@ -228,7 +228,7 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
       if (accel_line.empty()) continue;
       std::stringstream ss(line);
       std::stringstream ss2(accel_line);
-      IMUData imu_data;
+      steam::IMUData imu_data;
       std::string value;
       std::getline(ss, value, ',');
       imu_data.timestamp = std::stod(value) - initial_timestamp_sec;
