@@ -14,47 +14,50 @@ namespace steam_icp {
 namespace {
 
 inline double AngularDistance(const Eigen::Matrix3d &rota, const Eigen::Matrix3d &rotb) {
-  double norm = ((rota * rotb.transpose()).trace() - 1) / 2;
-  norm = std::acos(norm) * 180 / M_PI;
-  return norm;
+  double d = 0.5 * ((rota * rotb.transpose()).trace() - 1);
+  // double norm = ((rota * rotb.transpose()).trace() - 1) / 2;
+  return std::acos(std::max(std::min(d, 1.0), -1.0)) * 180.0 / M_PI;
+  // norm = std::acos(norm) * 180 / M_PI;
+  // return norm;
 }
 
 /* -------------------------------------------------------------------------------------------------------------- */
 // Subsample to keep one (random) point in every voxel of the current frame
 // Run std::shuffle() first in order to retain a random point for each voxel.
-void sub_sample_frame(std::vector<Point3D> &frame, double size_voxel) {
-  std::unordered_map<Voxel, std::vector<Point3D>> grid;
-  for (int i = 0; i < (int)frame.size(); i++) {
-    auto kx = static_cast<short>(frame[i].pt[0] / size_voxel);
-    auto ky = static_cast<short>(frame[i].pt[1] / size_voxel);
-    auto kz = static_cast<short>(frame[i].pt[2] / size_voxel);
-    grid[Voxel(kx, ky, kz)].push_back(frame[i]);
+void sub_sample_frame(std::vector<Point3D> &frame, double size_voxel, int num_threads) {
+  using VoxelMap = tsl::robin_map<Voxel, Point3D>;
+  VoxelMap voxel_map;
+
+  for (unsigned int i = 0; i < frame.size(); i++) {
+    const auto kx = static_cast<short>(frame[i].pt[0] / size_voxel);
+    const auto ky = static_cast<short>(frame[i].pt[1] / size_voxel);
+    const auto kz = static_cast<short>(frame[i].pt[2] / size_voxel);
+    const auto voxel = Voxel(kx, ky, kz);
+    voxel_map.try_emplace(voxel, frame[i]);
   }
-  frame.resize(0);
-  int step = 0;  // to take one random point inside each voxel (but with identical results when lunching the SLAM a
-                 // second time)
-  for (const auto &n : grid) {
-    if (n.second.size() > 0) {
-      // frame.push_back(n.second[step % (int)n.second.size()]);
-      frame.push_back(n.second[0]);
-      step++;
-    }
-  }
+  frame.clear();
+  std::transform(voxel_map.begin(), voxel_map.end(), std::back_inserter(frame),
+                 [](const auto &pair) { return pair.second; });
+  frame.shrink_to_fit();
 }
 
 /* -------------------------------------------------------------------------------------------------------------- */
-void grid_sampling(const std::vector<Point3D> &frame, std::vector<Point3D> &keypoints, double size_voxel_subsampling) {
-  keypoints.resize(0);
+void grid_sampling(const std::vector<Point3D> &frame, std::vector<Point3D> &keypoints, double size_voxel_subsampling,
+                   int num_threads) {
+  keypoints.clear();
   std::vector<Point3D> frame_sub;
   frame_sub.resize(frame.size());
+#pragma omp parallel for num_threads(2)
   for (int i = 0; i < (int)frame_sub.size(); i++) {
     frame_sub[i] = frame[i];
   }
-  sub_sample_frame(frame_sub, size_voxel_subsampling);
+  sub_sample_frame(frame_sub, size_voxel_subsampling, num_threads);
   keypoints.reserve(frame_sub.size());
-  for (int i = 0; i < (int)frame_sub.size(); i++) {
-    keypoints.push_back(frame_sub[i]);
-  }
+  // for (int i = 0; i < (int)frame_sub.size(); i++) {
+  //   keypoints.emplace_back(frame_sub[i]);
+  // }
+  std::transform(frame_sub.begin(), frame_sub.end(), std::back_inserter(keypoints), [](const auto c) { return c; });
+  keypoints.shrink_to_fit();
 }
 
 /* -------------------------------------------------------------------------------------------------------------- */
@@ -186,6 +189,11 @@ Trajectory SteamLioOdometry::trajectory() {
 auto SteamLioOdometry::registerFrame(const DataFrame &const_frame) -> RegistrationSummary {
   RegistrationSummary summary;
 
+  std::vector<std::pair<std::string, std::unique_ptr<Stopwatch<>>>> timer;
+  timer.emplace_back("initialization ..................... ", std::make_unique<Stopwatch<>>(false));
+  timer.emplace_back("icp ................................ ", std::make_unique<Stopwatch<>>(false));
+  timer.emplace_back("updateMap .......................... ", std::make_unique<Stopwatch<>>(false));
+
   // add a new frame
   int index_frame = trajectory_.size();
   trajectory_.emplace_back();
@@ -197,7 +205,9 @@ auto SteamLioOdometry::registerFrame(const DataFrame &const_frame) -> Registrati
   initializeMotion(index_frame);
 
   //
+  timer[0].second->start();
   auto frame = initializeFrame(index_frame, const_frame.pointcloud);
+  timer[0].second->stop();
 
   //
   if (index_frame > 0) {
@@ -206,12 +216,16 @@ auto SteamLioOdometry::registerFrame(const DataFrame &const_frame) -> Registrati
 
     // downsample
     std::vector<Point3D> keypoints;
-    grid_sampling(frame, keypoints, sample_voxel_size);
+    // timer[0].second->start();
+    grid_sampling(frame, keypoints, sample_voxel_size, options_.num_threads);
+    // timer[0].second->stop();
 
     // icp
     const auto &imu_data_vec = const_frame.imu_data_vec;
     const auto &pose_data_vec = const_frame.pose_data_vec;
+    timer[1].second->start();
     summary.success = icp(index_frame, keypoints, imu_data_vec, pose_data_vec);
+    timer[1].second->stop();
     summary.keypoints = keypoints;
     if (!summary.success) return summary;
   } else {
@@ -219,6 +233,8 @@ auto SteamLioOdometry::registerFrame(const DataFrame &const_frame) -> Registrati
     using namespace steam::se3;
     using namespace steam::vspace;
     using namespace steam::traj;
+
+    timer[0].second->start();
 
     // initial state
     lgmath::se3::Transformation T_rm;
@@ -269,15 +285,18 @@ auto SteamLioOdometry::registerFrame(const DataFrame &const_frame) -> Registrati
     // trajectory_[index_frame].end_state_cov = Eigen::Matrix<double, 18, 18>::Identity() * 1e-4;
 
     summary.success = true;
+    timer[0].second->stop();
   }
   trajectory_[index_frame].points = frame;
 
   // add points
+  timer[2].second->start();
   if (index_frame == 0) {
     updateMap(index_frame, index_frame);
   } else if ((index_frame - options_.delay_adding_points) > 0) {
     updateMap(index_frame, (index_frame - options_.delay_adding_points));
   }
+  timer[2].second->stop();
 
   summary.corrected_points = frame;
 
@@ -299,12 +318,19 @@ auto SteamLioOdometry::registerFrame(const DataFrame &const_frame) -> Registrati
   summary.R_ms = trajectory_[index_frame].end_R;
   summary.t_ms = trajectory_[index_frame].end_t;
 
+  LOG(INFO) << "OUTER LOOP TIMERS" << std::endl;
+  if (options_.debug_print) {
+    for (size_t i = 0; i < timer.size(); i++)
+      LOG(INFO) << "Elapsed " << timer[i].first << *(timer[i].second) << std::endl;
+  }
+
   return summary;
 }
 
 void SteamLioOdometry::initializeTimestamp(int index_frame, const DataFrame &const_frame) {
   double min_timestamp = std::numeric_limits<double>::max();
   double max_timestamp = std::numeric_limits<double>::min();
+#pragma omp parallel for num_threads(2) reduction(min : min_timestamp) reduction(max : max_timestamp)
   for (const auto &point : const_frame.pointcloud) {
     if (point.timestamp > max_timestamp) max_timestamp = point.timestamp;
     if (point.timestamp < min_timestamp) min_timestamp = point.timestamp;
@@ -340,20 +366,20 @@ void SteamLioOdometry::initializeMotion(int index_frame) {
 
 std::vector<Point3D> SteamLioOdometry::initializeFrame(int index_frame, const std::vector<Point3D> &const_frame) {
   std::vector<Point3D> frame(const_frame);
-
   double sample_size = index_frame < options_.init_num_frames ? options_.init_voxel_size : options_.voxel_size;
   std::mt19937_64 g;
   std::shuffle(frame.begin(), frame.end(), g);
   // Subsample the scan with voxels taking one random in every voxel
-  sub_sample_frame(frame, sample_size);
+  sub_sample_frame(frame, sample_size, options_.num_threads);
   std::shuffle(frame.begin(), frame.end(), g);
-
   // initialize points
   auto q_begin = Eigen::Quaterniond(trajectory_[index_frame].begin_R);
   auto q_end = Eigen::Quaterniond(trajectory_[index_frame].end_R);
   Eigen::Vector3d t_begin = trajectory_[index_frame].begin_t;
   Eigen::Vector3d t_end = trajectory_[index_frame].end_t;
-  for (auto &point : frame) {
+#pragma omp parallel for num_threads(options_.num_threads)
+  for (unsigned int i = 0; i < frame.size(); ++i) {
+    auto &point = frame[i];
     double alpha_timestamp = point.alpha_timestamp;
     Eigen::Matrix3d R = q_begin.slerp(alpha_timestamp, q_end).normalized().toRotationMatrix();
     Eigen::Vector3d t = (1.0 - alpha_timestamp) * t_begin + alpha_timestamp * t_end;
@@ -1281,6 +1307,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints, con
       if (options_.debug_print) {
         LOG(INFO) << "CT_ICP: Finished with N=" << iter << " ICP iterations" << std::endl;
       }
+      break;
     }
   }
 
