@@ -442,29 +442,77 @@ void SteamLioOdometry::updateMap(int index_frame, int update_frame) {
   std::vector<double> unique_point_times(unique_point_times_.begin(), unique_point_times_.end());
 
   std::map<double, Eigen::Matrix4d> T_ms_cache_map;
-
   const Eigen::Matrix4d T_rs = options_.T_sr.inverse();
+  if (index_frame > 2) {
+    const auto &time1 = trajectory_vars_[trajectory_vars_.size() - 3].time;
+    const auto &time2 = trajectory_vars_[trajectory_vars_.size() - 2].time;
+    const double T = (time2 - time1).seconds();
+
+    const Eigen::Matrix<double, 6, 1> ones = Eigen::Matrix<double, 6, 1>::Ones();
+    const auto Qinv_T = update_trajectory->getQinvPublic(T, ones);
+    const auto Tran_T = update_trajectory->getTranPublic(T);
+
+    interp_mats_.clear();
 
 #pragma omp parallel for num_threads(options_.num_threads)
-  for (int jj = 0; jj < (int)unique_point_times.size(); jj++) {
-    // for (const auto &ts : unique_point_times) {
-    const auto &ts = unique_point_times[jj];
-    const auto T_rm_intp_eval = update_trajectory->getPoseInterpolator(Time(ts));
-    const Eigen::Matrix4d T_ms = T_rm_intp_eval->value().inverse().matrix() * T_rs;
+    for (int jj = 0; jj < unique_point_times.size(); ++jj) {
+      const auto &time = unique_point_times[jj];
+      const double tau = time - time1.seconds();
+      const double kappa = time2.seconds() - time;
+      const Matrix18d Q_tau = update_trajectory->getQPublic(tau, ones);
+      const Matrix18d Tran_kappa = update_trajectory->getTranPublic(kappa);
+      const Matrix18d Tran_tau = update_trajectory->getTranPublic(tau);
+      const Matrix18d omega = (Q_tau * Tran_kappa.transpose() * Qinv_T);
+      const Matrix18d lambda = (Tran_tau - omega * Tran_T);
+      const auto interp_pair = std::make_pair(omega, lambda);
 #pragma omp critical
-    T_ms_cache_map[ts] = T_ms;
+      interp_mats_.emplace(time, interp_pair);
+    }
+
+    const auto knot1 = update_trajectory->get(time1);
+    const auto knot2 = update_trajectory->get(time2);
+
+    const auto T1 = knot1->pose()->value();
+    const auto w1 = knot1->velocity()->value();
+    const auto dw1 = knot1->acceleration()->value();
+    const auto T2 = knot2->pose()->value();
+    const auto w2 = knot2->velocity()->value();
+    const auto dw2 = knot2->acceleration()->value();
+
+    const auto xi_21 = (T2 / T1).vec();
+    const lgmath::se3::Transformation T_21(xi_21);
+    const Eigen::Matrix<double, 6, 6> J_21_inv = lgmath::se3::vec2jacinv(xi_21);
+    const auto J_21_inv_w2 = J_21_inv * w2;
+    const auto J_21_inv_curl_dw2 = (-0.5 * lgmath::se3::curlyhat(J_21_inv * w2) * w2 + J_21_inv * dw2);
+
+#pragma omp parallel for num_threads(options_.num_threads)
+    for (int jj = 0; jj < (int)unique_point_times.size(); jj++) {
+      const auto &ts = unique_point_times[jj];
+      const auto &omega = interp_mats_.at(ts).first;
+      const auto &lambda = interp_mats_.at(ts).second;
+      const Eigen::Matrix<double, 6, 1> xi_i1 =
+          lambda.block<6, 6>(0, 6) * w1 + lambda.block<6, 6>(0, 12) * dw1 + omega.block<6, 6>(0, 0) * xi_21 +
+          omega.block<6, 6>(0, 6) * J_21_inv_w2 + omega.block<6, 6>(0, 12) * J_21_inv_curl_dw2;
+      const lgmath::se3::Transformation T_i1(xi_i1);
+      const lgmath::se3::Transformation T_i0 = T_i1 * T1;
+      const Eigen::Matrix4d T_ms = T_i0.inverse().matrix() * T_rs;
+#pragma omp critical
+      T_ms_cache_map[ts] = T_ms;
+    }
+  } else {
+#pragma omp parallel for num_threads(options_.num_threads)
+    for (int jj = 0; jj < (int)unique_point_times.size(); jj++) {
+      const auto &ts = unique_point_times[jj];
+      const auto T_rm_intp_eval = update_trajectory->getPoseInterpolator(Time(ts));
+      const Eigen::Matrix4d T_ms = T_rm_intp_eval->value().inverse().matrix() * T_rs;
+#pragma omp critical
+      T_ms_cache_map[ts] = T_ms;
+    }
   }
 
 #pragma omp parallel for num_threads(options_.num_threads)
   for (unsigned i = 0; i < frame.size(); i++) {
-    // const double query_time = frame[i].timestamp;
-    // const auto T_rm_intp_eval = update_trajectory->getPoseInterpolator(Time(query_time));
-    // const auto T_ms_intp_eval = inverse(compose(T_sr_var_, T_rm_intp_eval));
-    // const Eigen::Matrix4d T_ms = T_ms_intp_eval->value().matrix();
-    // const Eigen::Matrix3d R = T_ms.block<3, 3>(0, 0);
-    // const Eigen::Vector3d t = T_ms.block<3, 1>(0, 3);
     const Eigen::Matrix4d &T_ms = T_ms_cache_map[frame[i].timestamp];
-    //
     frame[i].pt = T_ms.block<3, 3>(0, 0) * frame[i].raw_pt + T_ms.block<3, 1>(0, 3);
   }
 #endif
@@ -818,10 +866,10 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     unique_point_times_.insert(keypoint.timestamp);
   }
   std::vector<double> unique_point_times(unique_point_times_.begin(), unique_point_times_.end());
-  for (const auto &ts : unique_point_times) {
-    const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(Time(ts));
-    T_rm_intp_eval_map[ts] = T_rm_intp_eval;
-  }
+  // for (const auto &ts : unique_point_times) {
+  //   const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(Time(ts));
+  //   T_rm_intp_eval_map[ts] = T_rm_intp_eval;
+  // }
 
   // T_ms_intp_eval_vec.reserve(keypoints.size());
   // for (const auto &keypoint : keypoints) {
@@ -1046,16 +1094,57 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   inner_timer.emplace_back("Add Cost Term ................ ", std::make_unique<Stopwatch<>>(false));
   bool innerloop_time = (options_.num_threads == 1);
 
+  interp_mats_.clear();
+
+  const auto &time1 = prev_steam_time.seconds();
+  const auto &time2 = knot_times.back();
+  const double T = time2 - time1;
+  const Eigen::Matrix<double, 6, 1> ones = Eigen::Matrix<double, 6, 1>::Ones();
+  const auto Qinv_T = steam_trajectory->getQinvPublic(T, ones);
+  const auto Tran_T = steam_trajectory->getTranPublic(T);
+
+  for (const double &time : unique_point_times_) {
+    const double tau = time - time1;
+    const double kappa = time2 - time;
+    const Matrix18d Q_tau = steam_trajectory->getQPublic(tau, ones);
+    const Matrix18d Tran_kappa = steam_trajectory->getTranPublic(kappa);
+    const Matrix18d Tran_tau = steam_trajectory->getTranPublic(tau);
+    const Matrix18d omega = (Q_tau * Tran_kappa.transpose() * Qinv_T);
+    const Matrix18d lambda = (Tran_tau - omega * Tran_T);
+    interp_mats_.emplace(time, std::make_pair(omega, lambda));
+  }
+  // std::vector<double> meas_times_vec(meas_times_set.begin(), meas_times_set.end());
+
   // TODO: speed this up by caching common sub-expressions and accessing omega, lambda from pose interp directly.
   auto transform_keypoints = [&]() {
+    const auto knot1 = steam_trajectory->get(prev_steam_time);
+    const auto knot2 = steam_trajectory->get(knot_times.back());
+    const auto T1 = knot1->pose()->value();
+    const auto w1 = knot1->velocity()->value();
+    const auto dw1 = knot1->acceleration()->value();
+    const auto T2 = knot2->pose()->value();
+    const auto w2 = knot2->velocity()->value();
+    const auto dw2 = knot2->acceleration()->value();
+
+    const auto xi_21 = (T2 / T1).vec();
+    const lgmath::se3::Transformation T_21(xi_21);
+    const Eigen::Matrix<double, 6, 6> J_21_inv = lgmath::se3::vec2jacinv(xi_21);
+    const auto J_21_inv_w2 = J_21_inv * w2;
+    const auto J_21_inv_curl_dw2 = (-0.5 * lgmath::se3::curlyhat(J_21_inv * w2) * w2 + J_21_inv * dw2);
+
     std::map<double, Eigen::Matrix4d> T_mr_cache_map;
-    // #pragma omp parallel for num_threads(options_.num_threads)
+#pragma omp parallel for num_threads(options_.num_threads)
     for (int jj = 0; jj < (int)unique_point_times.size(); jj++) {
-      // for (const auto &ts : unique_point_times) {
       const auto &ts = unique_point_times[jj];
-      const auto &T_rm_intp_eval = T_rm_intp_eval_map[ts];
-      const Eigen::Matrix4d T_mr = T_rm_intp_eval->value().inverse().matrix();
-      // #pragma omp critical
+      const auto &omega = interp_mats_.at(ts).first;
+      const auto &lambda = interp_mats_.at(ts).second;
+      const Eigen::Matrix<double, 6, 1> xi_i1 =
+          lambda.block<6, 6>(0, 6) * w1 + lambda.block<6, 6>(0, 12) * dw1 + omega.block<6, 6>(0, 0) * xi_21 +
+          omega.block<6, 6>(0, 6) * J_21_inv_w2 + omega.block<6, 6>(0, 12) * J_21_inv_curl_dw2;
+      const lgmath::se3::Transformation T_i1(xi_i1);
+      const lgmath::se3::Transformation T_i0 = T_i1 * T1;
+      const Eigen::Matrix4d T_mr = T_i0.inverse().matrix();
+#pragma omp critical
       T_mr_cache_map[ts] = T_mr;
     }
 #pragma omp parallel for num_threads(options_.num_threads)
@@ -1065,6 +1154,22 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       keypoint.pt = T_mr.block<3, 3>(0, 0) * keypoint.raw_pt + T_mr.block<3, 1>(0, 3);
     }
   };
+
+  /*auto transform_keypoints = [&]() {
+    std::map<double, Eigen::Matrix4d> T_mr_cache_map;
+    for (int jj = 0; jj < (int)unique_point_times.size(); jj++) {
+      const auto &ts = unique_point_times[jj];
+      const auto &T_rm_intp_eval = T_rm_intp_eval_map[ts];
+      const Eigen::Matrix4d T_mr = T_rm_intp_eval->value().inverse().matrix();
+      T_mr_cache_map[ts] = T_mr;
+    }
+#pragma omp parallel for num_threads(options_.num_threads)
+    for (int jj = 0; jj < (int)keypoints.size(); jj++) {
+      auto &keypoint = keypoints[jj];
+      const Eigen::Matrix4d &T_mr = T_mr_cache_map[keypoint.timestamp];
+      keypoint.pt = T_mr.block<3, 3>(0, 0) * keypoint.raw_pt + T_mr.block<3, 1>(0, 3);
+    }
+  };*/
 
   // std::vector<P2PMatch> p2p_matches;
   // p2p_matches.reserve(keypoints.size());

@@ -13,6 +13,8 @@ namespace steam_icp {
 
 class SteamLioOdometry : public Odometry {
  public:
+  using Matrix18d = Eigen::Matrix<double, 18, 18>;
+
   enum class STEAM_LOSS_FUNC { L2, DCS, CAUCHY, GM };
 
   struct Options : public Odometry::Options {
@@ -107,6 +109,8 @@ class SteamLioOdometry : public Odometry {
   };
   std::vector<TrajectoryVar> trajectory_vars_;
   size_t to_marginalize_ = 0;
+
+  std::map<double, std::pair<Matrix18d, Matrix18d>> interp_mats_;
 
   steam::SlidingWindowFilter::Ptr sliding_window_filter_;
 
