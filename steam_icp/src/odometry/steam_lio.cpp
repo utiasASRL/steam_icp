@@ -943,8 +943,9 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 
   // Get IMU cost terms
   if (options_.use_imu) {
-    auto &imu_data_vec_ = imu_super_cost_term->get();
-    imu_data_vec_ = imu_data_vec;
+    // auto &imu_data_vec_ = imu_super_cost_term->get();
+    // imu_data_vec_ = imu_data_vec;
+    imu_super_cost_term->set(imu_data_vec);
     imu_super_cost_term->init();
 
     /*
@@ -1041,8 +1042,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       imu_cost_terms.emplace_back(acc_cost);
       const auto gyro_cost = WeightedLeastSqCostTerm<3>::MakeShared(gyro_error_func, gyro_noise_model, gyro_loss_func);
       imu_cost_terms.emplace_back(gyro_cost);
-    }
-    */
+  } */
 
     // Get IMU prior cost terms
     {
@@ -1099,7 +1099,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   const auto Qinv_T = steam_trajectory->getQinvPublic(T, ones);
   const auto Tran_T = steam_trajectory->getTranPublic(T);
 #pragma omp parallel for num_threads(options_.num_threads)
-  for (int i = 0; i < unique_point_times.size(); ++i) {
+  for (unsigned int i = 0; i < unique_point_times.size(); ++i) {
     // for (const double &time : unique_point_times_) {
     const double &time = unique_point_times[i];
     const double tau = time - time1;
@@ -1163,7 +1163,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       const Eigen::Matrix4d T_mr = T_rm_intp_eval->value().inverse().matrix();
       T_mr_cache_map[ts] = T_mr;
     }
-#pragma omp parallel for num_threads(options_.num_threads)
+  #pragma omp parallel for num_threads(options_.num_threads)
     for (int jj = 0; jj < (int)keypoints.size(); jj++) {
       auto &keypoint = keypoints[jj];
       const Eigen::Matrix4d &T_mr = T_mr_cache_map[keypoint.timestamp];

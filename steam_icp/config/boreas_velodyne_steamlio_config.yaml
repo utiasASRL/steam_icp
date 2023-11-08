@@ -94,9 +94,9 @@
         pk_bias_accel: 1.0e-1  # prior after init
         pk_bias_gyro: 1.0e-1  # prior after init
         xi_ig: [0., 0., 0., -1.51869911e-02,  3.07697005e-02, 0.]  # sim: [0., 0., 0., -0.0197052, 0.0285345, 0.] 
-        p2p_loss_func: CAUCHY
+        p2p_loss_func: L2
         num_extra_states: 0
-        acc_loss_func: CAUCHY
+        acc_loss_func: L2
         acc_loss_sigma: 1.0
         gyro_loss_func: L2
         gyro_loss_sigma: 1.0
