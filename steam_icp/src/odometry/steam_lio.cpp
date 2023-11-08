@@ -443,72 +443,72 @@ void SteamLioOdometry::updateMap(int index_frame, int update_frame) {
 
   std::map<double, Eigen::Matrix4d> T_ms_cache_map;
   const Eigen::Matrix4d T_rs = options_.T_sr.inverse();
-  if (index_frame > 2) {
-    const auto &time1 = trajectory_vars_[trajectory_vars_.size() - 3].time;
-    const auto &time2 = trajectory_vars_[trajectory_vars_.size() - 2].time;
-    const double T = (time2 - time1).seconds();
+//   if (index_frame > 2) {
+//     const auto &time1 = trajectory_vars_[trajectory_vars_.size() - 3].time;
+//     const auto &time2 = trajectory_vars_[trajectory_vars_.size() - 2].time;
+//     const double T = (time2 - time1).seconds();
 
-    const Eigen::Matrix<double, 6, 1> ones = Eigen::Matrix<double, 6, 1>::Ones();
-    const auto Qinv_T = update_trajectory->getQinvPublic(T, ones);
-    const auto Tran_T = update_trajectory->getTranPublic(T);
+//     const Eigen::Matrix<double, 6, 1> ones = Eigen::Matrix<double, 6, 1>::Ones();
+//     const auto Qinv_T = update_trajectory->getQinvPublic(T, ones);
+//     const auto Tran_T = update_trajectory->getTranPublic(T);
 
-    interp_mats_.clear();
+//     interp_mats_.clear();
 
+// #pragma omp parallel for num_threads(options_.num_threads)
+//     for (int jj = 0; jj < unique_point_times.size(); ++jj) {
+//       const auto &time = unique_point_times[jj];
+//       const double tau = time - time1.seconds();
+//       const double kappa = time2.seconds() - time;
+//       const Matrix18d Q_tau = update_trajectory->getQPublic(tau, ones);
+//       const Matrix18d Tran_kappa = update_trajectory->getTranPublic(kappa);
+//       const Matrix18d Tran_tau = update_trajectory->getTranPublic(tau);
+//       const Matrix18d omega = (Q_tau * Tran_kappa.transpose() * Qinv_T);
+//       const Matrix18d lambda = (Tran_tau - omega * Tran_T);
+//       const auto interp_pair = std::make_pair(omega, lambda);
+// #pragma omp critical
+//       interp_mats_.emplace(time, interp_pair);
+//     }
+
+//     const auto knot1 = update_trajectory->get(time1);
+//     const auto knot2 = update_trajectory->get(time2);
+
+//     const auto T1 = knot1->pose()->value();
+//     const auto w1 = knot1->velocity()->value();
+//     const auto dw1 = knot1->acceleration()->value();
+//     const auto T2 = knot2->pose()->value();
+//     const auto w2 = knot2->velocity()->value();
+//     const auto dw2 = knot2->acceleration()->value();
+
+//     const auto xi_21 = (T2 / T1).vec();
+//     const lgmath::se3::Transformation T_21(xi_21);
+//     const Eigen::Matrix<double, 6, 6> J_21_inv = lgmath::se3::vec2jacinv(xi_21);
+//     const auto J_21_inv_w2 = J_21_inv * w2;
+//     const auto J_21_inv_curl_dw2 = (-0.5 * lgmath::se3::curlyhat(J_21_inv * w2) * w2 + J_21_inv * dw2);
+
+// #pragma omp parallel for num_threads(options_.num_threads)
+//     for (int jj = 0; jj < (int)unique_point_times.size(); jj++) {
+//       const auto &ts = unique_point_times[jj];
+//       const auto &omega = interp_mats_.at(ts).first;
+//       const auto &lambda = interp_mats_.at(ts).second;
+//       const Eigen::Matrix<double, 6, 1> xi_i1 =
+//           lambda.block<6, 6>(0, 6) * w1 + lambda.block<6, 6>(0, 12) * dw1 + omega.block<6, 6>(0, 0) * xi_21 +
+//           omega.block<6, 6>(0, 6) * J_21_inv_w2 + omega.block<6, 6>(0, 12) * J_21_inv_curl_dw2;
+//       const lgmath::se3::Transformation T_i1(xi_i1);
+//       const lgmath::se3::Transformation T_i0 = T_i1 * T1;
+//       const Eigen::Matrix4d T_ms = T_i0.inverse().matrix() * T_rs;
+// #pragma omp critical
+//       T_ms_cache_map[ts] = T_ms;
+//     }
+// } else {
 #pragma omp parallel for num_threads(options_.num_threads)
-    for (int jj = 0; jj < unique_point_times.size(); ++jj) {
-      const auto &time = unique_point_times[jj];
-      const double tau = time - time1.seconds();
-      const double kappa = time2.seconds() - time;
-      const Matrix18d Q_tau = update_trajectory->getQPublic(tau, ones);
-      const Matrix18d Tran_kappa = update_trajectory->getTranPublic(kappa);
-      const Matrix18d Tran_tau = update_trajectory->getTranPublic(tau);
-      const Matrix18d omega = (Q_tau * Tran_kappa.transpose() * Qinv_T);
-      const Matrix18d lambda = (Tran_tau - omega * Tran_T);
-      const auto interp_pair = std::make_pair(omega, lambda);
+  for (int jj = 0; jj < (int)unique_point_times.size(); jj++) {
+    const auto &ts = unique_point_times[jj];
+    const auto T_rm_intp_eval = update_trajectory->getPoseInterpolator(Time(ts));
+    const Eigen::Matrix4d T_ms = T_rm_intp_eval->value().inverse().matrix() * T_rs;
 #pragma omp critical
-      interp_mats_.emplace(time, interp_pair);
-    }
-
-    const auto knot1 = update_trajectory->get(time1);
-    const auto knot2 = update_trajectory->get(time2);
-
-    const auto T1 = knot1->pose()->value();
-    const auto w1 = knot1->velocity()->value();
-    const auto dw1 = knot1->acceleration()->value();
-    const auto T2 = knot2->pose()->value();
-    const auto w2 = knot2->velocity()->value();
-    const auto dw2 = knot2->acceleration()->value();
-
-    const auto xi_21 = (T2 / T1).vec();
-    const lgmath::se3::Transformation T_21(xi_21);
-    const Eigen::Matrix<double, 6, 6> J_21_inv = lgmath::se3::vec2jacinv(xi_21);
-    const auto J_21_inv_w2 = J_21_inv * w2;
-    const auto J_21_inv_curl_dw2 = (-0.5 * lgmath::se3::curlyhat(J_21_inv * w2) * w2 + J_21_inv * dw2);
-
-#pragma omp parallel for num_threads(options_.num_threads)
-    for (int jj = 0; jj < (int)unique_point_times.size(); jj++) {
-      const auto &ts = unique_point_times[jj];
-      const auto &omega = interp_mats_.at(ts).first;
-      const auto &lambda = interp_mats_.at(ts).second;
-      const Eigen::Matrix<double, 6, 1> xi_i1 =
-          lambda.block<6, 6>(0, 6) * w1 + lambda.block<6, 6>(0, 12) * dw1 + omega.block<6, 6>(0, 0) * xi_21 +
-          omega.block<6, 6>(0, 6) * J_21_inv_w2 + omega.block<6, 6>(0, 12) * J_21_inv_curl_dw2;
-      const lgmath::se3::Transformation T_i1(xi_i1);
-      const lgmath::se3::Transformation T_i0 = T_i1 * T1;
-      const Eigen::Matrix4d T_ms = T_i0.inverse().matrix() * T_rs;
-#pragma omp critical
-      T_ms_cache_map[ts] = T_ms;
-    }
-  } else {
-#pragma omp parallel for num_threads(options_.num_threads)
-    for (int jj = 0; jj < (int)unique_point_times.size(); jj++) {
-      const auto &ts = unique_point_times[jj];
-      const auto T_rm_intp_eval = update_trajectory->getPoseInterpolator(Time(ts));
-      const Eigen::Matrix4d T_ms = T_rm_intp_eval->value().inverse().matrix() * T_rs;
-#pragma omp critical
-      T_ms_cache_map[ts] = T_ms;
-    }
+    T_ms_cache_map[ts] = T_ms;
   }
+  // }
 
 #pragma omp parallel for num_threads(options_.num_threads)
   for (unsigned i = 0; i < frame.size(); i++) {
@@ -1088,22 +1088,20 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   timer.emplace_back("Association .................... ", std::make_unique<Stopwatch<>>(false));
   timer.emplace_back("Optimization ................... ", std::make_unique<Stopwatch<>>(false));
   timer.emplace_back("Alignment ...................... ", std::make_unique<Stopwatch<>>(false));
-  std::vector<std::pair<std::string, std::unique_ptr<Stopwatch<>>>> inner_timer;
-  inner_timer.emplace_back("Search Neighbors ............. ", std::make_unique<Stopwatch<>>(false));
-  inner_timer.emplace_back("Compute Normal ............... ", std::make_unique<Stopwatch<>>(false));
-  inner_timer.emplace_back("Add Cost Term ................ ", std::make_unique<Stopwatch<>>(false));
-  bool innerloop_time = (options_.num_threads == 1);
 
   interp_mats_.clear();
 
+  timer[0].second->start();
   const auto &time1 = prev_steam_time.seconds();
   const auto &time2 = knot_times.back();
   const double T = time2 - time1;
   const Eigen::Matrix<double, 6, 1> ones = Eigen::Matrix<double, 6, 1>::Ones();
   const auto Qinv_T = steam_trajectory->getQinvPublic(T, ones);
   const auto Tran_T = steam_trajectory->getTranPublic(T);
-
-  for (const double &time : unique_point_times_) {
+#pragma omp parallel for num_threads(options_.num_threads)
+  for (int i = 0; i < unique_point_times.size(); ++i) {
+    // for (const double &time : unique_point_times_) {
+    const double &time = unique_point_times[i];
     const double tau = time - time1;
     const double kappa = time2 - time;
     const Matrix18d Q_tau = steam_trajectory->getQPublic(tau, ones);
@@ -1111,8 +1109,10 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     const Matrix18d Tran_tau = steam_trajectory->getTranPublic(tau);
     const Matrix18d omega = (Q_tau * Tran_kappa.transpose() * Qinv_T);
     const Matrix18d lambda = (Tran_tau - omega * Tran_T);
+#pragma omp critical
     interp_mats_.emplace(time, std::make_pair(omega, lambda));
   }
+  timer[0].second->stop();
   // std::vector<double> meas_times_vec(meas_times_set.begin(), meas_times_set.end());
 
   // TODO: speed this up by caching common sub-expressions and accessing omega, lambda from pose interp directly.
@@ -1240,29 +1240,19 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       const auto &keypoint = keypoints[i];
       const auto &pt_keypoint = keypoint.pt;
 
-      if (innerloop_time) inner_timer[0].second->start();
-
       // Neighborhood search
       ArrayVector3d vector_neighbors =
           map_.searchNeighbors(pt_keypoint, nb_voxels_visited, options_.size_voxel_map, options_.max_number_neighbors);
 
-      if (innerloop_time) inner_timer[0].second->stop();
-
       if ((int)vector_neighbors.size() < kMinNumNeighbors) {
         continue;
       }
-
-      if (innerloop_time) inner_timer[1].second->start();
 
       // Compute normals from neighbors
       auto neighborhood = compute_neighborhood_distribution(vector_neighbors);
 
       const double planarity_weight = std::pow(neighborhood.a2D, options_.power_planarity);
       const double weight = planarity_weight;
-
-      if (innerloop_time) inner_timer[1].second->stop();
-
-      if (innerloop_time) inner_timer[2].second->start();
 
       const double dist_to_plane = std::abs((keypoint.pt - vector_neighbors[0]).transpose() * neighborhood.normal);
       double max_dist_to_plane = options_.p2p_max_dist;
@@ -1308,7 +1298,6 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       //   const auto cost = WeightedLeastSqCostTerm<3>::MakeShared(error_func, noise_model, loss_func);
       //   meas_cost_terms.emplace_back(cost);
       // }
-      if (innerloop_time) inner_timer[2].second->stop();
     }
 
     p2p_super_cost_term->initP2PMatches();
@@ -1319,7 +1308,9 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     for (const auto &cost : imu_prior_cost_terms) problem.addCostTerm(cost);
     for (const auto &cost : T_mi_prior_cost_terms) problem.addCostTerm(cost);
     problem.addCostTerm(p2p_super_cost_term);
-    problem.addCostTerm(imu_super_cost_term);
+    if (options_.use_imu) {
+      problem.addCostTerm(imu_super_cost_term);
+    }
 
     timer[1].second->stop();
 
@@ -1336,6 +1327,8 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     GaussNewtonSolverNVA::Params params;
     params.verbose = options_.verbose;
     params.max_iterations = (unsigned int)options_.max_iterations;
+    // params.max_iterations =
+    // std::max(int(options_.max_iterations - (options_.max_iterations / options_.num_iters_icp) * iter), 2);
 #if SWF_INSIDE_ICP
     // params.max_iterations = 20;
     params.reuse_previous_pattern = false;
@@ -1407,12 +1400,13 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 
     timer[3].second->stop();
 
-    std::cout << "w(-1): " << trajectory_vars_[trajectory_vars_.size() - 1].w_mr_inr->value().transpose() << std::endl;
-    std::cout << "w(-2): " << trajectory_vars_[trajectory_vars_.size() - 2].w_mr_inr->value().transpose() << std::endl;
-    std::cout << "dw(-1): " << trajectory_vars_[trajectory_vars_.size() - 1].dw_mr_inr->value().transpose()
-              << std::endl;
-    std::cout << "dw(-2): " << trajectory_vars_[trajectory_vars_.size() - 2].dw_mr_inr->value().transpose()
-              << std::endl;
+    // std::cout << "w(-1): " << trajectory_vars_[trajectory_vars_.size() - 1].w_mr_inr->value().transpose() <<
+    // std::endl; std::cout << "w(-2): " << trajectory_vars_[trajectory_vars_.size() - 2].w_mr_inr->value().transpose()
+    // << std::endl; std::cout << "dw(-1): " << trajectory_vars_[trajectory_vars_.size() -
+    // 1].dw_mr_inr->value().transpose()
+    // << std::endl;
+    // std::cout << "dw(-2): " << trajectory_vars_[trajectory_vars_.size() - 2].dw_mr_inr->value().transpose()
+    // << std::endl;
     if (options_.use_imu) {
       // get the value of the bias at the midpoint
       Eigen::Matrix<double, 6, 1> b;
@@ -1426,10 +1420,10 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
           curr_mid_steam_time.seconds() >= trajectory_vars_[i + 1].time.seconds())
         throw std::runtime_error("mid time not within knot times");
       current_estimate.mid_b = trajectory_vars_[i].imu_biases->value();
-      std::cout << "biases(-1): " << trajectory_vars_[trajectory_vars_.size() - 1].imu_biases->value().transpose()
-                << std::endl;
-      std::cout << "biases(-2): " << trajectory_vars_[trajectory_vars_.size() - 2].imu_biases->value().transpose()
-                << std::endl;
+      // std::cout << "biases(-1): " << trajectory_vars_[trajectory_vars_.size() - 1].imu_biases->value().transpose()
+      //           << std::endl;
+      // std::cout << "biases(-2): " << trajectory_vars_[trajectory_vars_.size() - 2].imu_biases->value().transpose()
+      //           << std::endl;
     }
 
     std::cout << "diff_rot: " << diff_rot << " diff_trans: " << diff_trans << std::endl;
@@ -1454,7 +1448,9 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   for (const auto &imu_prior_cost : imu_prior_cost_terms) sliding_window_filter_->addCostTerm(imu_prior_cost);
   for (const auto &T_mi_prior_cost : T_mi_prior_cost_terms) sliding_window_filter_->addCostTerm(T_mi_prior_cost);
   sliding_window_filter_->addCostTerm(p2p_super_cost_term);
-  sliding_window_filter_->addCostTerm(imu_super_cost_term);
+  if (options_.use_imu) {
+    sliding_window_filter_->addCostTerm(imu_super_cost_term);
+  }
 
   //
   LOG(INFO) << "number of variables: " << sliding_window_filter_->getNumberOfVariables() << std::endl;
@@ -1503,7 +1499,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   // M.block<6, 6>(0, 0) = AdT_sr;
   // M.block<6, 6>(6, 6) = AdT_sr;
   // M.block<6, 6>(12, 12) = AdT_sr;
-  current_estimate.mid_state_cov = /*M **/ steam_trajectory->getCovariance(covariance, curr_mid_steam_time) /** M.transpose()*/;
+  current_estimate.mid_state_cov = /*M **/ steam_trajectory->getCovariance(covariance, trajectory_vars_[prev_trajectory_var_index].time) /** M.transpose()*/;
 
   current_estimate.begin_R = curr_begin_T_ms.block<3, 3>(0, 0);
   current_estimate.begin_t = curr_begin_T_ms.block<3, 1>(0, 3);
@@ -1511,10 +1507,10 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   current_estimate.end_t = curr_end_T_ms.block<3, 1>(0, 3);
   // clang-format on
 
-  std::cout << "w: " << current_estimate.mid_w.transpose() << std::endl;
-  std::cout << "dw: " << current_estimate.mid_dw.transpose() << std::endl;
+  // std::cout << "w: " << current_estimate.mid_w.transpose() << std::endl;
+  // std::cout << "dw: " << current_estimate.mid_dw.transpose() << std::endl;
   if (options_.use_imu) {
-    std::cout << "ang_vel_meas: " << imu_data_vec.back().ang_vel.transpose() << std::endl;
+    // std::cout << "ang_vel_meas: " << imu_data_vec.back().ang_vel.transpose() << std::endl;
     // get the value of the bias at the midpoint
     Eigen::Matrix<double, 6, 1> b;
     size_t i = prev_trajectory_var_index;
@@ -1532,19 +1528,22 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
                                      trajectory_vars_[i + 1].imu_biases, trajectory_vars_[i + 1].time);
 
     current_estimate.mid_b = bias_intp_eval->value();
-    std::cout << "lin_acc_meas: " << imu_data_vec.back().lin_acc.transpose() << std::endl;
-    std::cout << "biases(-1): " << trajectory_vars_[trajectory_vars_.size() - 1].imu_biases->value().transpose()
-              << std::endl;
+    // std::cout << "lin_acc_meas: " << imu_data_vec.back().lin_acc.transpose() << std::endl;
+    // std::cout << "biases(-1): " << trajectory_vars_[trajectory_vars_.size() - 1].imu_biases->value().transpose()
+    //           << std::endl;
 
-    std::cout << "T_mi(-2): " << trajectory_vars_[trajectory_vars_.size() - 2].T_mi->value().vec().transpose()
-              << std::endl;
-    std::cout << "T_mi(-1): " << trajectory_vars_[trajectory_vars_.size() - 1].T_mi->value().vec().transpose()
-              << std::endl;
+    // std::cout << "T_mi(-2): " << trajectory_vars_[trajectory_vars_.size() - 2].T_mi->value().vec().transpose()
+    //           << std::endl;
+    // std::cout << "T_mi(-1): " << trajectory_vars_[trajectory_vars_.size() - 1].T_mi->value().vec().transpose()
+    //           << std::endl;
   }
 
-  timer[0].second->start();
-  transform_keypoints();
-  timer[0].second->stop();
+  // timer[0].second->start();
+  // transform_keypoints();
+  // timer[0].second->stop();
+
+  // p2p_super_cost_term->freeze();
+  // imu_super_cost_term->freeze();
 
   LOG(INFO) << "Number of keypoints used in CT-ICP : " << p2p_matches.size() << std::endl;
 
@@ -1552,8 +1551,6 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   if (options_.debug_print) {
     for (size_t i = 0; i < timer.size(); i++)
       LOG(INFO) << "Elapsed " << timer[i].first << *(timer[i].second) << std::endl;
-    for (size_t i = 0; i < inner_timer.size(); i++)
-      LOG(INFO) << "Elapsed (Inner Loop) " << inner_timer[i].first << *(inner_timer[i].second) << std::endl;
     LOG(INFO) << "Number iterations CT-ICP : " << options_.num_iters_icp << std::endl;
     LOG(INFO) << "Translation Begin: " << trajectory_[index_frame].begin_t.transpose() << std::endl;
     LOG(INFO) << "Translation End: " << trajectory_[index_frame].end_t.transpose() << std::endl;

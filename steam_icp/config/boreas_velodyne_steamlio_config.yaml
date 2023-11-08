@@ -27,7 +27,7 @@
       debug_print: true
       debug_path: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlio
       num_iters_icp: 10
-      init_num_frames: 0
+      # init_num_frames: 0
 
 
       elastic:
