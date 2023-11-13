@@ -35,6 +35,8 @@ class Sequence {
     double modified_cacfar_threshold2 = 0.0;
     double modified_cacfar_threshold3 = 0.09;
     int modified_cacfar_num_threads = 1;
+    bool lidar_timestamp_round = false;
+    double lidar_timestamp_round_hz = 400.0;
   };
 
   Sequence(const Options &options) : options_(options) {}

@@ -136,6 +136,8 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
     ROS2_PARAM_CLAUSE(node, dataset_options, prefix, last_frame, int);
     ROS2_PARAM_CLAUSE(node, dataset_options, prefix, min_dist_sensor_center, float);
     ROS2_PARAM_CLAUSE(node, dataset_options, prefix, max_dist_sensor_center, float);
+    ROS2_PARAM_CLAUSE(node, dataset_options, prefix, lidar_timestamp_round, bool);
+    ROS2_PARAM_CLAUSE(node, dataset_options, prefix, lidar_timestamp_round_hz, float);
 
     if (options.dataset == "BoreasNavtech") {
       ROS2_PARAM_CLAUSE(node, dataset_options, prefix, radar_resolution, double);

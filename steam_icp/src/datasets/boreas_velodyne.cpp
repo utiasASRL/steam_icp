@@ -82,7 +82,8 @@ ArrayPoses loadPoses(const std::string &file_path) {
 }
 
 std::vector<Point3D> readPointCloud(const std::string &path, const std::string &precision_time_path,
-                                    const double &time_delta_sec, const double &min_dist, const double &max_dist) {
+                                    const double &time_delta_sec, const double &min_dist, const double &max_dist,
+                                    const bool round_timestamps, const double &timestamp_round_hz) {
   std::vector<Point3D> frame;
   // read bin file
   std::ifstream ifs(path, std::ios::binary);
@@ -91,6 +92,7 @@ std::vector<Point3D> readPointCloud(const std::string &path, const std::string &
   const unsigned fields = 6;  // x, y, z, i, r, t
   const unsigned point_step = float_offset * fields;
   const unsigned numPointsIn = std::floor(buffer.size() / point_step);
+  const double timestamp_round_dt = 1.0 / timestamp_round_hz;
 
   auto getFloatFromByteArray = [](char *byteArray, unsigned index) -> float { return *((float *)(byteArray + index)); };
   auto getDoubleFromByteArray = [](char *byteArray, unsigned index) -> double {
@@ -149,6 +151,9 @@ std::vector<Point3D> readPointCloud(const std::string &path, const std::string &
     } else {
       new_point.alpha_timestamp = getFloatFromByteArray(buffer.data(), bufpos + offset * float_offset);
     }
+
+    if (round_timestamps)
+      new_point.alpha_timestamp = new_point.alpha_timestamp - fmod(new_point.alpha_timestamp, timestamp_round_dt);
 
     if (new_point.alpha_timestamp < frame_first_timestamp) {
       frame_first_timestamp = new_point.alpha_timestamp;
@@ -305,7 +310,8 @@ DataFrame BoreasVelodyneSequence::next() {
   frame.timestamp = time_delta_sec;
   const auto precision_time_file = options_.root_path + "/" + options_.sequence + "/lidar_times/" + filename;
   frame.pointcloud = readPointCloud(dir_path_ + "/" + filename, precision_time_file, time_delta_sec,
-                                    options_.min_dist_sensor_center, options_.max_dist_sensor_center);
+                                    options_.min_dist_sensor_center, options_.max_dist_sensor_center,
+                                    options_.lidar_timestamp_round, options_.lidar_timestamp_round_hz);
 
   // get IMU data for this pointcloud:
   double tmin = std::numeric_limits<double>::max();

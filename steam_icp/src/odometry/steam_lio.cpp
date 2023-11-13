@@ -79,7 +79,7 @@ Neighborhood compute_neighborhood_distribution(const ArrayVector3d &points) {
   barycenter /= (double)points.size();
   neighborhood.center = barycenter;
 
-  Eigen::Matrix3d covariance_Matrix(Eigen::Matrix3d::Zero());
+  Eigen::Matrix3d covariance_Matrix = Eigen::Matrix3d::Zero();
   for (auto &point : points) {
     for (int k = 0; k < 3; ++k)
       for (int l = k; l < 3; ++l) covariance_Matrix(k, l) += (point(k) - barycenter(k)) * (point(l) - barycenter(l));
@@ -216,9 +216,9 @@ auto SteamLioOdometry::registerFrame(const DataFrame &const_frame) -> Registrati
 
     // downsample
     std::vector<Point3D> keypoints;
-    // timer[0].second->start();
+    timer[0].second->start();
     grid_sampling(frame, keypoints, sample_voxel_size, options_.num_threads);
-    // timer[0].second->stop();
+    timer[0].second->stop();
 
     // icp
     const auto &imu_data_vec = const_frame.imu_data_vec;
@@ -350,17 +350,31 @@ void SteamLioOdometry::initializeMotion(int index_frame) {
     trajectory_[index_frame].end_R = T_rs.block<3, 3>(0, 0);
     trajectory_[index_frame].end_t = T_rs.block<3, 1>(0, 3);
   } else {
+#if false
+    const auto extrap_trajectory = steam::traj::const_acc::Interface::MakeShared(options_.qc_diag);
+    const auto prev_steam_time = trajectory_vars_.back().time;
+    const auto prev_T_rm_var = trajectory_vars_.back().T_rm;
+    const auto prev_w_mr_inr_var = trajectory_vars_.back().w_mr_inr;
+    const auto prev_dw_mr_inr_var = trajectory_vars_.back().dw_mr_inr;
+    extrap_trajectory->add(prev_steam_time, prev_T_rm_var, prev_w_mr_inr_var, prev_dw_mr_inr_var);
+    const auto extrap_time = steam::traj::Time(trajectory_[index_frame].end_timestamp);
+    const Eigen::Matrix4d T_rs = options_.T_sr.inverse();
+    const auto T_rm_intp_eval = extrap_trajectory->getPoseInterpolator(extrap_time);
+    const Eigen::Matrix4d T_ms = T_rm_intp_eval->value().inverse().matrix() * T_rs;
+    trajectory_[index_frame].end_R = T_ms.block<3, 3>(0, 0);
+    trajectory_[index_frame].end_t = T_ms.block<3, 1>(0, 3);
+#else
     // Different regimen for the second frame due to the bootstrapped elasticity
     Eigen::Matrix3d R_next_end = trajectory_[index_frame - 1].end_R * trajectory_[index_frame - 2].end_R.inverse() *
                                  trajectory_[index_frame - 1].end_R;
     Eigen::Vector3d t_next_end = trajectory_[index_frame - 1].end_t +
                                  trajectory_[index_frame - 1].end_R * trajectory_[index_frame - 2].end_R.inverse() *
                                      (trajectory_[index_frame - 1].end_t - trajectory_[index_frame - 2].end_t);
-
-    trajectory_[index_frame].begin_R = trajectory_[index_frame - 1].end_R;
-    trajectory_[index_frame].begin_t = trajectory_[index_frame - 1].end_t;
     trajectory_[index_frame].end_R = R_next_end;
     trajectory_[index_frame].end_t = t_next_end;
+#endif
+    trajectory_[index_frame].begin_R = trajectory_[index_frame - 1].end_R;
+    trajectory_[index_frame].begin_t = trajectory_[index_frame - 1].end_t;
   }
 }
 
@@ -372,6 +386,44 @@ std::vector<Point3D> SteamLioOdometry::initializeFrame(int index_frame, const st
   // Subsample the scan with voxels taking one random in every voxel
   sub_sample_frame(frame, sample_size, options_.num_threads);
   std::shuffle(frame.begin(), frame.end(), g);
+
+#if false
+  const auto extrap_trajectory = steam::traj::const_acc::Interface::MakeShared(options_.qc_diag);
+  const auto prev_steam_time = trajectory_vars_.back().time;
+  const auto prev_T_rm_var = trajectory_vars_.back().T_rm;
+  const auto prev_w_mr_inr_var = trajectory_vars_.back().w_mr_inr;
+  const auto prev_dw_mr_inr_var = trajectory_vars_.back().dw_mr_inr;
+  const unsigned N = trajectory_vars_.size();
+  extrap_trajectory->add(prev_steam_time, prev_T_rm_var, prev_w_mr_inr_var, prev_dw_mr_inr_var);
+  const Eigen::Matrix4d T_rs = options_.T_sr.inverse();
+
+  std::set<double> unique_point_times_;
+  for (const auto &point : frame) {
+    unique_point_times_.insert(point.timestamp);
+  }
+  std::vector<double> unique_point_times(unique_point_times_.begin(), unique_point_times_.end());
+
+  std::map<double, Eigen::Matrix4d> T_ms_cache_map;
+
+  std::cout << prev_steam_time.seconds() << " " << unique_point_times.front() << " " << unique_point_times.back()
+            << std::endl;
+
+#pragma omp parallel for num_threads(options_.num_threads)
+  for (unsigned jj = 0; jj < unique_point_times.size(); jj++) {
+    const auto &ts = unique_point_times[jj];
+    const auto T_rm_intp_eval = extrap_trajectory->getPoseInterpolator(steam::traj::Time(ts));
+    const Eigen::Matrix4d T_ms = T_rm_intp_eval->value().inverse().matrix() * T_rs;
+#pragma omp critical
+    T_ms_cache_map[ts] = T_ms;
+  }
+
+#pragma omp parallel for num_threads(options_.num_threads)
+  for (unsigned i = 0; i < frame.size(); ++i) {
+    const Eigen::Matrix4d &T_ms = T_ms_cache_map[frame[i].timestamp];
+    frame[i].pt = T_ms.block<3, 3>(0, 0) * frame[i].raw_pt + T_ms.block<3, 1>(0, 3);
+  }
+
+#else
   // initialize points
   auto q_begin = Eigen::Quaterniond(trajectory_[index_frame].begin_R);
   auto q_end = Eigen::Quaterniond(trajectory_[index_frame].end_R);
@@ -386,6 +438,7 @@ std::vector<Point3D> SteamLioOdometry::initializeFrame(int index_frame, const st
     //
     point.pt = R * point.raw_pt + t;
   }
+#endif
 
   return frame;
 }
@@ -518,6 +571,7 @@ void SteamLioOdometry::updateMap(int index_frame, int update_frame) {
 #endif
 
   map_.add(frame, kSizeVoxelMap, kMaxNumPointsInVoxel, kMinDistancePoints);
+  map_.update_and_filter_lifetimes();
   frame.clear();
   frame.shrink_to_fit();
 
@@ -598,7 +652,17 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 
   bool icp_success = true;
 
+  // timers
+  std::vector<std::pair<std::string, std::unique_ptr<Stopwatch<>>>> timer;
+  timer.emplace_back("Update Transform ............... ", std::make_unique<Stopwatch<>>(false));
+  timer.emplace_back("Association .................... ", std::make_unique<Stopwatch<>>(false));
+  timer.emplace_back("Optimization ................... ", std::make_unique<Stopwatch<>>(false));
+  timer.emplace_back("Alignment ...................... ", std::make_unique<Stopwatch<>>(false));
+  timer.emplace_back("Initialization ................. ", std::make_unique<Stopwatch<>>(false));
+  timer.emplace_back("Marginalization ................ ", std::make_unique<Stopwatch<>>(false));
+
   ///
+  timer[4].second->start();
   const auto steam_trajectory = const_acc::Interface::MakeShared(options_.qc_diag);
   // const auto steam_trajectory = singer::Interface::MakeShared(options_.ad_diag, options_.qc_diag);
   std::vector<StateVarBase::Ptr> steam_state_vars;
@@ -792,8 +856,11 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     }
   }
 
+  timer[4].second->stop();
+
   /// update sliding window variables
   {
+    timer[5].second->start();
     //
     if (index_frame == 1) {
       const auto &prev_var = trajectory_vars_.at(prev_trajectory_var_index);
@@ -853,9 +920,11 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       LOG(INFO) << "Marginalizing time (inclusive): " << begin_marg_time << " - " << end_marg_time
                 << ", with num states: " << num_states << std::endl;
     }
+    timer[5].second->stop();
   }
 
   // Get evaluator for query points
+  timer[4].second->start();
   // std::vector<Evaluable<const_vel::Interface::PoseType>::ConstPtr> T_mr_intp_eval_vec;
   std::map<double, Evaluable<const_vel::Interface::PoseType>::ConstPtr> T_rm_intp_eval_map;
   // std::vector<Evaluable<const_vel::Interface::PoseType>::ConstPtr> T_sm_intp_eval_vec;
@@ -866,6 +935,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     unique_point_times_.insert(keypoint.timestamp);
   }
   std::vector<double> unique_point_times(unique_point_times_.begin(), unique_point_times_.end());
+
   // for (const auto &ts : unique_point_times) {
   //   const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(Time(ts));
   //   T_rm_intp_eval_map[ts] = T_rm_intp_eval;
@@ -1082,13 +1152,6 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 
   auto &current_estimate = trajectory_.at(index_frame);
 
-  // timers
-  std::vector<std::pair<std::string, std::unique_ptr<Stopwatch<>>>> timer;
-  timer.emplace_back("Update Transform ............... ", std::make_unique<Stopwatch<>>(false));
-  timer.emplace_back("Association .................... ", std::make_unique<Stopwatch<>>(false));
-  timer.emplace_back("Optimization ................... ", std::make_unique<Stopwatch<>>(false));
-  timer.emplace_back("Alignment ...................... ", std::make_unique<Stopwatch<>>(false));
-
   interp_mats_.clear();
 
   timer[0].second->start();
@@ -1191,6 +1254,8 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     p2p_options.p2p_loss_func = P2PSuperCostTerm::LOSS_FUNC::GM;
   const auto p2p_super_cost_term =
       P2PSuperCostTerm::MakeShared(steam_trajectory, prev_steam_time, knot_times.back(), p2p_options);
+
+  timer[4].second->stop();
 
   // *transform points into the robot frame just once:
   timer[0].second->start();

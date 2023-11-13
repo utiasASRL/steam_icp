@@ -20,6 +20,8 @@
       last_frame: 450 # 5680 (highway 7 front image)
       min_dist_sensor_center: 5.0
       max_dist_sensor_center: 100.0
+      lidar_timestamp_round: false
+      lidar_timestamp_round_hz: 400.0
 
     # ODOMETRY OPTIONS ----
     odometry: STEAMLIO
