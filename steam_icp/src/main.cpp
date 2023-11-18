@@ -511,6 +511,7 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_imu, bool);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, T_mi_init_only, bool);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_T_mi_prior_after_init, bool);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_bias_prior_after_init, bool);
     } else if (options.odometry == "STEAMRIO") {
       auto &steam_icp_options = dynamic_cast<SteamRioOdometry::Options &>(odometry_options);
       prefix = "odometry_options.steam.";
@@ -536,9 +537,34 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
         steam_icp_options.qc_diag << qc_diag[0], qc_diag[1], qc_diag[2], qc_diag[3], qc_diag[4], qc_diag[5];
       LOG(WARNING) << "Parameter " << prefix + "qc_diag"
                    << " = " << steam_icp_options.qc_diag.transpose() << std::endl;
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, num_extra_states, int);
 
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, power_planarity, double);
+      std::vector<double> p0_pose;
+      ROS2_PARAM_NO_LOG(node, p0_pose, prefix, p0_pose, std::vector<double>);
+      if ((p0_pose.size() != 6) && (p0_pose.size() != 0))
+        throw std::invalid_argument{"P0 pose diagonal malformed. Must be 6 elements!"};
+      if (p0_pose.size() == 6)
+        steam_icp_options.p0_pose << p0_pose[0], p0_pose[1], p0_pose[2], p0_pose[3], p0_pose[4], p0_pose[5];
+      LOG(WARNING) << "Parameter " << prefix + "p0_pose"
+                   << " = " << steam_icp_options.p0_pose.transpose() << std::endl;
+
+      std::vector<double> p0_vel;
+      ROS2_PARAM_NO_LOG(node, p0_vel, prefix, p0_vel, std::vector<double>);
+      if ((p0_vel.size() != 6) && (p0_vel.size() != 0))
+        throw std::invalid_argument{"P0 velocity diagonal malformed. Must be 6 elements!"};
+      if (p0_vel.size() == 6)
+        steam_icp_options.p0_vel << p0_vel[0], p0_vel[1], p0_vel[2], p0_vel[3], p0_vel[4], p0_vel[5];
+      LOG(WARNING) << "Parameter " << prefix + "p0_vel"
+                   << " = " << steam_icp_options.p0_vel.transpose() << std::endl;
+
+      std::vector<double> p0_accel;
+      ROS2_PARAM_NO_LOG(node, p0_accel, prefix, p0_accel, std::vector<double>);
+      if ((p0_accel.size() != 6) && (p0_accel.size() != 0))
+        throw std::invalid_argument{"P0 acceleration malformed. Must be 6 elements!"};
+      if (p0_accel.size() == 6)
+        steam_icp_options.p0_accel << p0_accel[0], p0_accel[1], p0_accel[2], p0_accel[3], p0_accel[4], p0_accel[5];
+      LOG(WARNING) << "Parameter " << prefix + "p0_accel"
+                   << " = " << steam_icp_options.p0_accel.transpose() << std::endl;
+
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p2p_max_dist, double);
       std::string p2p_loss_func;
       ROS2_PARAM(node, p2p_loss_func, prefix, p2p_loss_func, std::string);
@@ -550,6 +576,8 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
         steam_icp_options.p2p_loss_func = SteamRioOdometry::STEAM_LOSS_FUNC::CAUCHY;
       else if (p2p_loss_func == "GM")
         steam_icp_options.p2p_loss_func = SteamRioOdometry::STEAM_LOSS_FUNC::GM;
+      else if (p2p_loss_func == "HUBER")
+        steam_icp_options.p2p_loss_func = SteamRioOdometry::STEAM_LOSS_FUNC::HUBER;
       else {
         LOG(WARNING) << "Parameter " << prefix + "p2p_loss_func"
                      << " not specified. Using default value: "
@@ -563,11 +591,50 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_final_state_value, bool);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, beta, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, gravity, double);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, r_imu_acc, double);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, r_imu_ang, double);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p0_imu, double);
-      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, q_imu, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, voxel_downsample, bool);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, acc_loss_func, std::string);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, acc_loss_sigma, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, gyro_loss_func, std::string);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, gyro_loss_sigma, double);
+      std::vector<double> r_imu_acc;
+      ROS2_PARAM_NO_LOG(node, r_imu_acc, prefix, r_imu_acc, std::vector<double>);
+      if ((r_imu_acc.size() != 3) && (r_imu_acc.size() != 0))
+        throw std::invalid_argument{"r_imu_acc malformed. Must be 3 elements!"};
+      if (r_imu_acc.size() == 3) steam_icp_options.r_imu_acc << r_imu_acc[0], r_imu_acc[1], r_imu_acc[2];
+      LOG(WARNING) << "Parameter " << prefix + "r_imu_acc"
+                   << " = " << steam_icp_options.r_imu_acc.transpose() << std::endl;
+      std::vector<double> r_imu_ang;
+      ROS2_PARAM_NO_LOG(node, r_imu_ang, prefix, r_imu_ang, std::vector<double>);
+      if ((r_imu_ang.size() != 3) && (r_imu_ang.size() != 0))
+        throw std::invalid_argument{"r_imu_ang malformed. Must be 3 elements!"};
+      if (r_imu_ang.size() == 3) steam_icp_options.r_imu_ang << r_imu_ang[0], r_imu_ang[1], r_imu_ang[2];
+      LOG(WARNING) << "Parameter " << prefix + "r_imu_ang"
+                   << " = " << steam_icp_options.r_imu_ang.transpose() << std::endl;
+
+      std::vector<double> p0_bias_accel;
+      ROS2_PARAM_NO_LOG(node, p0_bias_accel, prefix, p0_bias_accel, std::vector<double>);
+      if ((p0_bias_accel.size() != 3) && (p0_bias_accel.size() != 0))
+        throw std::invalid_argument{"p0_bias_accel malformed. Must be 3 elements!"};
+      if (p0_bias_accel.size() == 3)
+        steam_icp_options.p0_bias_accel << p0_bias_accel[0], p0_bias_accel[1], p0_bias_accel[2];
+      LOG(WARNING) << "Parameter " << prefix + "p0_bias_accel"
+                   << " = " << steam_icp_options.p0_bias_accel.transpose() << std::endl;
+
+      std::vector<double> q_bias_accel;
+      ROS2_PARAM_NO_LOG(node, q_bias_accel, prefix, q_bias_accel, std::vector<double>);
+      if ((q_bias_accel.size() != 3) && (q_bias_accel.size() != 0))
+        throw std::invalid_argument{"q_bias_accel malformed. Must be 3 elements!"};
+      if (q_bias_accel.size() == 3) steam_icp_options.q_bias_accel << q_bias_accel[0], q_bias_accel[1], q_bias_accel[2];
+      LOG(WARNING) << "Parameter " << prefix + "q_bias_accel"
+                   << " = " << steam_icp_options.q_bias_accel.transpose() << std::endl;
+
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, pk_bias_accel, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, p0_bias_gyro, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, pk_bias_gyro, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, q_bias_gyro, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_imu, bool);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_bias_prior_after_init, bool);
+
     } else if (options.odometry == "STEAMRO") {
       auto &steam_icp_options = dynamic_cast<SteamRoOdometry::Options &>(odometry_options);
       prefix = "odometry_options.steam.";
@@ -607,6 +674,8 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
         steam_icp_options.p2p_loss_func = SteamRoOdometry::STEAM_LOSS_FUNC::CAUCHY;
       else if (p2p_loss_func == "GM")
         steam_icp_options.p2p_loss_func = SteamRoOdometry::STEAM_LOSS_FUNC::GM;
+      else if (p2p_loss_func == "HUBER")
+        steam_icp_options.p2p_loss_func = SteamRoOdometry::STEAM_LOSS_FUNC::HUBER;
       else {
         LOG(WARNING) << "Parameter " << prefix + "p2p_loss_func"
                      << " not specified. Using default value: "

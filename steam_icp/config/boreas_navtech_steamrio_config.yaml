@@ -1,12 +1,12 @@
 /**:
   ros__parameters:
-    log_dir: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steam
-    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steam
+    log_dir: /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio
+    output_dir: /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
       odometry: true
-      raw_points: true
+      raw_points: false
       sampled_points: true
       map_points: true
 
@@ -14,10 +14,10 @@
     dataset: BoreasNavtech
     dataset_options:
       all_sequences: false
-      root_path: /workspace/raid/krb/boreas
+      root_path: /workspace/data1
       sequence: "boreas-2021-09-02-11-42"
       init_frame: 0 # 5675 (highway 7 front image)
-      last_frame: 100000 # 5680 (highway 7 front image)
+      last_frame: 10000 # 5680 (highway 7 front image)
       min_dist_sensor_center: 2.0
       max_dist_sensor_center: 80.0
       radar_resolution: 0.0596
@@ -42,25 +42,44 @@
       max_distance: 80.0  # determines radius for cropping when adding to the map
       max_number_neighbors: 1  # determines size of priority queue when getting neighbors from map
       max_num_points_in_voxel: 1
-      num_iters_icp: 100
+      num_iters_icp: 20
       voxel_lifetime: 3
 
       elastic:
         num_threads: 20
 
       steam:
-        qc_diag: [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.01] #[50.0, 50.0, 50.0, 5.0, 5.0, 5.0]  # [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.01]
-        num_threads: 20
+        qc_diag: [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.1] #[50.0, 50.0, 50.0, 5.0, 5.0, 5.0]  # [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.01]
+        # qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
+        num_threads: 16
         # parameters copied from VTR3:
+        p2p_loss_func: CAUCHY  # (L2, DCS, CAUCHY, GM, HUBER)
         p2p_loss_sigma: 1.0
-        p2p_loss_func: CAUCHY  # (L2, DCS, CAUCHY, GM)
         p2p_max_dist: 5.0
-        beta: 0.049
+        beta: 0.0535
         voxel_downsample: false
-        verbose: false
-        max_iterations: 10
+
+        p0_pose: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4]
+        p0_vel: [1.0e-1, 1.0e-1, 1.0e-1, 1.0e-4, 1.0e-4, 1.0e-4]
+        p0_accel: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-1, 1.0e-1, 1.0e-1]
+
         gravity: -9.8042
-        r_imu_acc: 0.01
-        r_imu_ang: 0.001
-        p0_imu: 0.0001
-        q_imu: 0.0001
+        r_imu_acc: [1.0, 100.0, 1.0]
+        r_imu_ang: [5.48885234e-06, 2.38789649e-05, 3.34471102e-06]
+        q_bias_accel: [1.0e-4, 1.0e-1, 1.0e-1]
+        p0_bias_accel: [1.0e-4, 1.0e-4, 1.0e-4]
+        q_bias_gyro: 1.0e-10
+        p0_bias_gyro: 1.0e-2
+        use_imu: false
+        max_iterations: 5
+        verbose: true
+        delay_adding_points: 1
+        use_bias_prior_after_init: false
+        pk_bias_accel: 1.0e-1  # prior after init
+        pk_bias_gyro: 1.0e-1  # prior after init
+        acc_loss_func: CAUCHY
+        acc_loss_sigma: 1.0
+        gyro_loss_func: L2
+        gyro_loss_sigma: 1.0
+
+

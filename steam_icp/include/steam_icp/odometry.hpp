@@ -40,7 +40,7 @@ class Odometry {
     // common icp options
     int num_iters_icp = 10;                      // The Maximum number of ICP iterations performed
     double threshold_orientation_norm = 0.0001;  // Threshold on rotation (deg) for ICP's stopping criterion
-    double threshold_translation_norm = 0.001;   // Threshold on translation (deg) for ICP's stopping criterion
+    double threshold_translation_norm = 0.001;   // Threshold on translation (m) for ICP's stopping criterion
     int min_number_keypoints = 100;
 
     //

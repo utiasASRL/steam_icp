@@ -216,6 +216,7 @@ void BoreasNavtechSequence::save(const std::string &path, const Trajectory &traj
   Eigen::Matrix3d R;
   Eigen::Vector3d t;
   for (auto &pose : poses) {
+    pose = pose;
     R = pose.block<3, 3>(0, 0);
     t = pose.block<3, 1>(0, 3);
     posefile << R(0, 0) << " " << R(0, 1) << " " << R(0, 2) << " " << t(0) << " " << R(1, 0) << " " << R(1, 1) << " "
@@ -228,13 +229,16 @@ auto BoreasNavtechSequence::evaluate(const std::string &path, const Trajectory &
   //
   std::string ground_truth_file = options_.root_path + "/" + options_.sequence + "/applanix/radar_poses.csv";
   const auto gt_poses_full = loadPoses(ground_truth_file);
-  const ArrayPoses gt_poses(gt_poses_full.begin() + init_frame_, gt_poses_full.begin() + last_frame_);
+  int last_frame = std::min(last_frame_, int(init_frame_ + trajectory.size()));
+  const ArrayPoses gt_poses(gt_poses_full.begin() + init_frame_, gt_poses_full.begin() + last_frame);
 
   //
   ArrayPoses poses;
   poses.reserve(trajectory.size());
+  Eigen::Matrix4d zup2zdown;
+  zup2zdown << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
   for (auto &frame : trajectory) {
-    poses.emplace_back(frame.getMidPose());
+    poses.emplace_back(frame.getMidPose() * zup2zdown);
   }
 
   //

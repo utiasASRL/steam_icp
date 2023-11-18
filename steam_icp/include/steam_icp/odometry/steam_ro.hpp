@@ -9,7 +9,7 @@ namespace steam_icp {
 
 class SteamRoOdometry : public Odometry {
  public:
-  enum class STEAM_LOSS_FUNC { L2, DCS, CAUCHY, GM };
+  enum class STEAM_LOSS_FUNC { L2, DCS, CAUCHY, GM, HUBER };
 
   struct Options : public Odometry::Options {
     // sensor vehicle transformation

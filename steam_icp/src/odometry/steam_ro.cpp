@@ -320,10 +320,6 @@ void SteamRoOdometry::updateMap(int index_frame, int update_frame) {
   Time begin_steam_time = trajectory_[update_frame].begin_timestamp;
   Time end_steam_time = trajectory_[update_frame].end_timestamp;
 
-  // consistency check
-  // const auto &begin_var = trajectory_vars_.at(to_marginalize_ - 1);
-  //   if (begin_var.time > begin_steam_time) throw std::runtime_error("begin_var.time > begin_steam_time");
-
   // construct the trajectory for interpolation
   int num_states = 0;
   const auto update_trajectory = const_vel::Interface::MakeShared(options_.qc_diag);
@@ -345,11 +341,21 @@ void SteamRoOdometry::updateMap(int index_frame, int update_frame) {
     const auto T_rm_intp_eval = update_trajectory->getPoseInterpolator(Time(query_time));
     const auto T_ms_intp_eval = inverse(compose(T_sr_var_, T_rm_intp_eval));
 
+    const auto w_mr_inr_intp_eval = update_trajectory->getVelocityInterpolator(Time(query_time));
+    const auto w_ms_ins_intp_eval = compose_velocity(T_sr_var_, w_mr_inr_intp_eval);
+
     const Eigen::Matrix4d T_ms = T_ms_intp_eval->evaluate().matrix();
     const Eigen::Matrix3d R = T_ms.block<3, 3>(0, 0);
     const Eigen::Vector3d t = T_ms.block<3, 1>(0, 3);
     //
-    frame[i].pt = R * frame[i].raw_pt + t;
+    if (options_.beta != 0) {
+      const auto abar = frame[i].raw_pt.normalized();
+      const auto v_m_s_in_s = w_ms_ins_intp_eval->evaluate().matrix().block<3, 1>(0, 0);
+      frame[i].pt = T_ms.block<3, 3>(0, 0) * (frame[i].raw_pt - options_.beta * abar * abar.transpose() * v_m_s_in_s) +
+                    T_ms.block<3, 1>(0, 3);
+    } else {
+      frame[i].pt = R * frame[i].raw_pt + t;
+    }
   }
 #endif
 

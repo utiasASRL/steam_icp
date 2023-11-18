@@ -20,7 +20,7 @@
       last_frame: 450 # 5680 (highway 7 front image)
       min_dist_sensor_center: 5.0
       max_dist_sensor_center: 100.0
-      lidar_timestamp_round: false
+      lidar_timestamp_round: true
       lidar_timestamp_round_hz: 400.0
 
     # ODOMETRY OPTIONS ----
@@ -30,6 +30,13 @@
       debug_path: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlio
       num_iters_icp: 10
       # init_num_frames: 0
+      sample_voxel_size: 1.70
+      # min_number_neighbors: 3
+      min_distance_points: 0.1
+      max_num_points_in_voxel: 18
+      min_number_neighbors: 18
+      max_number_neighbors: 18
+
 
 
       elastic:
@@ -54,7 +61,8 @@
 
         # sim:
         ad_diag: [0.0, 0.0, 0.0, 100., 100., 100.]
-        qc_diag: [1.0e+0, 1.0e+1, 1.0e+1, 3.0e+03, 3.0e+03, 3.0e+04]
+        # qc_diag: [1.0e+0, 1.0e+1, 1.0e+1, 3.0e+03, 3.0e+03, 3.0e+04]
+        qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
 
         # r_imu_acc: [0.00038025, 0.00038025, 0.00038025]
         # r_imu_ang: [0.0001, 0.0001, 0.0001]
@@ -79,7 +87,7 @@
         r_imu_acc: [1.0, 100.0, 1.0]
         r_imu_ang: [5.48885234e-06, 2.38789649e-05, 3.34471102e-06]
         # q_bias_accel: [1.0e-11, 4.0e-3, 1.0e-3]
-        q_bias_accel: [1.0e-11, 1.0e-2, 1.0e-3]
+        q_bias_accel: [1.0e-4, 1.0e-1, 1.0e-1]
         p0_bias_accel: [1.0e-4, 1.0e-4, 1.0e-4]
         q_bias_gyro: 1.0e-10
         p0_bias_gyro: 1.0e-2
@@ -88,7 +96,7 @@
         verbose: true
         delay_adding_points: 1
         qg_diag: [1.0e-6, 1.0e-6, 1.0e-6, 1.0e-7, 1.0e-7, 1.0e-6]  # motion model for T_mi
-        T_mi_init_only: false
+        T_mi_init_only: true
         T_mi_init_cov: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-6, 1.0e-6, 1.0e-8]
         use_T_mi_prior_after_init: false
         T_mi_prior_cov: [1.0e-3, 1.0e-3, 1.0e-3, 1.0, 1.0, 1.0e-4]
@@ -98,7 +106,7 @@
         xi_ig: [0., 0., 0., -1.51869911e-02,  3.07697005e-02, 0.]  # sim: [0., 0., 0., -0.0197052, 0.0285345, 0.] 
         p2p_loss_func: L2
         num_extra_states: 0
-        acc_loss_func: L2
+        acc_loss_func: CAUCHY
         acc_loss_sigma: 1.0
         gyro_loss_func: L2
         gyro_loss_sigma: 1.0
