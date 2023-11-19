@@ -27,7 +27,7 @@
       modified_cacfar_threshold: 1.0
       modified_cacfar_threshold2: 0.0
       modified_cacfar_threshold3: 0.09
-      modified_cacfar_num_threads: 20
+      modified_cacfar_num_threads: 16
 
     # ODOMETRY OPTIONS ----
     odometry: STEAMRIO
@@ -49,7 +49,7 @@
         num_threads: 20
 
       steam:
-        qc_diag: [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.1] #[50.0, 50.0, 50.0, 5.0, 5.0, 5.0]  # [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.01]
+        qc_diag: [1.0, 0.004, 0.0001, 0.0001, 0.0001, 1.5] #[50.0, 50.0, 50.0, 5.0, 5.0, 5.0]  # [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.01]
         # qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
         num_threads: 16
         # parameters copied from VTR3:
@@ -66,8 +66,8 @@
         gravity: -9.8042
         r_imu_acc: [1.0, 100.0, 1.0]
         r_imu_ang: [5.48885234e-06, 2.38789649e-05, 3.34471102e-06]
-        q_bias_accel: [1.0e-4, 1.0e-1, 1.0e-1]
-        p0_bias_accel: [1.0e-4, 1.0e-4, 1.0e-4]
+        q_bias_accel: [0.025, 0.1, 1.0e-1]
+        p0_bias_accel: [1.0e-1, 1.0e-1, 1.0e-1]
         q_bias_gyro: 1.0e-10
         p0_bias_gyro: 1.0e-2
         use_imu: false

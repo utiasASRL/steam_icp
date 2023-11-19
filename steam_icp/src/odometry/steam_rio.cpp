@@ -214,6 +214,13 @@ auto SteamRioOdometry::registerFrame(const DataFrame &const_frame) -> Registrati
     Eigen::Matrix<double, 6, 1> xi_mi = initialize_gravity(const_frame.imu_data_vec);
     T_mi_var_->update(xi_mi);
     T_mi_var_->locked() = true;
+    // Eigen::Vector3d gravity;
+    // gravity << 0, 0, options_.gravity;
+    // Eigen::Matrix<double, 6, 1> bias = Eigen::Matrix<double, 6, 1>::Zero();
+    // bias.block<3, 1>(0, 0) = -1 * T_mi_var_->value().matrix().block<3, 3>(0, 0) * gravity;
+    // bias(2, 0) = 0.0;
+    // begin_imu_biases->update(bias);
+    // end_imu_biases->update(bias);
 
     to_marginalize_ = 1;  /// The first state is not added to the filter
 
@@ -997,7 +1004,7 @@ bool SteamRioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       if (options_.debug_print) {
         LOG(INFO) << "CT_ICP: Finished with N=" << iter << " ICP iterations" << std::endl;
       }
-      break;
+      // break;
     }
   }
 
