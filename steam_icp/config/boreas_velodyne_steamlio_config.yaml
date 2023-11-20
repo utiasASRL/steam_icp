@@ -14,7 +14,7 @@
     dataset: BoreasVelodyne
     dataset_options:
       all_sequences: false
-      root_path: /workspace/data1
+      root_path: /home/asrl/boreas_docker_local
       sequence: "boreas-2021-09-02-11-42" #"boreas-2021-09-02-11-42"
       init_frame: 0 # 5675 (highway 7 front image)
       last_frame: 450 # 5680 (highway 7 front image)

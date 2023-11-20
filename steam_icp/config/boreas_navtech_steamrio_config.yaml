@@ -13,8 +13,8 @@
     # DATASET OPTIONS ----
     dataset: BoreasNavtech
     dataset_options:
-      all_sequences: false
-      root_path: /workspace/data1
+      all_sequences: true
+      root_path: /home/asrl/boreas_docker_local
       sequence: "boreas-2021-09-02-11-42"
       init_frame: 0 # 5675 (highway 7 front image)
       last_frame: 10000 # 5680 (highway 7 front image)
@@ -64,13 +64,13 @@
         p0_accel: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-1, 1.0e-1, 1.0e-1]
 
         gravity: -9.8042
-        r_imu_acc: [1.0, 100.0, 1.0]
+        r_imu_acc: [100.0, 100.0, 1.0]
         r_imu_ang: [5.48885234e-06, 2.38789649e-05, 3.34471102e-06]
-        q_bias_accel: [0.025, 0.1, 1.0e-1]
+        q_bias_accel: [0.1, 0.1, 1.0e-1]
         p0_bias_accel: [1.0e-1, 1.0e-1, 1.0e-1]
         q_bias_gyro: 1.0e-10
         p0_bias_gyro: 1.0e-2
-        use_imu: false
+        use_imu: true
         max_iterations: 5
         verbose: true
         delay_adding_points: 1

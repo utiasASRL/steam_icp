@@ -1004,7 +1004,7 @@ bool SteamRioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       if (options_.debug_print) {
         LOG(INFO) << "CT_ICP: Finished with N=" << iter << " ICP iterations" << std::endl;
       }
-      // break;
+      break;
     }
   }
 

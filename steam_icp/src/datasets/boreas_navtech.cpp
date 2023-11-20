@@ -223,6 +223,43 @@ void BoreasNavtechSequence::save(const std::string &path, const Trajectory &traj
              << R(1, 2) << " " << t(1) << " " << R(2, 0) << " " << R(2, 1) << " " << R(2, 2) << " " << t(2)
              << std::endl;
   }
+
+  {
+    const auto filename = path + "/" + options_.sequence + "_debug.txt";
+    std::ofstream posefile(filename);
+    if (!posefile.is_open()) throw std::runtime_error{"failed to open file: " + filename};
+    posefile << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+    for (auto &frame : trajectory) {
+      const auto T = frame.getMidPose();
+      for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+          posefile << T(i, j) << " ";
+        }
+      }
+      for (int i = 0; i < 6; ++i) {
+        posefile << frame.mid_w(i, 0) << " ";
+      }
+      for (int i = 0; i < 6; ++i) {
+        posefile << frame.mid_dw(i, 0) << " ";
+      }
+      for (int i = 0; i < 6; ++i) {
+        posefile << frame.mid_b(i, 0) << " ";
+      }
+      // const auto P = frame.getMidPose();
+      for (int i = 0; i < 18; ++i) {
+        for (int j = 0; j < 18; ++j) {
+          posefile << frame.mid_state_cov(i, j) << " ";
+        }
+      }
+      const auto T_mi = frame.mid_T_mi;
+      for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+          posefile << T_mi(i, j) << " ";
+        }
+      }
+      posefile << std::endl;
+    }
+  }
 }
 
 auto BoreasNavtechSequence::evaluate(const std::string &path, const Trajectory &trajectory) const -> SeqError {
