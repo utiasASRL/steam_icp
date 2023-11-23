@@ -432,4 +432,18 @@ auto BoreasVelodyneSequence::evaluate(const std::string &path, const Trajectory 
   return evaluateOdometry(filename, gt_poses, poses);
 }
 
+auto BoreasVelodyneSequence::evaluate(const std::string &path) const -> SeqError {
+  //
+  std::string ground_truth_file = options_.root_path + "/" + options_.sequence + "/applanix/lidar_poses.csv";
+  const auto gt_poses = loadPoses(ground_truth_file);
+  //
+  const auto poses = loadPoses(path + "/" + options_.sequence + "_poses.txt");
+  //
+  if (gt_poses.size() == 0 || gt_poses.size() != poses.size())
+    throw std::runtime_error{"estimated and ground truth poses are not the same size."};
+
+  const auto filename = path + "/" + options_.sequence + "_eval.txt";
+  return evaluateOdometry(filename, gt_poses, poses);
+}
+
 }  // namespace steam_icp

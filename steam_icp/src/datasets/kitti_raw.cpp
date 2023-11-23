@@ -54,7 +54,8 @@ inline std::string frame_file_name(int frame_id) {
   return "frame_" + ss.str() + ".ply";
 }
 
-std::vector<Point3D> readPointCloud(const std::string &path, const double &min_dist, const double &max_dist) {
+std::vector<Point3D> readPointCloud(const std::string &path, const double &min_dist, const double &max_dist,
+                                    const bool round_timestamps, const double &timestamp_round_hz) {
   std::vector<Point3D> frame;
   // read ply frame file
   PlyFile plyFileIn(path, fileOpenMode_IN);
@@ -62,6 +63,8 @@ std::vector<Point3D> readPointCloud(const std::string &path, const double &min_d
   int sizeOfPointsIn = 0;
   int numPointsIn = 0;
   plyFileIn.readFile(dataIn, sizeOfPointsIn, numPointsIn);
+  const double timestamp_round_dt = 1.0 / timestamp_round_hz;
+  std::cout << timestamp_round_dt << std::endl;
 
   // Specific Parameters for KITTI_raw
   const double KITTI_MIN_Z = -5.0;                          // Bad returns under the ground
@@ -83,6 +86,9 @@ std::vector<Point3D> readPointCloud(const std::string &path, const double &min_d
     new_point.alpha_timestamp = *((float *)(dataIn + offset));
     offset += sizeof(float);
 
+    if (round_timestamps)
+      new_point.alpha_timestamp = new_point.alpha_timestamp - fmod(new_point.alpha_timestamp, timestamp_round_dt);
+
     if (new_point.alpha_timestamp < frame_first_timestamp) {
       frame_first_timestamp = new_point.alpha_timestamp;
     }
@@ -99,6 +105,7 @@ std::vector<Point3D> readPointCloud(const std::string &path, const double &min_d
   frame.shrink_to_fit();
 
   for (int i(0); i < (int)frame.size(); i++) {
+    frame[i].timestamp = frame[i].alpha_timestamp;
     frame[i].alpha_timestamp = std::min(1.0, std::max(0.0, 1 - (frame_last_timestamp - frame[i].alpha_timestamp) /
                                                                    (frame_last_timestamp - frame_first_timestamp)));
   }
@@ -195,9 +202,10 @@ DataFrame KittiRawSequence::next() {
   int curr_frame = curr_frame_++;
   auto filename = dir_path_ + frame_file_name(curr_frame);
   DataFrame frame;
-  frame.pointcloud = readPointCloud(filename, options_.min_dist_sensor_center, options_.max_dist_sensor_center);
-  auto &pc = frame.pointcloud;
-  for (auto &point : pc) point.timestamp = (static_cast<double>(curr_frame) + point.alpha_timestamp) / 10.0;
+  frame.pointcloud = readPointCloud(filename, options_.min_dist_sensor_center, options_.max_dist_sensor_center,
+                                    options_.lidar_timestamp_round, options_.lidar_timestamp_round_hz);
+  // auto &pc = frame.pointcloud;
+  // for (auto &point : pc) point.timestamp = (static_cast<double>(curr_frame) + point.alpha_timestamp) / 10.0;
   frame.timestamp = static_cast<double>(curr_frame) / 10.0 + 0.05;
   return frame;
 }
@@ -230,6 +238,20 @@ auto KittiRawSequence::evaluate(const std::string &path, const Trajectory &traje
   //
   const auto poses = transformTrajectory(trajectory, sequence_id_);
 
+  //
+  if (gt_poses.size() == 0 || gt_poses.size() != poses.size())
+    throw std::runtime_error{"estimated and ground truth poses are not the same size."};
+
+  const auto filename = path + "/" + options_.sequence + "_eval.txt";
+  return evaluateOdometry(filename, gt_poses, poses);
+}
+
+auto KittiRawSequence::evaluate(const std::string &path) const -> SeqError {
+  //
+  std::string ground_truth_file = options_.root_path + "/" + options_.sequence + "/" + options_.sequence + ".txt";
+  const auto gt_poses = loadPoses(ground_truth_file);
+
+  const auto poses = loadPoses(path + "/" + options_.sequence + "_poses.txt");
   //
   if (gt_poses.size() == 0 || gt_poses.size() != poses.size())
     throw std::runtime_error{"estimated and ground truth poses are not the same size."};

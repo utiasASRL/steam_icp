@@ -80,6 +80,9 @@ class Sequence {
   virtual SeqError evaluate(const std::string & /* path */, const Trajectory & /* trajectory */) const {
     throw std::runtime_error("no ground truth available");
   }
+  virtual SeqError evaluate(const std::string & /* path */) const {
+    throw std::runtime_error("no ground truth available");
+  }
 
  protected:
   const Options options_;

@@ -83,7 +83,8 @@ struct EIGEN_ALIGN16 PCLPoint3D {
 
 // Parameters to run the SLAM
 struct SLAMOptions {
-  bool suspend_on_failure = false;       // Whether to suspend the execution once an error is detected
+  bool suspend_on_failure = false;  // Whether to suspend the execution once an error is detected
+  bool eval_only = false;
   std::string output_dir = "./outputs";  // The output path (relative or absolute) to save the pointclouds
 
   struct {
@@ -120,6 +121,7 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
     ROS2_PARAM_CLAUSE(node, options, prefix, output_dir, std::string);
     if (!options.output_dir.empty() && options.output_dir[options.output_dir.size() - 1] != '/')
       options.output_dir += '/';
+    ROS2_PARAM_CLAUSE(node, options, prefix, eval_only, bool);
   }
 
   /// dataset options
@@ -816,6 +818,30 @@ int main(int argc, char **argv) {
       T_rs_msg.header.frame_id = "vehicle";
       T_rs_msg.child_frame_id = "sensor";
       tf_static_bc->sendTransform(T_rs_msg);
+    }
+
+    if (options.eval_only) {
+      if (seq->hasGroundTruth()) {
+        const auto seq_error = seq->evaluate(options.output_dir);
+        LOG(WARNING) << "Mean RPE : " << seq_error.mean_t_rpe << std::endl;
+        LOG(WARNING) << "Mean RPE 2D : " << seq_error.mean_t_rpe_2d << std::endl;
+        LOG(WARNING) << "Mean APE : " << seq_error.mean_ape << std::endl;
+        LOG(WARNING) << "Max APE : " << seq_error.max_ape << std::endl;
+        LOG(WARNING) << "Mean Local Error : " << seq_error.mean_local_err << std::endl;
+        LOG(WARNING) << "Max Local Error : " << seq_error.max_local_err << std::endl;
+        LOG(WARNING) << "Index Max Local Error : " << seq_error.index_max_local_err << std::endl;
+        // clang-format off
+      LOG(WARNING) << "KITTI Summary : "
+                   << std::fixed << std::setprecision(2) << seq_error.mean_t_rpe_2d << " & "
+                   << std::fixed << std::setprecision(4) << seq_error.mean_r_rpe_2d << " & "
+                   << std::fixed << std::setprecision(2) << seq_error.mean_t_rpe << " & "
+                   << std::fixed << std::setprecision(4) << seq_error.mean_r_rpe << "\\\\" << std::endl;
+        // clang-format on
+        LOG(WARNING) << std::endl;
+
+        sequence_errors.emplace_back(seq_error);
+      }
+      continue;
     }
 
     // timers

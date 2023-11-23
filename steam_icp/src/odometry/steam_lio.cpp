@@ -651,20 +651,41 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   knot_times.emplace_back(curr_time);
 
   /// add new state variables, initialize with constant velocity
+
+  Eigen::Matrix4d T_next_mat = Eigen::Matrix4d::Identity();
+  if (index_frame > 2) {
+    const Eigen::Matrix3d R_next = trajectory_[index_frame - 1].end_R * trajectory_[index_frame - 2].end_R.inverse() *
+                                   trajectory_[index_frame - 1].end_R;
+    const Eigen::Vector3d t_next = trajectory_[index_frame - 1].end_t +
+                                   trajectory_[index_frame - 1].end_R * trajectory_[index_frame - 2].end_R.inverse() *
+                                       (trajectory_[index_frame - 1].end_t - trajectory_[index_frame - 2].end_t);
+    T_next_mat.block<3, 3>(0, 0) = R_next;
+    T_next_mat.block<3, 1>(0, 3) = t_next;
+  } else {
+    T_next_mat = steam_trajectory->getPoseInterpolator(Time(knot_times.back()))->value().inverse().matrix();
+  }
+
+  const lgmath::se3::Transformation T_next(Eigen::Matrix4d(T_next_mat.inverse()));
+  const Eigen::Matrix<double, 6, 1> w_next = Eigen::Matrix<double, 6, 1>::Zero();
+  const Eigen::Matrix<double, 6, 1> dw_next = Eigen::Matrix<double, 6, 1>::Zero();
   for (size_t i = 0; i < knot_times.size(); ++i) {
     double knot_time = knot_times[i];
     Time knot_steam_time(knot_time);
     const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(knot_steam_time);
     const auto w_mr_inr_intp_eval = steam_trajectory->getVelocityInterpolator(knot_steam_time);
     const auto dw_mr_inr_intp_eval = steam_trajectory->getAccelerationInterpolator(knot_steam_time);
-
     const auto knot_T_rm = T_rm_intp_eval->value();
     const auto T_rm_var = SE3StateVar::MakeShared(knot_T_rm);
-    //
     const auto w_mr_inr_var = VSpaceStateVar<6>::MakeShared(w_mr_inr_intp_eval->value());
     const auto dw_mr_inr_var = VSpaceStateVar<6>::MakeShared(dw_mr_inr_intp_eval->value());
-    LOG(INFO) << "w_mr_inr_intp_eval->value() " << w_mr_inr_intp_eval->value().transpose() << std::endl;
-    LOG(INFO) << "dw_mr_inr_intp_eval->value() " << dw_mr_inr_intp_eval->value().transpose() << std::endl;
+
+    // const auto T_rm_var = SE3StateVar::MakeShared(T_next);
+    // const auto w_mr_inr_var = VSpaceStateVar<6>::MakeShared(w_next);
+    // const auto dw_mr_inr_var = VSpaceStateVar<6>::MakeShared(dw_next);
+    //
+
+    LOG(INFO) << "init: w_mr_inr_var->value() " << w_mr_inr_var->value().transpose() << std::endl;
+    LOG(INFO) << "init: dw_mr_inr_var->value() " << dw_mr_inr_var->value().transpose() << std::endl;
     const auto imu_biases_var = VSpaceStateVar<6>::MakeShared(prev_imu_biases);
 
     steam_trajectory->add(knot_steam_time, T_rm_var, w_mr_inr_var, dw_mr_inr_var);
@@ -1093,22 +1114,24 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   p2p_matches.clear();
   int N_matches = 0;
 
+  bool swf_inside_icp = false;
+  if (index_frame > options_.init_num_frames) swf_inside_icp = true;
+
   for (int iter(0); iter < options_.num_iters_icp; iter++) {
-    timer[0].second->start();
-    transform_keypoints();
-    timer[0].second->stop();
-
     // initialize problem
-#define SWF_INSIDE_ICP true
-#if SWF_INSIDE_ICP
-    SlidingWindowFilter problem(*sliding_window_filter_);
-#else
-    OptimizationProblem problem(/* num_threads */ options_.num_threads);
-    for (const auto &var : steam_state_vars) problem.addStateVariable(var);
-#endif
 
-    steam_trajectory->addPriorCostTerms(problem);
-    for (const auto &prior_cost_term : prior_cost_terms) problem.addCostTerm(prior_cost_term);
+    const auto problem = [&]() -> Problem::Ptr {
+      if (swf_inside_icp) {
+        return std::make_shared<SlidingWindowFilter>(*sliding_window_filter_);
+      } else {
+        auto problem = OptimizationProblem::MakeShared(options_.num_threads);
+        for (const auto &var : steam_state_vars) problem->addStateVariable(var);
+        return problem;
+      }
+    }();
+
+    steam_trajectory->addPriorCostTerms(*problem);
+    for (const auto &prior_cost_term : prior_cost_terms) problem->addCostTerm(prior_cost_term);
 
     timer[1].second->start();
 
@@ -1195,14 +1218,14 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 
     p2p_super_cost_term->initP2PMatches();
 
-    for (const auto &cost : meas_cost_terms) problem.addCostTerm(cost);
-    for (const auto &cost : imu_cost_terms) problem.addCostTerm(cost);
-    for (const auto &cost : pose_meas_cost_terms) problem.addCostTerm(cost);
-    for (const auto &cost : imu_prior_cost_terms) problem.addCostTerm(cost);
-    for (const auto &cost : T_mi_prior_cost_terms) problem.addCostTerm(cost);
-    problem.addCostTerm(p2p_super_cost_term);
+    for (const auto &cost : meas_cost_terms) problem->addCostTerm(cost);
+    for (const auto &cost : imu_cost_terms) problem->addCostTerm(cost);
+    for (const auto &cost : pose_meas_cost_terms) problem->addCostTerm(cost);
+    for (const auto &cost : imu_prior_cost_terms) problem->addCostTerm(cost);
+    for (const auto &cost : T_mi_prior_cost_terms) problem->addCostTerm(cost);
+    problem->addCostTerm(p2p_super_cost_term);
     if (options_.use_imu) {
-      problem.addCostTerm(imu_super_cost_term);
+      problem->addCostTerm(imu_super_cost_term);
     }
 
     timer[1].second->stop();
@@ -1220,10 +1243,8 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     GaussNewtonSolverNVA::Params params;
     params.verbose = options_.verbose;
     params.max_iterations = (unsigned int)options_.max_iterations;
-#if SWF_INSIDE_ICP
-    params.reuse_previous_pattern = false;
-#endif
-    GaussNewtonSolverNVA solver(problem, params);
+    if (swf_inside_icp) params.reuse_previous_pattern = false;
+    GaussNewtonSolverNVA solver(*problem, params);
     solver.optimize();
 
     timer[2].second->stop();
@@ -1279,6 +1300,9 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       }
       break;
     }
+    timer[0].second->start();
+    transform_keypoints();
+    timer[0].second->stop();
   }
 
   steam_trajectory->addPriorCostTerms(*sliding_window_filter_);  // ** this includes state priors (like for x_0)
@@ -1304,6 +1328,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   params.verbose = options_.verbose;
   params.max_iterations = (unsigned int)options_.max_iterations;
   GaussNewtonSolverNVA solver(*sliding_window_filter_, params);
+  if (!swf_inside_icp) solver.optimize();
 
   if (options_.T_mi_init_only && !use_T_mi_gt) {
     size_t i = prev_trajectory_var_index + 1;

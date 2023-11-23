@@ -17,6 +17,7 @@ class BoreasVelodyneSequence : public Sequence {
 
   bool hasGroundTruth() const override { return true; }
   SeqError evaluate(const std::string& path, const Trajectory& trajectory) const override;
+  SeqError evaluate(const std::string& path) const override;
 
  private:
   std::string dir_path_;
