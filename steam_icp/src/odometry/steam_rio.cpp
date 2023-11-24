@@ -567,6 +567,23 @@ bool SteamRioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   knot_times.reserve(num_states);
   knot_times.emplace_back(curr_time);
 
+  Eigen::Matrix4d T_next_mat = Eigen::Matrix4d::Identity();
+  if (index_frame > 2) {
+    const Eigen::Matrix3d R_next = trajectory_[index_frame - 1].end_R * trajectory_[index_frame - 2].end_R.inverse() *
+                                   trajectory_[index_frame - 1].end_R;
+    const Eigen::Vector3d t_next = trajectory_[index_frame - 1].end_t +
+                                   trajectory_[index_frame - 1].end_R * trajectory_[index_frame - 2].end_R.inverse() *
+                                       (trajectory_[index_frame - 1].end_t - trajectory_[index_frame - 2].end_t);
+    T_next_mat.block<3, 3>(0, 0) = R_next;
+    T_next_mat.block<3, 1>(0, 3) = t_next;
+  } else {
+    T_next_mat = steam_trajectory->getPoseInterpolator(Time(knot_times.back()))->value().inverse().matrix();
+  }
+
+  const lgmath::se3::Transformation T_next(Eigen::Matrix4d(T_next_mat.inverse()));
+  const Eigen::Matrix<double, 6, 1> w_next = Eigen::Matrix<double, 6, 1>::Zero();
+  const Eigen::Matrix<double, 6, 1> dw_next = Eigen::Matrix<double, 6, 1>::Zero();
+
   /// add new state variables, initialize with constant velocity
   for (size_t i = 0; i < knot_times.size(); ++i) {
     double knot_time = knot_times[i];
@@ -574,14 +591,15 @@ bool SteamRioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(knot_steam_time);
     const auto w_mr_inr_intp_eval = steam_trajectory->getVelocityInterpolator(knot_steam_time);
     const auto dw_mr_inr_intp_eval = steam_trajectory->getAccelerationInterpolator(knot_steam_time);
-
     const auto knot_T_rm = T_rm_intp_eval->value();
     const auto T_rm_var = SE3StateVar::MakeShared(knot_T_rm);
-    //
     const auto w_mr_inr_var = VSpaceStateVar<6>::MakeShared(w_mr_inr_intp_eval->value());
     const auto dw_mr_inr_var = VSpaceStateVar<6>::MakeShared(dw_mr_inr_intp_eval->value());
-    LOG(INFO) << "w_mr_inr_intp_eval->value() " << w_mr_inr_intp_eval->value().transpose() << std::endl;
-    LOG(INFO) << "dw_mr_inr_intp_eval->value() " << dw_mr_inr_intp_eval->value().transpose() << std::endl;
+    // const auto T_rm_var = SE3StateVar::MakeShared(T_next);
+    // const auto w_mr_inr_var = VSpaceStateVar<6>::MakeShared(w_next);
+    // const auto dw_mr_inr_var = VSpaceStateVar<6>::MakeShared(dw_next);
+    LOG(INFO) << "init: w_mr_inr_var->value() " << w_mr_inr_var->value().transpose() << std::endl;
+    LOG(INFO) << "init: dw_mr_inr_var->value() " << dw_mr_inr_var->value().transpose() << std::endl;
     const auto imu_biases_var = VSpaceStateVar<6>::MakeShared(prev_imu_biases);
 
     steam_trajectory->add(knot_steam_time, T_rm_var, w_mr_inr_var, dw_mr_inr_var);
@@ -872,13 +890,10 @@ bool SteamRioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 
   const double max_pair_d2 = options_.p2p_max_dist * options_.p2p_max_dist;
 
-  for (int iter(0); iter < options_.num_iters_icp; iter++) {
-    timer[0].second->start();
-    transform_keypoints();
-    timer[0].second->stop();
-
-    // initialize problem
 #define SWF_INSIDE_ICP true
+
+  for (int iter(0); iter < options_.num_iters_icp; iter++) {
+    // initialize problem
 #if SWF_INSIDE_ICP
     SlidingWindowFilter problem(*sliding_window_filter_);
 #else
@@ -1006,6 +1021,9 @@ bool SteamRioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       }
       break;
     }
+    timer[0].second->start();
+    transform_keypoints();
+    timer[0].second->stop();
   }
 
   steam_trajectory->addPriorCostTerms(*sliding_window_filter_);  // ** this includes state priors (like for x_0)
@@ -1030,6 +1048,9 @@ bool SteamRioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   params.verbose = options_.verbose;
   params.max_iterations = (unsigned int)options_.max_iterations;
   GaussNewtonSolverNVA solver(*sliding_window_filter_, params);
+#if !SWF_INSIDE_ICP
+  solver.optimize();
+#endif
 
   // clang-format off
   Time curr_begin_steam_time(static_cast<double>(current_estimate.begin_timestamp));

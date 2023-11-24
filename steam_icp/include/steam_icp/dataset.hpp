@@ -34,6 +34,11 @@ class Sequence {
     double modified_cacfar_threshold = 1.0;
     double modified_cacfar_threshold2 = 0.0;
     double modified_cacfar_threshold3 = 0.09;
+    int modified_cacfar_width_0438 = 137;
+    int modified_cacfar_guard_0438 = 7;
+    double modified_cacfar_threshold_0438 = 0.5;
+    double modified_cacfar_threshold2_0438 = 0.0;
+    double modified_cacfar_threshold3_0438 = 0.25;
     int modified_cacfar_num_threads = 1;
     bool lidar_timestamp_round = false;
     double lidar_timestamp_round_hz = 400.0;

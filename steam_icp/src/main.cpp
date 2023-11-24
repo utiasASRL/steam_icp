@@ -149,6 +149,11 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold, double);
       ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold2, double);
       ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold3, double);
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_width_0438, int);
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_guard_0438, int);
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold_0438, double);
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold2_0438, double);
+      ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_threshold3_0438, double);
       ROS2_PARAM_CLAUSE(node, dataset_options, prefix, modified_cacfar_num_threads, int);
     }
   }
