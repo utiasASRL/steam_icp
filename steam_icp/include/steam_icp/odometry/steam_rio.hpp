@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include "steam.hpp"
-#include "steam/evaluable/imu/bias_interpolator.hpp"
+#include "steam/evaluable/vspace/vspace_interpolator.hpp"
 #include "steam/problem/cost_term/imu_super_cost_term.hpp"
 #include "steam/problem/cost_term/p2p_doppler_const_acc_super_cost_term.hpp"
 #include "steam/solver/gauss_newton_solver_nva.hpp"
@@ -35,9 +35,9 @@ class SteamRioOdometry : public Odometry {
     bool use_final_state_value = false;
     // IMU
     double gravity = -9.8042;
-    Eigen::Matrix<double, 3, 1> r_imu_acc = Eigen::Matrix<double, 3, 1>::Zero();
-    Eigen::Matrix<double, 3, 1> r_imu_ang = Eigen::Matrix<double, 3, 1>::Zero();
-    Eigen::Matrix<double, 3, 1> p0_bias_accel = Eigen::Matrix<double, 3, 1>::Zero();
+    Eigen::Matrix<double, 3, 1> r_imu_acc = Eigen::Matrix<double, 3, 1>::Ones();
+    Eigen::Matrix<double, 3, 1> r_imu_ang = Eigen::Matrix<double, 3, 1>::Ones();
+    Eigen::Matrix<double, 3, 1> p0_bias_accel = Eigen::Matrix<double, 3, 1>::Ones();
     double pk_bias_accel = 0.0001;
     Eigen::Matrix<double, 3, 1> q_bias_accel = Eigen::Matrix<double, 3, 1>::Ones();
     double p0_bias_gyro = 0.0001;

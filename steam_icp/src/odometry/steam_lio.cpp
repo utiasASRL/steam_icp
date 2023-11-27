@@ -945,7 +945,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
           imu_data.timestamp >= trajectory_vars_[i + 1].time.seconds())
         throw std::runtime_error("imu stamp not within knot times");
 
-      const auto bias_intp_eval = BiasInterpolator::MakeShared(
+      const auto bias_intp_eval = VSpaceInterpolator<6>::MakeShared(
           Time(imu_data.timestamp), trajectory_vars_[i].imu_biases, trajectory_vars_[i].time,
           trajectory_vars_[i + 1].imu_biases, trajectory_vars_[i + 1].time);
 
@@ -1100,6 +1100,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   timer[4].second->stop();
 
   // Transform points into the robot frame just once:
+#if USE_P2P_SUPER_COST_TERM
   timer[0].second->start();
   const Eigen::Matrix4d T_rs_mat = options_.T_sr.inverse();
 
@@ -1109,12 +1110,13 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     keypoint.raw_pt = T_rs_mat.block<3, 3>(0, 0) * keypoint.raw_pt + T_rs_mat.block<3, 1>(0, 3);
   }
   timer[0].second->stop();
+#endif
 
   auto &p2p_matches = p2p_super_cost_term->get();
   p2p_matches.clear();
   int N_matches = 0;
 
-  bool swf_inside_icp = false;
+  bool swf_inside_icp = true;  // kitti-raw : false
   if (index_frame > options_.init_num_frames) swf_inside_icp = true;
 
   for (int iter(0); iter < options_.num_iters_icp; iter++) {
@@ -1378,8 +1380,8 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       throw std::runtime_error("mid time not within knot times");
 
     const auto bias_intp_eval =
-        BiasInterpolator::MakeShared(curr_mid_steam_time, trajectory_vars_[i].imu_biases, trajectory_vars_[i].time,
-                                     trajectory_vars_[i + 1].imu_biases, trajectory_vars_[i + 1].time);
+        VSpaceInterpolator<6>::MakeShared(curr_mid_steam_time, trajectory_vars_[i].imu_biases, trajectory_vars_[i].time,
+                                          trajectory_vars_[i + 1].imu_biases, trajectory_vars_[i + 1].time);
 
     current_estimate.mid_b = bias_intp_eval->value();
   }

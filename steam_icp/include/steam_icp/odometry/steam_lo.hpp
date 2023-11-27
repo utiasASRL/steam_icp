@@ -4,16 +4,15 @@
 
 #include "steam.hpp"
 #include "steam/problem/cost_term/imu_super_cost_term.hpp"
-#include "steam/problem/cost_term/p2p_doppler_const_vel_super_cost_term.hpp"
+#include "steam/problem/cost_term/p2p_const_vel_super_cost_term.hpp"
 #include "steam_icp/odometry.hpp"
 
 namespace steam_icp {
 
-class SteamRoOdometry : public Odometry {
+class SteamLoOdometry : public Odometry {
  public:
   using Matrix12d = Eigen::Matrix<double, 12, 12>;
-
-  enum class STEAM_LOSS_FUNC { L2, DCS, CAUCHY, GM, HUBER };
+  enum class STEAM_LOSS_FUNC { L2, DCS, CAUCHY, GM };
 
   struct Options : public Odometry::Options {
     // sensor vehicle transformation
@@ -40,18 +39,15 @@ class SteamRoOdometry : public Odometry {
     //
     int delay_adding_points = 4;
     bool use_final_state_value = false;
-    // radar-only option
-    double beta = 0.049;  // used for Doppler correction
-    bool voxel_downsample = false;
     // IMU
     bool use_imu = false;
-    double r_imu_ang = 1.0;
+    Eigen::Matrix<double, 3, 1> r_imu_ang = Eigen::Matrix<double, 3, 1>::Zero();
     double p0_bias_gyro = 0.0001;
     double q_bias_gyro = 0.0001;
   };
 
-  SteamRoOdometry(const Options &options);
-  ~SteamRoOdometry();
+  SteamLoOdometry(const Options &options);
+  ~SteamLoOdometry();
 
   Trajectory trajectory() override;
 
@@ -73,12 +69,12 @@ class SteamRoOdometry : public Odometry {
   // trajectory variables
   struct TrajectoryVar {
     TrajectoryVar(const steam::traj::Time &t, const steam::se3::SE3StateVar::Ptr &T,
-                  const steam::vspace::VSpaceStateVar<6>::Ptr &w, const steam::vspace::VSpaceStateVar<1>::Ptr &b)
+                  const steam::vspace::VSpaceStateVar<6>::Ptr &w, const steam::vspace::VSpaceStateVar<6>::Ptr &b)
         : time(t), T_rm(T), w_mr_inr(w), imu_biases(b) {}
     steam::traj::Time time;
     steam::se3::SE3StateVar::Ptr T_rm;
     steam::vspace::VSpaceStateVar<6>::Ptr w_mr_inr;
-    steam::vspace::VSpaceStateVar<1>::Ptr imu_biases;
+    steam::vspace::VSpaceStateVar<6>::Ptr imu_biases;
   };
   std::vector<TrajectoryVar> trajectory_vars_;
   size_t to_marginalize_ = 0;
@@ -87,7 +83,7 @@ class SteamRoOdometry : public Odometry {
 
   steam::SlidingWindowFilter::Ptr sliding_window_filter_;
 
-  STEAM_ICP_REGISTER_ODOMETRY("STEAMRO", SteamRoOdometry);
+  STEAM_ICP_REGISTER_ODOMETRY("STEAMLO", SteamLoOdometry);
 };
 
 }  // namespace steam_icp

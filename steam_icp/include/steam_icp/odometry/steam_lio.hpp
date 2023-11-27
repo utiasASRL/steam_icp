@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include "steam.hpp"
-#include "steam/evaluable/imu/bias_interpolator.hpp"
+#include "steam/evaluable/vspace/vspace_interpolator.hpp"
 #include "steam/problem/cost_term/imu_super_cost_term.hpp"
 #include "steam/problem/cost_term/p2p_super_cost_term.hpp"
 #include "steam/solver/gauss_newton_solver_nva.hpp"

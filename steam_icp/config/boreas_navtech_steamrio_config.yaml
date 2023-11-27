@@ -13,9 +13,9 @@
     # DATASET OPTIONS ----
     dataset: BoreasNavtech
     dataset_options:
-      all_sequences: true
+      all_sequences: false
       root_path: /home/asrl/boreas_docker_local
-      sequence: "boreas-2021-09-02-11-42"
+      sequence: "boreas-2020-12-04-14-00"
       init_frame: 0 # 5675 (highway 7 front image)
       last_frame: 10000 # 5680 (highway 7 front image)
       min_dist_sensor_center: 2.0
@@ -54,7 +54,7 @@
         num_threads: 20
 
       steam:
-        qc_diag: [1.0, 0.01, 0.0001, 0.0001, 0.0001, 0.1] #[50.0, 50.0, 50.0, 5.0, 5.0, 5.0]  # [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.01]
+        qc_diag: [1.0, 0.004, 0.0001, 0.0001, 0.0001, 1.0] #[50.0, 50.0, 50.0, 5.0, 5.0, 5.0]  # [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.01]
         # qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
         num_threads: 16
         # parameters copied from VTR3:
@@ -69,9 +69,9 @@
         p0_accel: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-1, 1.0e-1, 1.0e-1]
 
         gravity: -9.8042
-        r_imu_acc: [1.0, 10.0, 1.0]
+        r_imu_acc: [1.0, 100.0, 1.0]
         r_imu_ang: [5.48885234e-06, 2.38789649e-05, 3.34471102e-09]
-        q_bias_accel: [0.001, 0.01, 1.0e-1]
+        q_bias_accel: [0.001, 0.1, 1.0e-1]
         p0_bias_accel: [1.0e-1, 1.0e-1, 1.0e-1]
         q_bias_gyro: 1.0e-10
         p0_bias_gyro: 1.0e-3

@@ -120,5 +120,6 @@ struct OdometryRegister {
 #include "steam_icp/odometry/elastic_icp.hpp"
 #include "steam_icp/odometry/steam_icp.hpp"
 #include "steam_icp/odometry/steam_lio.hpp"
+#include "steam_icp/odometry/steam_lo.hpp"
 #include "steam_icp/odometry/steam_rio.hpp"
 #include "steam_icp/odometry/steam_ro.hpp"
