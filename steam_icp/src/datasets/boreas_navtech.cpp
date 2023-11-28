@@ -83,6 +83,27 @@ ArrayPoses loadPoses(const std::string &file_path) {
   return poses;
 }
 
+ArrayPoses loadPredPoses(const std::string &file_path) {
+  ArrayPoses poses;
+  std::ifstream pFile(file_path);
+  std::string line;
+  if (pFile.is_open()) {
+    while (!pFile.eof()) {
+      std::getline(pFile, line);
+      if (line.empty()) continue;
+      std::stringstream ss(line);
+      Eigen::Matrix4d P = Eigen::Matrix4d::Identity();
+      ss >> P(0, 0) >> P(0, 1) >> P(0, 2) >> P(0, 3) >> P(1, 0) >> P(1, 1) >> P(1, 2) >> P(1, 3) >> P(2, 0) >>
+          P(2, 1) >> P(2, 2) >> P(2, 3);
+      poses.push_back(P);
+    }
+    pFile.close();
+  } else {
+    throw std::runtime_error{"unable to open file: " + file_path};
+  }
+  return poses;
+}
+
 /// boreas navtech radar upgrade time
 static constexpr int64_t upgrade_time = 1632182400000000;
 
@@ -308,7 +329,12 @@ auto BoreasNavtechSequence::evaluate(const std::string &path) const -> SeqError 
   std::string ground_truth_file = options_.root_path + "/" + options_.sequence + "/applanix/radar_poses.csv";
   const auto gt_poses = loadPoses(ground_truth_file);
   //
-  const auto poses = loadPoses(path + "/" + options_.sequence + "_poses.txt");
+  auto poses = loadPredPoses(path + "/" + options_.sequence + "_poses.txt");
+  Eigen::Matrix4d zup2zdown;
+  zup2zdown << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
+  for (auto &pose : poses) {
+    pose = pose * zup2zdown;
+  }
   //
   if (gt_poses.size() == 0 || gt_poses.size() != poses.size())
     throw std::runtime_error{"estimated and ground truth poses are not the same size."};

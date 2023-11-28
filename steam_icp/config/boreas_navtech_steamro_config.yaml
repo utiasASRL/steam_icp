@@ -1,7 +1,8 @@
 /**:
   ros__parameters:
-    log_dir: /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio
-    output_dir: /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio
+    log_dir: /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamro
+    output_dir: /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamro
+    eval_only: false
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
@@ -13,7 +14,7 @@
     # DATASET OPTIONS ----
     dataset: BoreasNavtech
     dataset_options:
-      all_sequences: false
+      all_sequences: true
       root_path: /home/asrl/boreas_docker_local
       sequence: "boreas-2021-09-08-21-00"
       init_frame: 0 # 5675 (highway 7 front image)
@@ -38,7 +39,7 @@
     odometry: STEAMRO
     odometry_options:
       debug_print: true
-      debug_path: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steamrio
+      debug_path: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steamro
       min_number_neighbors: 1
       init_voxel_size: 1.0
       voxel_size: 1.0

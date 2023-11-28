@@ -81,6 +81,27 @@ ArrayPoses loadPoses(const std::string &file_path) {
   return poses;
 }
 
+ArrayPoses loadPredPoses(const std::string &file_path) {
+  ArrayPoses poses;
+  std::ifstream pFile(file_path);
+  std::string line;
+  if (pFile.is_open()) {
+    while (!pFile.eof()) {
+      std::getline(pFile, line);
+      if (line.empty()) continue;
+      std::stringstream ss(line);
+      Eigen::Matrix4d P = Eigen::Matrix4d::Identity();
+      ss >> P(0, 0) >> P(0, 1) >> P(0, 2) >> P(0, 3) >> P(1, 0) >> P(1, 1) >> P(1, 2) >> P(1, 3) >> P(2, 0) >>
+          P(2, 1) >> P(2, 2) >> P(2, 3);
+      poses.push_back(P);
+    }
+    pFile.close();
+  } else {
+    throw std::runtime_error{"unable to open file: " + file_path};
+  }
+  return poses;
+}
+
 std::vector<Point3D> readPointCloud(const std::string &path, const std::string &precision_time_path,
                                     const double &time_delta_sec, const double &min_dist, const double &max_dist,
                                     const bool round_timestamps, const double &timestamp_round_hz) {
@@ -437,7 +458,7 @@ auto BoreasVelodyneSequence::evaluate(const std::string &path) const -> SeqError
   std::string ground_truth_file = options_.root_path + "/" + options_.sequence + "/applanix/lidar_poses.csv";
   const auto gt_poses = loadPoses(ground_truth_file);
   //
-  const auto poses = loadPoses(path + "/" + options_.sequence + "_poses.txt");
+  const auto poses = loadPredPoses(path + "/" + options_.sequence + "_poses.txt");
   //
   if (gt_poses.size() == 0 || gt_poses.size() != poses.size())
     throw std::runtime_error{"estimated and ground truth poses are not the same size."};
