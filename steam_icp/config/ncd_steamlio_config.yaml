@@ -1,0 +1,80 @@
+/**:
+  ros__parameters:
+    log_dir: /home/krb/ASRL/temp/steam_icp/newer_college_dataset/steamlio
+    output_dir: /home/krb/ASRL/temp/steam_icp/newer_college_dataset/steamlio
+
+    # VISUALIZATION OPTIONS ----
+    visualization_options:
+      odometry: true
+      raw_points: false
+      sampled_points: true
+      map_points: true
+
+    # DATASET OPTIONS ----
+    dataset: NewerCollege
+    dataset_options:
+      all_sequences: false
+      root_path: /workspace/raid/krb/newer_college_dataset
+      sequence: "06_dynamic_spinning" #"boreas-2021-09-02-11-42"
+      init_frame: 0 # 5675 (highway 7 front image)
+      last_frame: 100000 # 5680 (highway 7 front image)
+      min_dist_sensor_center: 0.1
+      max_dist_sensor_center: 100.0
+      lidar_timestamp_round: false
+      lidar_timestamp_round_hz: 400.0
+
+    # ODOMETRY OPTIONS ----
+    odometry: STEAMLIO
+    odometry_options:
+      debug_print: true
+      debug_path: /home/krb/ASRL/temp/steam_icp/newer_college_dataset/steamlio
+      num_iters_icp: 10
+      # sample_voxel_size: 1.0
+      # min_distance_points: 0.05
+      # max_num_points_in_voxel: 25
+      # min_number_neighbors: 25
+      # max_number_neighbors: 25
+      # voxel_lifetime: 100
+
+      elastic:
+        num_threads: 20
+
+      steam:
+        ad_diag: [100.0, 100.0, 100.0, 100., 100., 100.]
+        qc_diag: [5000000.0, 5000000.0, 5000000.0, 500000.0, 500000.0, 500000.0]
+
+        p0_pose: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4]
+        p0_vel: [1.0e-0, 1.0e-0, 1.0e-0, 1.0e-0, 1.0e-0, 1.0e-0]
+        p0_accel: [1.0e-0, 1.0e-0, 1.0e-0, 1.0e-0, 1.0e-0, 1.0e-0]
+
+        num_threads: 16
+        gravity: -9.81599
+
+        r_imu_acc: [5.0e-04, 5.0e-04, 5.0e-04]
+        r_imu_ang: [4.326e-03, 4.326e-03, 4.326e-03]
+        q_bias_accel: [1.1236e-2, 1.1236e-2, 1.1236e-2]
+        p0_bias_accel: [1.0e-3, 1.0e-3, 1.0e-3]
+        q_bias_gyro: 1.6e-4
+        p0_bias_gyro: 1.0e-2
+
+        use_imu: true
+        max_iterations: 5
+        verbose: true
+        delay_adding_points: 1
+        qg_diag: [1.0e-6, 1.0e-6, 1.0e-6, 1.0e-7, 1.0e-7, 1.0e-6]  # motion model for T_mi
+        T_mi_init_only: true
+        T_mi_init_cov: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-6, 1.0e-6, 1.0e-8]
+        use_T_mi_prior_after_init: false
+        T_mi_prior_cov: [1.0e-2, 1.0e-2, 1.0e-3, 1.0, 1.0, 1.0e-4]
+        use_bias_prior_after_init: false
+        pk_bias_accel: 1.0e-1  # prior after init
+        pk_bias_gyro: 1.0e-1  # prior after init
+        xi_ig: [0., 0., 0., -1.51869911e-02,  3.07697005e-02, 0.]  # sim: [0., 0., 0., -0.0197052, 0.0285345, 0.] 
+        p2p_loss_func: L2
+        num_extra_states: 0
+        acc_loss_func: CAUCHY
+        acc_loss_sigma: 1.0
+        gyro_loss_func: L2
+        gyro_loss_sigma: 1.0
+        T_sr_vec: [ 0.01849613,  0.00982219, -0.028535  ,  0.        ,  0.        , 3.14159265]
+        # T_sr_vec: [ 0.,  0., 0.  ,  0.        ,  0.        , 0.]

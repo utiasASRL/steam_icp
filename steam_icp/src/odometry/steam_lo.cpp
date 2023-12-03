@@ -417,7 +417,7 @@ void SteamLoOdometry::updateMap(int index_frame, int update_frame) {
 #endif
 
   map_.add(frame, kSizeVoxelMap, kMaxNumPointsInVoxel, kMinDistancePoints);
-  map_.update_and_filter_lifetimes();
+  // map_.update_and_filter_lifetimes();
   frame.clear();
   frame.shrink_to_fit();
 
@@ -726,6 +726,9 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   p2p_matches.clear();
   int N_matches = 0;
 
+  Eigen::Matrix<double, 6, 1> v_begin = Eigen::Matrix<double, 6, 1>::Zero();
+  Eigen::Matrix<double, 6, 1> v_end = Eigen::Matrix<double, 6, 1>::Zero();
+
 #define SWF_INSIDE_ICP true
 
   //
@@ -861,7 +864,7 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     timer[3].second->start();
 
     // Update (changes trajectory data)
-    double diff_trans = 0, diff_rot = 0;
+    double diff_trans = 0, diff_rot = 0, diff_vel = 0;
 
     Time curr_begin_steam_time(static_cast<double>(trajectory_[index_frame].begin_timestamp));
     const auto begin_T_mr = inverse(steam_trajectory->getPoseInterpolator(curr_begin_steam_time))->evaluate().matrix();
@@ -875,6 +878,13 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     diff_trans += (current_estimate.end_t - end_T_ms.block<3, 1>(0, 3)).norm();
     diff_rot += AngularDistance(current_estimate.end_R, end_T_ms.block<3, 3>(0, 0));
 
+    const auto vb = steam_trajectory->getVelocityInterpolator(curr_begin_steam_time)->value();
+    const auto ve = steam_trajectory->getVelocityInterpolator(curr_end_steam_time)->value();
+    diff_vel += (vb - v_begin).norm();
+    diff_vel += (ve - v_end).norm();
+    v_begin = vb;
+    v_end = ve;
+
     Time curr_mid_steam_time(static_cast<double>(trajectory_[index_frame].getEvalTime()));
     const auto mid_T_mr = inverse(steam_trajectory->getPoseInterpolator(curr_mid_steam_time))->evaluate().matrix();
     const auto mid_T_ms = mid_T_mr * options_.T_sr.inverse();
@@ -887,8 +897,11 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 
     timer[3].second->stop();
 
+    LOG(INFO) << "diff_trans: " << diff_trans << " diff_rot: " << diff_rot << " diff_vel: " << diff_vel << std::endl;
+
     if ((index_frame > 1) &&
-        (diff_rot < options_.threshold_orientation_norm && diff_trans < options_.threshold_translation_norm)) {
+        (diff_rot < options_.threshold_orientation_norm && diff_trans < options_.threshold_translation_norm &&
+         diff_vel < options_.threshold_translation_norm * 10 + options_.threshold_orientation_norm * 10)) {
       if (options_.debug_print) {
         LOG(INFO) << "CT_ICP: Finished with N=" << iter << " ICP iterations" << std::endl;
       }
