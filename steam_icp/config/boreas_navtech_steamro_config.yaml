@@ -6,17 +6,17 @@
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
-      odometry: false
+      odometry: true
       raw_points: false
-      sampled_points: false
-      map_points: false
+      sampled_points: true
+      map_points: true
 
     # DATASET OPTIONS ----
     dataset: BoreasNavtech
     dataset_options:
       all_sequences: true
       root_path: /home/asrl/boreas_docker_local
-      sequence: "boreas-2021-09-08-21-00"
+      sequence: "boreas-2021-04-22-15-00"
       init_frame: 0 # 5675 (highway 7 front image)
       last_frame: 10000 # 5680 (highway 7 front image)
       min_dist_sensor_center: 2.0
@@ -45,11 +45,15 @@
       voxel_size: 1.0
       init_sample_voxel_size: 1.0
       sample_voxel_size: 1.0
-      max_distance: 80.0  # determines radius for cropping when adding to the map
       max_number_neighbors: 1  # determines size of priority queue when getting neighbors from map
-      max_num_points_in_voxel: 1
       num_iters_icp: 20
+      # map parameters:
+      max_num_points_in_voxel: 10
+      # min_distance_points: 0.1
+      # size_voxel_map: 1.0
       voxel_lifetime: 3
+      max_distance: 80.0  # determines radius for cropping when adding to the map
+
 
       elastic:
         num_threads: 20
@@ -57,7 +61,7 @@
       steam:
         qc_diag: [1.0, 0.004, 0.0001, 0.0001, 0.0001, 0.01] #[50.0, 50.0, 50.0, 5.0, 5.0, 5.0]  # [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.01]
         # qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
-        num_threads: 16
+        num_threads: 1
         # parameters copied from VTR3:
         p2p_loss_func: CAUCHY  # (L2, DCS, CAUCHY, GM, HUBER)
         p2p_loss_sigma: 1.0
@@ -68,12 +72,18 @@
         p0_pose: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4]
         p0_vel: [1.0e-1, 1.0e-1, 1.0e-1, 1.0e-4, 1.0e-4, 1.0e-4]
 
-        r_imu_ang: 3.34471102e-06
-        q_bias_gyro: 1.0e-10
+        r_imu_ang: 3.34471102e-03
+        q_bias_gyro: 1.0e-4
         p0_bias_gyro: 1.0e-2
-        use_imu: false
+        use_imu: true
+        use_accel: true
         max_iterations: 5
         verbose: true
         delay_adding_points: 1
-
+        # Accel
+        r_imu_acc: [5.0e-02, 100.0, 1.0]
+        q_bias_accel: [0.1, 0.1, 1.0e-1]
+        p0_bias_accel: [1.0e-3, 1.0e-3, 1.0e-1]
+        acc_loss_func: L2
+        acc_loss_sigma: 1.0
 

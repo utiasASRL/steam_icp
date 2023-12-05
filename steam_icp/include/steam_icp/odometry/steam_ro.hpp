@@ -5,6 +5,7 @@
 #include "steam.hpp"
 #include "steam/problem/cost_term/imu_super_cost_term.hpp"
 #include "steam/problem/cost_term/p2p_doppler_const_vel_super_cost_term.hpp"
+#include "steam/problem/cost_term/preintegrated_accel_cost_term.hpp"
 #include "steam_icp/odometry.hpp"
 
 namespace steam_icp {
@@ -45,9 +46,17 @@ class SteamRoOdometry : public Odometry {
     bool voxel_downsample = false;
     // IMU
     bool use_imu = false;
+    bool use_accel = false;
     double r_imu_ang = 1.0;
     double p0_bias_gyro = 0.0001;
     double q_bias_gyro = 0.0001;
+    // Accelerometer
+    double gravity = -9.8042;
+    Eigen::Matrix<double, 3, 1> r_imu_acc = Eigen::Matrix<double, 3, 1>::Ones();
+    Eigen::Matrix<double, 3, 1> p0_bias_accel = Eigen::Matrix<double, 3, 1>::Ones();
+    Eigen::Matrix<double, 3, 1> q_bias_accel = Eigen::Matrix<double, 3, 1>::Ones();
+    std::string acc_loss_func = "L2";
+    double acc_loss_sigma = 1.0;
   };
 
   SteamRoOdometry(const Options &options);
@@ -69,16 +78,17 @@ class SteamRoOdometry : public Odometry {
 
   // steam variables
   steam::se3::SE3StateVar::Ptr T_sr_var_ = nullptr;  // robot to sensor transformation as a steam variable
+  steam::se3::SE3StateVar::Ptr T_mi_var_ = nullptr;  // transform from gravity-down to map frame
 
   // trajectory variables
   struct TrajectoryVar {
     TrajectoryVar(const steam::traj::Time &t, const steam::se3::SE3StateVar::Ptr &T,
-                  const steam::vspace::VSpaceStateVar<6>::Ptr &w, const steam::vspace::VSpaceStateVar<1>::Ptr &b)
+                  const steam::vspace::VSpaceStateVar<6>::Ptr &w, const steam::vspace::VSpaceStateVar<6>::Ptr &b)
         : time(t), T_rm(T), w_mr_inr(w), imu_biases(b) {}
     steam::traj::Time time;
     steam::se3::SE3StateVar::Ptr T_rm;
     steam::vspace::VSpaceStateVar<6>::Ptr w_mr_inr;
-    steam::vspace::VSpaceStateVar<1>::Ptr imu_biases;
+    steam::vspace::VSpaceStateVar<6>::Ptr imu_biases;
   };
   std::vector<TrajectoryVar> trajectory_vars_;
   size_t to_marginalize_ = 0;

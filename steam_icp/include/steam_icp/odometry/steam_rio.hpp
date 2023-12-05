@@ -22,6 +22,7 @@ class SteamRioOdometry : public Odometry {
     Eigen::Matrix<double, 4, 4> T_sr = Eigen::Matrix<double, 4, 4>::Identity();
     // trajectory
     Eigen::Matrix<double, 6, 1> qc_diag = Eigen::Matrix<double, 6, 1>::Ones();
+    Eigen::Matrix<double, 6, 1> ad_diag = Eigen::Matrix<double, 6, 1>::Ones();
     // p2p
     double p2p_max_dist = 0.5;
     STEAM_LOSS_FUNC p2p_loss_func = STEAM_LOSS_FUNC::CAUCHY;
@@ -36,7 +37,7 @@ class SteamRioOdometry : public Odometry {
     // IMU
     double gravity = -9.8042;
     Eigen::Matrix<double, 3, 1> r_imu_acc = Eigen::Matrix<double, 3, 1>::Ones();
-    Eigen::Matrix<double, 3, 1> r_imu_ang = Eigen::Matrix<double, 3, 1>::Ones();
+    double r_imu_ang = 1.0;
     Eigen::Matrix<double, 3, 1> p0_bias_accel = Eigen::Matrix<double, 3, 1>::Ones();
     double pk_bias_accel = 0.0001;
     Eigen::Matrix<double, 3, 1> q_bias_accel = Eigen::Matrix<double, 3, 1>::Ones();

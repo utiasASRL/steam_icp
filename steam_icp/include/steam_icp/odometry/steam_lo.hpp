@@ -48,13 +48,13 @@ class SteamLoOdometry : public Odometry {
     double q_bias_gyro = 0.0001;
     // Accelerometer
     double gravity = -9.8042;
-    Eigen::Matrix<double, 3, 1> r_imu_acc = Eigen::Matrix<double, 3, 1>::Zero();
+    Eigen::Matrix<double, 3, 1> r_imu_acc = Eigen::Matrix<double, 3, 1>::Ones();
     Eigen::Matrix<double, 3, 1> p0_bias_accel = Eigen::Matrix<double, 3, 1>::Ones();
     Eigen::Matrix<double, 3, 1> q_bias_accel = Eigen::Matrix<double, 3, 1>::Ones();
     bool T_mi_init_only = true;
     Eigen::Matrix<double, 6, 1> qg_diag = Eigen::Matrix<double, 6, 1>::Ones();
     Eigen::Matrix<double, 6, 1> T_mi_init_cov = Eigen::Matrix<double, 6, 1>::Ones();
-    std::string acc_loss_func = "CAUCHY";
+    std::string acc_loss_func = "L2";
     double acc_loss_sigma = 1.0;
   };
 

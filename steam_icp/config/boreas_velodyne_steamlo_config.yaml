@@ -49,7 +49,7 @@
 
         num_threads: 16
         r_imu_ang: [5.48885234e-06, 2.38789649e-05, 3.34471102e-06]
-        q_bias_gyro: 1.0e-10
+        q_bias_gyro: 1.0e-4
         p0_bias_gyro: 1.0e-2
         use_imu: false
         max_iterations: 5
