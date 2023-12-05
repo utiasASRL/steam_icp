@@ -5,6 +5,7 @@
 #include "steam.hpp"
 #include "steam/problem/cost_term/imu_super_cost_term.hpp"
 #include "steam/problem/cost_term/p2p_const_vel_super_cost_term.hpp"
+#include "steam/problem/cost_term/preintegrated_accel_cost_term.hpp"
 #include "steam_icp/odometry.hpp"
 
 namespace steam_icp {
@@ -41,9 +42,20 @@ class SteamLoOdometry : public Odometry {
     bool use_final_state_value = false;
     // IMU
     bool use_imu = false;
+    bool use_accel = false;
     Eigen::Matrix<double, 3, 1> r_imu_ang = Eigen::Matrix<double, 3, 1>::Zero();
     double p0_bias_gyro = 0.0001;
     double q_bias_gyro = 0.0001;
+    // Accelerometer
+    double gravity = -9.8042;
+    Eigen::Matrix<double, 3, 1> r_imu_acc = Eigen::Matrix<double, 3, 1>::Zero();
+    Eigen::Matrix<double, 3, 1> p0_bias_accel = Eigen::Matrix<double, 3, 1>::Ones();
+    Eigen::Matrix<double, 3, 1> q_bias_accel = Eigen::Matrix<double, 3, 1>::Ones();
+    bool T_mi_init_only = true;
+    Eigen::Matrix<double, 6, 1> qg_diag = Eigen::Matrix<double, 6, 1>::Ones();
+    Eigen::Matrix<double, 6, 1> T_mi_init_cov = Eigen::Matrix<double, 6, 1>::Ones();
+    std::string acc_loss_func = "CAUCHY";
+    double acc_loss_sigma = 1.0;
   };
 
   SteamLoOdometry(const Options &options);
@@ -55,6 +67,7 @@ class SteamLoOdometry : public Odometry {
 
  private:
   void initializeTimestamp(int index_frame, const DataFrame &const_frame);
+  Eigen::Matrix<double, 6, 1> initialize_gravity(const std::vector<steam::IMUData> &imu_data_vec);
   void initializeMotion(int index_frame);
   std::vector<Point3D> initializeFrame(int index_frame, const std::vector<Point3D> &const_frame);
   void updateMap(int index_frame, int update_frame);
@@ -69,12 +82,14 @@ class SteamLoOdometry : public Odometry {
   // trajectory variables
   struct TrajectoryVar {
     TrajectoryVar(const steam::traj::Time &t, const steam::se3::SE3StateVar::Ptr &T,
-                  const steam::vspace::VSpaceStateVar<6>::Ptr &w, const steam::vspace::VSpaceStateVar<6>::Ptr &b)
-        : time(t), T_rm(T), w_mr_inr(w), imu_biases(b) {}
+                  const steam::vspace::VSpaceStateVar<6>::Ptr &w, const steam::vspace::VSpaceStateVar<6>::Ptr &b,
+                  const steam::se3::SE3StateVar::Ptr &T_m_i)
+        : time(t), T_rm(T), w_mr_inr(w), imu_biases(b), T_mi(T_m_i) {}
     steam::traj::Time time;
     steam::se3::SE3StateVar::Ptr T_rm;
     steam::vspace::VSpaceStateVar<6>::Ptr w_mr_inr;
     steam::vspace::VSpaceStateVar<6>::Ptr imu_biases;
+    steam::se3::SE3StateVar::Ptr T_mi;
   };
   std::vector<TrajectoryVar> trajectory_vars_;
   size_t to_marginalize_ = 0;

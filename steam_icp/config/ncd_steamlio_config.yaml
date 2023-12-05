@@ -29,12 +29,18 @@
       debug_print: true
       debug_path: /home/krb/ASRL/temp/steam_icp/newer_college_dataset/steamlio
       num_iters_icp: 10
+      init_voxel_size: 1.0
+      voxel_size: 1.0
+      init_sample_voxel_size: 1.0
+      sample_voxel_size: 1.0
       # sample_voxel_size: 1.0
       # min_distance_points: 0.05
       # max_num_points_in_voxel: 25
       # min_number_neighbors: 25
       # max_number_neighbors: 25
       # voxel_lifetime: 100
+      min_distance_points: 0.05
+      max_num_points_in_voxel: 100
 
       elastic:
         num_threads: 20

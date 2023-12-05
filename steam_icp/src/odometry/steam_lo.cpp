@@ -218,6 +218,7 @@ auto SteamLoOdometry::registerFrame(const DataFrame &const_frame) -> Registratio
 
     // initial state
     lgmath::se3::Transformation T_rm;
+    lgmath::se3::Transformation T_mi;
     lgmath::se3::Transformation T_sr(options_.T_sr);
     Eigen::Matrix<double, 6, 1> w_mr_inr = Eigen::Matrix<double, 6, 1>::Zero();
     Eigen::Matrix<double, 6, 1> b_zero = Eigen::Matrix<double, 6, 1>::Zero();
@@ -228,7 +229,8 @@ auto SteamLoOdometry::registerFrame(const DataFrame &const_frame) -> Registratio
     const auto begin_T_rm_var = SE3StateVar::MakeShared(T_rm);
     const auto begin_w_mr_inr_var = VSpaceStateVar<6>::MakeShared(w_mr_inr);
     const auto begin_b_var = VSpaceStateVar<6>::MakeShared(b_zero);
-    trajectory_vars_.emplace_back(begin_steam_time, begin_T_rm_var, begin_w_mr_inr_var, begin_b_var);
+    const auto begin_T_mi_var = SE3StateVar::MakeShared(T_mi);
+    trajectory_vars_.emplace_back(begin_steam_time, begin_T_rm_var, begin_w_mr_inr_var, begin_b_var, begin_T_mi_var);
 
     // the end of current scan (this is the first state that could be optimized)
     const double end_time = trajectory_[index_frame].end_timestamp;
@@ -236,8 +238,13 @@ auto SteamLoOdometry::registerFrame(const DataFrame &const_frame) -> Registratio
     const auto end_T_rm_var = SE3StateVar::MakeShared(T_rm);
     const auto end_w_mr_inr_var = VSpaceStateVar<6>::MakeShared(w_mr_inr);
     const auto end_b_var = VSpaceStateVar<6>::MakeShared(b_zero);
-    trajectory_vars_.emplace_back(end_steam_time, end_T_rm_var, end_w_mr_inr_var, end_b_var);
+    const auto end_T_mi_var = SE3StateVar::MakeShared(T_mi);
+    trajectory_vars_.emplace_back(end_steam_time, end_T_rm_var, end_w_mr_inr_var, end_b_var, end_T_mi_var);
     to_marginalize_ = 1;  /// The first state is not added to the filter
+
+    Eigen::Matrix<double, 6, 1> xi_mi = initialize_gravity(const_frame.imu_data_vec);
+    begin_T_mi_var->update(xi_mi);
+    end_T_mi_var->update(xi_mi);
 
     trajectory_[index_frame].end_T_rm_cov = Eigen::Matrix<double, 6, 6>::Identity() * 1e-4;
     trajectory_[index_frame].end_w_mr_inr_cov = Eigen::Matrix<double, 6, 6>::Identity() * 1e-4;
@@ -427,6 +434,66 @@ void SteamLoOdometry::updateMap(int index_frame, int update_frame) {
   map_.remove(location, kMaxDistance);
 }
 
+Eigen::Matrix<double, 6, 1> SteamLoOdometry::initialize_gravity(const std::vector<steam::IMUData> &imu_data_vec) {
+  using namespace steam;
+  using namespace steam::se3;
+  using namespace steam::traj;
+  using namespace steam::vspace;
+  using namespace steam::imu;
+
+  std::vector<BaseCostTerm::ConstPtr> cost_terms;
+  cost_terms.reserve(imu_data_vec.size());
+  Eigen::Matrix<double, 3, 3> R = Eigen::Matrix<double, 3, 3>::Identity();
+  R.diagonal() = options_.r_imu_acc;
+  const auto noise_model = StaticNoiseModel<3>::MakeShared(R);
+  // const auto loss_func = CauchyLossFunc::MakeShared(1.0);
+  const auto loss_func = L2LossFunc::MakeShared();
+  const auto T_rm_init = SE3StateVar::MakeShared(lgmath::se3::Transformation());
+  lgmath::se3::Transformation T_mi;
+  const auto T_mi_var = SE3StateVar::MakeShared(T_mi);
+  T_rm_init->locked() = true;
+  Eigen::Matrix<double, 6, 1> b_zero = Eigen::Matrix<double, 6, 1>::Zero();
+  Eigen::Matrix<double, 6, 1> dw_zero = Eigen::Matrix<double, 6, 1>::Zero();
+  const auto bias = VSpaceStateVar<6>::MakeShared(b_zero);
+  const auto dw_mr_inr = VSpaceStateVar<6>::MakeShared(dw_zero);
+  bias->locked() = true;
+  dw_mr_inr->locked() = true;
+  for (const auto &imu_data : imu_data_vec) {
+    const auto acc_error_func = imu::AccelerationError(T_rm_init, dw_mr_inr, bias, T_mi_var, imu_data.lin_acc);
+    acc_error_func->setGravity(options_.gravity);
+    const auto acc_cost = WeightedLeastSqCostTerm<3>::MakeShared(acc_error_func, noise_model, loss_func);
+    cost_terms.emplace_back(acc_cost);
+  }
+
+  {
+    Eigen::Matrix<double, 6, 6> init_T_mi_cov = Eigen::Matrix<double, 6, 6>::Identity();
+    init_T_mi_cov.diagonal() = options_.T_mi_init_cov;
+    init_T_mi_cov(3, 3) = 1.0;
+    init_T_mi_cov(4, 4) = 1.0;
+    init_T_mi_cov(5, 5) = 1.0;
+    lgmath::se3::Transformation T_mi_zero;
+    auto T_mi_error = se3_error(T_mi_var, T_mi_zero);
+    auto noise_model = StaticNoiseModel<6>::MakeShared(init_T_mi_cov);
+    auto loss_func = L2LossFunc::MakeShared();
+    const auto T_mi_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(T_mi_error, noise_model, loss_func);
+    cost_terms.emplace_back(T_mi_prior_factor);
+  }
+
+  // Solve
+  OptimizationProblem problem;
+  for (const auto &cost : cost_terms) problem.addCostTerm(cost);
+  problem.addStateVariable(T_mi_var);
+  GaussNewtonSolverNVA::Params params;
+  params.verbose = options_.verbose;
+  params.max_iterations = (unsigned int)options_.max_iterations;
+  GaussNewtonSolverNVA solver(problem, params);
+  solver.optimize();
+  LOG(INFO) << "Initialization, T_mi:" << std::endl
+            << T_mi_var->value().matrix() << std::endl
+            << "vec: " << T_mi_var->value().vec() << std::endl;
+  return T_mi_var->value().vec();
+}
+
 bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
                           const std::vector<steam::IMUData> &imu_data_vec) {
   using namespace steam;
@@ -444,6 +511,8 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   std::vector<BaseCostTerm::ConstPtr> meas_cost_terms;
   std::vector<BaseCostTerm::ConstPtr> imu_cost_terms;
   std::vector<BaseCostTerm::ConstPtr> imu_prior_cost_terms;
+  std::vector<BaseCostTerm::ConstPtr> preint_cost_terms;
+  std::vector<BaseCostTerm::ConstPtr> T_mi_prior_cost_terms;
   const size_t prev_trajectory_var_index = trajectory_vars_.size() - 1;
   size_t curr_trajectory_var_index = trajectory_vars_.size() - 1;
 
@@ -456,13 +525,19 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   lgmath::se3::Transformation prev_T_rm = trajectory_vars_.back().T_rm->value();
   Eigen::Matrix<double, 6, 1> prev_w_mr_inr = trajectory_vars_.back().w_mr_inr->value();
   Eigen::Matrix<double, 6, 1> prev_imu_biases = trajectory_vars_.back().imu_biases->value();
+  lgmath::se3::Transformation prev_T_mi = trajectory_vars_.back().T_mi->value();
   const auto prev_T_rm_var = trajectory_vars_.back().T_rm;
   const auto prev_w_mr_inr_var = trajectory_vars_.back().w_mr_inr;
   const auto prev_imu_biases_var = trajectory_vars_.back().imu_biases;
+  const auto prev_T_mi_var = trajectory_vars_.back().T_mi;
   steam_trajectory->add(prev_steam_time, prev_T_rm_var, prev_w_mr_inr_var);
   steam_state_vars.emplace_back(prev_T_rm_var);
   steam_state_vars.emplace_back(prev_w_mr_inr_var);
-  if (options_.use_imu) steam_state_vars.emplace_back(prev_imu_biases_var);
+  if (options_.use_imu) {
+    steam_state_vars.emplace_back(prev_imu_biases_var);
+    if ((!options_.T_mi_init_only || index_frame == 1) && options_.use_accel)
+      steam_state_vars.emplace_back(prev_T_mi_var);
+  }
 
   /// New state for this frame
   LOG(INFO) << "[CT_ICP_STEAM] curr scan end time: " << trajectory_[index_frame].end_timestamp << std::endl;
@@ -491,11 +566,18 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     steam_trajectory->add(knot_steam_time, T_rm_var, w_mr_inr_var);
     steam_state_vars.emplace_back(T_rm_var);
     steam_state_vars.emplace_back(w_mr_inr_var);
+    const auto T_mi_var = SE3StateVar::MakeShared(prev_T_mi);
     if (options_.use_imu) {
       steam_state_vars.emplace_back(imu_biases_var);
+      if (options_.T_mi_init_only || !options_.use_accel) {
+        T_mi_var->locked() = true;
+      } else {
+        steam_state_vars.emplace_back(T_mi_var);
+      }
     }
+
     // cache the end state in full steam trajectory because it will be used again
-    trajectory_vars_.emplace_back(knot_steam_time, T_rm_var, w_mr_inr_var, imu_biases_var);
+    trajectory_vars_.emplace_back(knot_steam_time, T_rm_var, w_mr_inr_var, imu_biases_var, T_mi_var);
     curr_trajectory_var_index++;
   }
 
@@ -513,12 +595,24 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     Eigen::Matrix<double, 6, 1> b_zero = Eigen::Matrix<double, 6, 1>::Zero();
     const auto &prev_var = trajectory_vars_.at(prev_trajectory_var_index);
     // add a prior to imu bias at the beginning
-    Eigen::Matrix<double, 6, 6> init_bias_cov = Eigen::Matrix<double, 6, 6>::Identity() * options_.p0_bias_gyro;
+    Eigen::Matrix<double, 6, 6> init_bias_cov = Eigen::Matrix<double, 6, 6>::Identity();
+    init_bias_cov.block<3, 3>(0, 0).diagonal() = options_.p0_bias_accel;
+    init_bias_cov.block<3, 3>(3, 3) = Eigen::Matrix<double, 3, 3>::Identity() * options_.p0_bias_gyro;
     auto bias_error = vspace::vspace_error<6>(prev_var.imu_biases, b_zero);
     auto noise_model = StaticNoiseModel<6>::MakeShared(init_bias_cov);
     auto loss_func = L2LossFunc::MakeShared();
     const auto bias_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(bias_error, noise_model, loss_func);
     imu_prior_cost_terms.emplace_back(bias_prior_factor);
+    if (options_.use_accel) {
+      Eigen::Matrix<double, 6, 6> init_T_mi_cov = Eigen::Matrix<double, 6, 6>::Zero();
+      init_T_mi_cov.diagonal() = options_.T_mi_init_cov;
+      lgmath::se3::Transformation T_mi = prev_var.T_mi->value();
+      auto T_mi_error = se3_error(prev_var.T_mi, T_mi);
+      auto noise_model = StaticNoiseModel<6>::MakeShared(init_T_mi_cov);
+      auto loss_func = L2LossFunc::MakeShared();
+      const auto T_mi_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(T_mi_error, noise_model, loss_func);
+      T_mi_prior_cost_terms.emplace_back(T_mi_prior_factor);
+    }
   }
 
   /// update sliding window variables
@@ -529,6 +623,9 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       sliding_window_filter_->addStateVariable(std::vector<StateVarBase::Ptr>{prev_var.T_rm, prev_var.w_mr_inr});
       if (options_.use_imu) {
         sliding_window_filter_->addStateVariable(std::vector<StateVarBase::Ptr>{prev_var.imu_biases});
+        if (options_.use_accel) {
+          sliding_window_filter_->addStateVariable(std::vector<StateVarBase::Ptr>{prev_var.T_mi});
+        }
       }
     }
 
@@ -538,6 +635,9 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       sliding_window_filter_->addStateVariable(std::vector<StateVarBase::Ptr>{var.T_rm, var.w_mr_inr});
       if (options_.use_imu) {
         sliding_window_filter_->addStateVariable(std::vector<StateVarBase::Ptr>{var.imu_biases});
+        if (!options_.T_mi_init_only && options_.use_accel) {
+          sliding_window_filter_->addStateVariable(std::vector<StateVarBase::Ptr>{var.T_mi});
+        }
       }
     }
 
@@ -559,6 +659,9 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
           marg_vars.emplace_back(var.w_mr_inr);
           if (options_.use_imu) {
             marg_vars.emplace_back(var.imu_biases);
+            if (options_.use_accel) {
+              if (!var.T_mi->locked()) marg_vars.emplace_back(var.T_mi);
+            }
           }
           num_states++;
         } else {
@@ -573,7 +676,26 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     }
   }
 
+  auto imu_options = PreintAccCostTerm::Options();
+  imu_options.num_threads = options_.num_threads;
+  imu_options.loss_sigma = options_.acc_loss_sigma;
+  if (options_.acc_loss_func == "L2") imu_options.loss_func = PreintAccCostTerm::LOSS_FUNC::L2;
+  if (options_.acc_loss_func == "DCS") imu_options.loss_func = PreintAccCostTerm::LOSS_FUNC::DCS;
+  if (options_.acc_loss_func == "CAUCHY") imu_options.loss_func = PreintAccCostTerm::LOSS_FUNC::CAUCHY;
+  if (options_.acc_loss_func == "GM") imu_options.loss_func = PreintAccCostTerm::LOSS_FUNC::GM;
+  imu_options.gravity(2, 0) = options_.gravity;
+  imu_options.r_imu_acc = options_.r_imu_acc;
+
+  const auto preint_cost_term = PreintAccCostTerm::MakeShared(
+      steam_trajectory, prev_steam_time, knot_times.back(), trajectory_vars_[prev_trajectory_var_index].imu_biases,
+      trajectory_vars_[prev_trajectory_var_index + 1].imu_biases, trajectory_vars_[prev_trajectory_var_index].T_mi,
+      trajectory_vars_[prev_trajectory_var_index + 1].T_mi, imu_options);
+
   if (options_.use_imu) {
+    if (options_.use_accel) {
+      preint_cost_term->set(imu_data_vec);
+      preint_cost_term->init();
+    }
     imu_cost_terms.reserve(imu_data_vec.size());
     Eigen::Matrix<double, 3, 3> R_ang = Eigen::Matrix<double, 3, 3>::Identity();
     R_ang.diagonal() = options_.r_imu_ang;
@@ -601,7 +723,9 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     }
 
     {
-      Eigen::Matrix<double, 6, 6> bias_cov = Eigen::Matrix<double, 6, 6>::Identity() * options_.q_bias_gyro;
+      Eigen::Matrix<double, 6, 6> bias_cov = Eigen::Matrix<double, 6, 6>::Identity();
+      bias_cov.block<3, 3>(0, 0).diagonal() = options_.q_bias_accel;
+      bias_cov.block<3, 3>(3, 3) = Eigen::Matrix<double, 3, 3>::Identity() * options_.q_bias_gyro;
       auto noise_model = StaticNoiseModel<6>::MakeShared(bias_cov);
       auto loss_func = L2LossFunc::MakeShared();
       size_t i = prev_trajectory_var_index;
@@ -610,6 +734,20 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
         auto bias_error = vspace::AdditionEvaluator<6>::MakeShared(trajectory_vars_[i].imu_biases, nbk);
         const auto bias_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(bias_error, noise_model, loss_func);
         imu_prior_cost_terms.emplace_back(bias_prior_factor);
+      }
+    }
+
+    if (!options_.T_mi_init_only && options_.use_accel) {
+      const auto T_mi = lgmath::se3::Transformation();
+      Eigen::Matrix<double, 6, 6> T_mi_cov = Eigen::Matrix<double, 6, 6>::Zero();
+      T_mi_cov.diagonal() = options_.qg_diag;
+      auto noise_model = StaticNoiseModel<6>::MakeShared(T_mi_cov);
+      auto loss_func = L2LossFunc::MakeShared();
+      size_t i = prev_trajectory_var_index;
+      for (; i < trajectory_vars_.size() - 1; i++) {
+        auto T_mi_error = se3_error(compose_rinv(trajectory_vars_[i + 1].T_mi, trajectory_vars_[i].T_mi), T_mi);
+        const auto T_mi_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(T_mi_error, noise_model, loss_func);
+        T_mi_prior_cost_terms.emplace_back(T_mi_prior_factor);
       }
     }
   }
@@ -837,6 +975,10 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     for (const auto &cost : imu_cost_terms) problem.addCostTerm(cost);
     for (const auto &cost : imu_prior_cost_terms) problem.addCostTerm(cost);
     problem.addCostTerm(p2p_super_cost_term);
+    if (options_.use_imu && options_.use_accel) {
+      for (const auto &cost : T_mi_prior_cost_terms) problem.addCostTerm(cost);
+      problem.addCostTerm(preint_cost_term);
+    }
 
     timer[1].second->stop();
 
@@ -919,6 +1061,10 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   for (const auto &imu_cost : imu_cost_terms) sliding_window_filter_->addCostTerm(imu_cost);
   sliding_window_filter_->addCostTerm(p2p_super_cost_term);
   for (const auto &imu_prior_cost : imu_prior_cost_terms) sliding_window_filter_->addCostTerm(imu_prior_cost);
+  if (options_.use_imu && options_.use_accel) {
+    for (const auto &cost : T_mi_prior_cost_terms) sliding_window_filter_->addCostTerm(cost);
+    sliding_window_filter_->addCostTerm(preint_cost_term);
+  }
 
   //
   LOG(INFO) << "number of variables: " << sliding_window_filter_->getNumberOfVariables() << std::endl;
@@ -936,6 +1082,14 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   solver.optimize();
 #endif
   // }
+
+  if (options_.T_mi_init_only && options_.use_accel) {
+    size_t i = prev_trajectory_var_index + 1;
+    for (; i < trajectory_vars_.size(); i++) {
+      trajectory_vars_[i].T_mi = SE3StateVar::MakeShared(prev_T_mi_var->value());
+      trajectory_vars_[i].T_mi->locked() = true;
+    }
+  }
 
   // clang-format off
   Time curr_begin_steam_time(static_cast<double>(current_estimate.begin_timestamp));
