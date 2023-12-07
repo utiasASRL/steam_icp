@@ -226,16 +226,16 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
     T_i_r_gt_poses.push_back(pose * T_lidar_applanix * T_applanix_robot);
   }
 
-  bool use_sbet_imu = false;
-  bool use_raw_accel_minus_gravity = false;
+  // bool use_sbet_imu = false;
+  // bool use_raw_accel_minus_gravity = false;
 
   std::string imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu_raw.csv";
-  if (use_sbet_imu) imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu.csv";
+  // if (use_sbet_imu) imu_path = options_.root_path + "/" + options_.sequence + "/applanix/imu.csv";
   std::string pose_meas_path = options_.root_path + "/" + options_.sequence + "/applanix/lidar_pose_meas.csv";
-  std::string accel_path = options_.root_path + "/" + options_.sequence + "/applanix/accel_raw_minus_gravity.csv";
+  // std::string accel_path = options_.root_path + "/" + options_.sequence + "/applanix/accel_raw_minus_gravity.csv";
   std::ifstream imu_file(imu_path);
   std::ifstream pose_meas_file(pose_meas_path);
-  std::ifstream acc_file(accel_path);
+  // std::ifstream acc_file(accel_path);
   Eigen::Matrix3d imu_body_raw_to_applanix, yfwd2xfwd;
   imu_body_raw_to_applanix << 0, -1, 0, -1, 0, 0, 0, 0, -1;
   yfwd2xfwd << 0, 1, 0, -1, 0, 0, 0, 0, 1;
@@ -245,15 +245,15 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
   const double initial_timestamp_sec = initial_timestamp_ * filename_to_time_convert_factor_;
   if (imu_file.is_open()) {
     std::string line;
-    std::string accel_line;
-    std::getline(imu_file, line);        // header
-    std::getline(acc_file, accel_line);  // header
+    // std::string accel_line;
+    std::getline(imu_file, line);  // header
+    // std::getline(acc_file, accel_line);  // header
     for (; std::getline(imu_file, line);) {
       if (line.empty()) continue;
-      std::getline(acc_file, accel_line);
-      if (accel_line.empty()) continue;
+      // std::getline(acc_file, accel_line);
+      // if (accel_line.empty()) continue;
       std::stringstream ss(line);
-      std::stringstream ss2(accel_line);
+      // std::stringstream ss2(accel_line);
       steam::IMUData imu_data;
       std::string value;
       std::getline(ss, value, ',');
@@ -273,23 +273,23 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
       imu_data.lin_acc[1] = std::stod(value);
       std::getline(ss, value, ',');
       imu_data.lin_acc[0] = std::stod(value);
-      if (use_sbet_imu) {
-        imu_data.ang_vel = yfwd2xfwd * imu_data.ang_vel;
-        imu_data.lin_acc = yfwd2xfwd * imu_data.lin_acc;
-      } else {
-        imu_data.ang_vel = yfwd2xfwd * imu_body_raw_to_applanix * imu_data.ang_vel;
-        if (use_raw_accel_minus_gravity) {
-          std::getline(ss2, value, ',');
-          std::getline(ss2, value, ',');
-          imu_data.lin_acc[0] = std::stod(value);
-          std::getline(ss2, value, ',');
-          imu_data.lin_acc[1] = std::stod(value);
-          std::getline(ss2, value, ',');
-          imu_data.lin_acc[2] = std::stod(value);
-        } else {
-          imu_data.lin_acc = yfwd2xfwd * imu_body_raw_to_applanix * imu_data.lin_acc;
-        }
-      }
+      // if (use_sbet_imu) {
+      //   imu_data.ang_vel = yfwd2xfwd * imu_data.ang_vel;
+      //   imu_data.lin_acc = yfwd2xfwd * imu_data.lin_acc;
+      // } else {
+      imu_data.ang_vel = yfwd2xfwd * imu_body_raw_to_applanix * imu_data.ang_vel;
+      // if (use_raw_accel_minus_gravity) {
+      //   std::getline(ss2, value, ',');
+      //   std::getline(ss2, value, ',');
+      //   imu_data.lin_acc[0] = std::stod(value);
+      //   std::getline(ss2, value, ',');
+      //   imu_data.lin_acc[1] = std::stod(value);
+      //   std::getline(ss2, value, ',');
+      //   imu_data.lin_acc[2] = std::stod(value);
+      // } else {
+      imu_data.lin_acc = yfwd2xfwd * imu_body_raw_to_applanix * imu_data.lin_acc;
+      // }
+      // }
       imu_data_vec_.push_back(imu_data);
     }
   }

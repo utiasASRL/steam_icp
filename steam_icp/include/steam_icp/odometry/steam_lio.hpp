@@ -70,6 +70,8 @@ class SteamLioOdometry : public Odometry {
     double acc_loss_sigma = 1.0;
     std::string gyro_loss_func = "L2";
     double gyro_loss_sigma = 1.0;
+    //
+    bool filter_lifetimes = false;
   };
 
   SteamLioOdometry(const Options &options);

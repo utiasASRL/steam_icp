@@ -23,27 +23,28 @@
 
 namespace steam_icp {
 
-template <class PointT>
-std::vector<PointT> ModifiedCACFAR<PointT>::run(const cv::Mat &raw_scan, const float &res,
-                                                const std::vector<int64_t> &azimuth_times,
-                                                const std::vector<double> &azimuth_angles) {
+// template <class PointT>
+std::vector<Point3D> ModifiedCACFAR::run(const cv::Mat &raw_scan, const float &res,
+                                         const std::vector<int64_t> &azimuth_times,
+                                         const std::vector<double> &azimuth_angles) {
   const int rows = raw_scan.rows;
   const int cols = raw_scan.cols;
   if (width_ % 2 == 0) width_ += 1;
   const int w2 = std::floor(width_ / 2);
-  auto mincol = minr_ / res + w2 + guard_ + 1;
+  int mincol = minr_ / res + w2 + guard_ + 1;
   if (mincol > cols || mincol < 0) mincol = 0;
-  auto maxcol = maxr_ / res - w2 - guard_;
+  int maxcol = maxr_ / res - w2 - guard_;
   if (maxcol > cols || maxcol < 0) maxcol = cols;
   const int N = maxcol - mincol;
 
-  std::vector<PointT> raw_points;
+  std::vector<Point3D> raw_points;
+  raw_points.clear();
   raw_points.reserve(2000);
 
   const double time_delta = azimuth_times.back() - azimuth_times.front();
 
-#pragma omp declare reduction( \
-        merge_points : std::vector<PointT> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
+#pragma omp declare reduction(merge_points : std::vector<Point3D> : omp_out.insert( \
+        omp_out.end(), omp_in.begin(), omp_in.end())) initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
 #pragma omp parallel for num_threads(num_threads_) reduction(merge_points : raw_points)
   for (int i = 0; i < rows; ++i) {
     const double azimuth = azimuth_angles[i];
@@ -71,7 +72,7 @@ std::vector<PointT> ModifiedCACFAR<PointT>::run(const cv::Mat &raw_scan, const f
         peak_points += j;
         num_peak_points += 1;
       } else if (num_peak_points > 0) {
-        PointT p;
+        Point3D p;
         const double rho = res * peak_points / num_peak_points + range_offset_;
         p.raw_pt[0] = rho * std::cos(-azimuth);
         p.raw_pt[1] = rho * std::sin(-azimuth);
@@ -79,13 +80,22 @@ std::vector<PointT> ModifiedCACFAR<PointT>::run(const cv::Mat &raw_scan, const f
         p.pt = p.raw_pt;
         p.timestamp = time;
         p.alpha_timestamp = alpha_time;
-        raw_points.emplace_back(p);
+        p.radial_velocity = rho;
+        raw_points.push_back(p);
         peak_points = 0;
         num_peak_points = 0;
       }
     }
   }
+
   raw_points.shrink_to_fit();
+  // sort points into a canonical order
+  std::sort(raw_points.begin(), raw_points.end(), [](Point3D a, Point3D b) {
+    if (a.timestamp == b.timestamp)
+      return a.radial_velocity < b.radial_velocity;
+    else
+      return a.timestamp < b.timestamp;
+  });
   return raw_points;
 }
 

@@ -57,3 +57,4 @@
         delay_adding_points: 1
         p2p_loss_func: L2
         num_extra_states: 0
+        filter_lifetimes: true

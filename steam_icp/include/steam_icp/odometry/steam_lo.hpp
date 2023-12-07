@@ -56,6 +56,8 @@ class SteamLoOdometry : public Odometry {
     Eigen::Matrix<double, 6, 1> T_mi_init_cov = Eigen::Matrix<double, 6, 1>::Ones();
     std::string acc_loss_func = "L2";
     double acc_loss_sigma = 1.0;
+    //
+    bool filter_lifetimes = false;
   };
 
   SteamLoOdometry(const Options &options);

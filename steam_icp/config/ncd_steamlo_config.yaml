@@ -97,3 +97,4 @@
         acc_loss_func: L2
         acc_loss_sigma: 1.0
         gravity: -9.81599  #-9.8042
+        filter_lifetimes: false

@@ -84,3 +84,4 @@
         gyro_loss_sigma: 1.0
         T_sr_vec: [ 0.01849613,  0.00982219, -0.028535  ,  0.        ,  0.        , 3.14159265]
         # T_sr_vec: [ 0.,  0., 0.  ,  0.        ,  0.        , 0.]
+        filter_lifetimes: false

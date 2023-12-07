@@ -21,20 +21,21 @@
 #pragma once
 
 #include "opencv2/opencv.hpp"
+#include "steam_icp/point.hpp"
 
 namespace steam_icp {
 
-template <class PointT>
+// template <class PointT>
 class Detector {
  public:
   virtual ~Detector() = default;
 
-  virtual std::vector<PointT> run(const cv::Mat &raw_scan, const float &res, const std::vector<int64_t> &azimuth_times,
-                                  const std::vector<double> &azimuth_angles) = 0;
+  virtual std::vector<Point3D> run(const cv::Mat &raw_scan, const float &res, const std::vector<int64_t> &azimuth_times,
+                                   const std::vector<double> &azimuth_angles) = 0;
 };
 
-template <class PointT>
-class ModifiedCACFAR : public Detector<PointT> {
+// template <class PointT>
+class ModifiedCACFAR : public Detector /*<PointT>*/ {
  public:
   ModifiedCACFAR() = default;
   ModifiedCACFAR(int width, int guard, double threshold, double threshold2, double threshold3, int num_threads,
@@ -50,8 +51,8 @@ class ModifiedCACFAR : public Detector<PointT> {
         range_offset_(range_offset),
         initial_timestamp_(initial_timestamp_micro) {}
 
-  std::vector<PointT> run(const cv::Mat &raw_scan, const float &res, const std::vector<int64_t> &azimuth_times,
-                          const std::vector<double> &azimuth_angles) override;
+  std::vector<Point3D> run(const cv::Mat &raw_scan, const float &res, const std::vector<int64_t> &azimuth_times,
+                           const std::vector<double> &azimuth_angles) override;
 
  private:
   int width_ = 41;  // window = width + 2 * guard

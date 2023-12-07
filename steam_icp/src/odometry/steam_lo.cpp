@@ -424,7 +424,7 @@ void SteamLoOdometry::updateMap(int index_frame, int update_frame) {
 #endif
 
   map_.add(frame, kSizeVoxelMap, kMaxNumPointsInVoxel, kMinDistancePoints);
-  // map_.update_and_filter_lifetimes();
+  if (options_.filter_lifetimes) map_.update_and_filter_lifetimes();
   frame.clear();
   frame.shrink_to_fit();
 
