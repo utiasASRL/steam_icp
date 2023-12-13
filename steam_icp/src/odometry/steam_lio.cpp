@@ -1126,7 +1126,6 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 
   for (int iter(0); iter < options_.num_iters_icp; iter++) {
     // initialize problem
-
     const auto problem = [&]() -> Problem::Ptr {
       if (swf_inside_icp) {
         return std::make_shared<SlidingWindowFilter>(*sliding_window_filter_);

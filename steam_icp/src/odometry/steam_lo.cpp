@@ -867,7 +867,10 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   Eigen::Matrix<double, 6, 1> v_begin = Eigen::Matrix<double, 6, 1>::Zero();
   Eigen::Matrix<double, 6, 1> v_end = Eigen::Matrix<double, 6, 1>::Zero();
 
-#define SWF_INSIDE_ICP true
+  bool swf_inside_icp = false;  // kitti-raw : false
+  if (index_frame > options_.init_num_frames || options_.swf_inside_icp_at_begin) {
+    swf_inside_icp = true;
+  }
 
   //
   for (int iter(0); iter < options_.num_iters_icp; iter++) {
@@ -876,16 +879,19 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     timer[0].second->stop();
 
     // initialize problem
-#if SWF_INSIDE_ICP
-    SlidingWindowFilter problem(*sliding_window_filter_);
-#else
-    OptimizationProblem problem(/* num_threads */ options_.num_threads);
-    for (const auto &var : steam_state_vars) problem.addStateVariable(var);
-#endif
+    const auto problem = [&]() -> Problem::Ptr {
+      if (swf_inside_icp) {
+        return std::make_shared<SlidingWindowFilter>(*sliding_window_filter_);
+      } else {
+        auto problem = OptimizationProblem::MakeShared(options_.num_threads);
+        for (const auto &var : steam_state_vars) problem->addStateVariable(var);
+        return problem;
+      }
+    }();
 
     // add prior cost terms
-    steam_trajectory->addPriorCostTerms(problem);
-    for (const auto &prior_cost_term : prior_cost_terms) problem.addCostTerm(prior_cost_term);
+    steam_trajectory->addPriorCostTerms(*problem);
+    for (const auto &prior_cost_term : prior_cost_terms) problem->addCostTerm(prior_cost_term);
 
     meas_cost_terms.clear();
     p2p_matches.clear();
@@ -971,13 +977,13 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 
     p2p_super_cost_term->initP2PMatches();
 
-    for (const auto &cost : meas_cost_terms) problem.addCostTerm(cost);
-    for (const auto &cost : imu_cost_terms) problem.addCostTerm(cost);
-    for (const auto &cost : imu_prior_cost_terms) problem.addCostTerm(cost);
-    problem.addCostTerm(p2p_super_cost_term);
+    for (const auto &cost : meas_cost_terms) problem->addCostTerm(cost);
+    for (const auto &cost : imu_cost_terms) problem->addCostTerm(cost);
+    for (const auto &cost : imu_prior_cost_terms) problem->addCostTerm(cost);
+    problem->addCostTerm(p2p_super_cost_term);
     if (options_.use_imu && options_.use_accel) {
-      for (const auto &cost : T_mi_prior_cost_terms) problem.addCostTerm(cost);
-      problem.addCostTerm(preint_cost_term);
+      for (const auto &cost : T_mi_prior_cost_terms) problem->addCostTerm(cost);
+      problem->addCostTerm(preint_cost_term);
     }
 
     timer[1].second->stop();
@@ -995,10 +1001,8 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     GaussNewtonSolverNVA::Params params;
     params.verbose = options_.verbose;
     params.max_iterations = (unsigned int)options_.max_iterations;
-#if SWF_INSIDE_ICP
-    params.reuse_previous_pattern = false;
-#endif
-    GaussNewtonSolverNVA solver(problem, params);
+    if (swf_inside_icp) params.reuse_previous_pattern = false;
+    GaussNewtonSolverNVA solver(*problem, params);
     solver.optimize();
 
     timer[2].second->stop();
@@ -1047,14 +1051,13 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       if (options_.debug_print) {
         LOG(INFO) << "CT_ICP: Finished with N=" << iter << " ICP iterations" << std::endl;
       }
-      break;
+      if (options_.break_icp_early) break;
     }
   }
 
   /// optimize in a sliding window
   LOG(INFO) << "Optimizing in a sliding window!" << std::endl;
-  // {
-  //
+
   steam_trajectory->addPriorCostTerms(*sliding_window_filter_);  // ** this includes state priors (like for x_0)
   for (const auto &prior_cost_term : prior_cost_terms) sliding_window_filter_->addCostTerm(prior_cost_term);
   for (const auto &meas_cost_term : meas_cost_terms) sliding_window_filter_->addCostTerm(meas_cost_term);
@@ -1078,10 +1081,7 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   params.max_iterations = 20;
   params.reuse_previous_pattern = false;
   GaussNewtonSolverNVA solver(*sliding_window_filter_, params);
-#if !SWF_INSIDE_ICP
-  solver.optimize();
-#endif
-  // }
+  if (!swf_inside_icp) solver.optimize();
 
   if (options_.T_mi_init_only && options_.use_accel) {
     size_t i = prev_trajectory_var_index + 1;

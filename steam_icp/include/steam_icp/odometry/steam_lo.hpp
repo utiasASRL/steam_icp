@@ -58,6 +58,8 @@ class SteamLoOdometry : public Odometry {
     double acc_loss_sigma = 1.0;
     //
     bool filter_lifetimes = false;
+    bool swf_inside_icp_at_begin = true;
+    bool break_icp_early = false;
   };
 
   SteamLoOdometry(const Options &options);
