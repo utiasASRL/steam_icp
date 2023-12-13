@@ -157,12 +157,12 @@ auto SteamRioOdometry::registerFrame(const DataFrame &const_frame) -> Registrati
   timer[0].second->stop();
 
   //
+  std::vector<Point3D> keypoints(frame);
   if (index_frame > 0) {
     double sample_voxel_size =
         index_frame < options_.init_num_frames ? options_.init_sample_voxel_size : options_.sample_voxel_size;
 
     // downsample
-    std::vector<Point3D> keypoints(frame);
     timer[0].second->start();
     if (options_.voxel_downsample) grid_sampling(frame, keypoints, sample_voxel_size, options_.num_threads);
     timer[0].second->stop();
@@ -249,7 +249,7 @@ auto SteamRioOdometry::registerFrame(const DataFrame &const_frame) -> Registrati
   }
   timer[2].second->stop();
 
-  summary.corrected_points = frame;
+  summary.corrected_points = keypoints;
 
 #if false
   // correct all points

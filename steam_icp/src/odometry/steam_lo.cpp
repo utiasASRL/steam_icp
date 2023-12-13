@@ -198,12 +198,12 @@ auto SteamLoOdometry::registerFrame(const DataFrame &const_frame) -> Registratio
   auto frame = initializeFrame(index_frame, const_frame.pointcloud);
 
   //
+  std::vector<Point3D> keypoints;
   if (index_frame > 0) {
     double sample_voxel_size =
         index_frame < options_.init_num_frames ? options_.init_sample_voxel_size : options_.sample_voxel_size;
 
     // downsample
-    std::vector<Point3D> keypoints;
     grid_sampling(frame, keypoints, sample_voxel_size, options_.num_threads);
 
     // icp
@@ -261,7 +261,7 @@ auto SteamLoOdometry::registerFrame(const DataFrame &const_frame) -> Registratio
     updateMap(index_frame, (index_frame - options_.delay_adding_points));
   }
 
-  summary.corrected_points = frame;
+  summary.corrected_points = keypoints;
 
 #if false
   // correct all points

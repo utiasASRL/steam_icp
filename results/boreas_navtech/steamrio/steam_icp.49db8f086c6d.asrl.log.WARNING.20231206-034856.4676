@@ -1,0 +1,314 @@
+Log file created at: 2023/12/06 03:48:56
+Running on machine: 49db8f086c6d
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+W20231206 03:48:56.986744  4676 main.cpp:921] Logging to /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio
+W20231206 03:48:56.986986  4676 main.cpp:120] Parameter suspend_on_failure = 0
+W20231206 03:48:56.987012  4676 main.cpp:121] Parameter output_dir = /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio
+W20231206 03:48:56.987038  4676 main.cpp:124] Parameter eval_only = 0
+W20231206 03:48:56.987058  4676 main.cpp:130] Parameter dataset = BoreasNavtech
+W20231206 03:48:56.987077  4676 main.cpp:134] Parameter dataset_options.all_sequences = 1
+W20231206 03:48:56.987097  4676 main.cpp:135] Parameter dataset_options.root_path = /home/asrl/boreas_docker_local
+W20231206 03:48:56.987118  4676 main.cpp:136] Parameter dataset_options.sequence = boreas-2021-01-26-10-59
+W20231206 03:48:56.987136  4676 main.cpp:137] Parameter dataset_options.init_frame = 0
+W20231206 03:48:56.987155  4676 main.cpp:138] Parameter dataset_options.last_frame = 10000
+W20231206 03:48:56.987174  4676 main.cpp:139] Parameter dataset_options.min_dist_sensor_center = 2
+W20231206 03:48:56.987210  4676 main.cpp:140] Parameter dataset_options.max_dist_sensor_center = 80
+W20231206 03:48:56.987231  4676 main.cpp:141] Parameter dataset_options.lidar_timestamp_round = 0
+W20231206 03:48:56.987249  4676 main.cpp:142] Parameter dataset_options.lidar_timestamp_round_hz = 400
+W20231206 03:48:56.987272  4676 main.cpp:145] Parameter dataset_options.radar_resolution = 0.0596
+W20231206 03:48:56.987293  4676 main.cpp:146] Parameter dataset_options.radar_range_offset = -0.31
+W20231206 03:48:56.987313  4676 main.cpp:147] Parameter dataset_options.modified_cacfar_width = 101
+W20231206 03:48:56.987330  4676 main.cpp:148] Parameter dataset_options.modified_cacfar_guard = 5
+W20231206 03:48:56.987350  4676 main.cpp:149] Parameter dataset_options.modified_cacfar_threshold = 1
+W20231206 03:48:56.987376  4676 main.cpp:150] Parameter dataset_options.modified_cacfar_threshold2 = 0
+W20231206 03:48:56.987413  4676 main.cpp:151] Parameter dataset_options.modified_cacfar_threshold3 = 0.09
+W20231206 03:48:56.987437  4676 main.cpp:152] Parameter dataset_options.modified_cacfar_width_0438 = 137
+W20231206 03:48:56.987458  4676 main.cpp:153] Parameter dataset_options.modified_cacfar_guard_0438 = 7
+W20231206 03:48:56.987478  4676 main.cpp:154] Parameter dataset_options.modified_cacfar_threshold_0438 = 0.5
+W20231206 03:48:56.987499  4676 main.cpp:155] Parameter dataset_options.modified_cacfar_threshold2_0438 = 0
+W20231206 03:48:56.987521  4676 main.cpp:156] Parameter dataset_options.modified_cacfar_threshold3_0438 = 0.25
+W20231206 03:48:56.987545  4676 main.cpp:157] Parameter dataset_options.modified_cacfar_num_threads = 16
+W20231206 03:48:56.987565  4676 main.cpp:166] Parameter visualization_options.odometry = 1
+W20231206 03:48:56.987586  4676 main.cpp:167] Parameter visualization_options.raw_points = 0
+W20231206 03:48:56.987605  4676 main.cpp:168] Parameter visualization_options.sampled_points = 1
+W20231206 03:48:56.987629  4676 main.cpp:169] Parameter visualization_options.map_points = 1
+W20231206 03:48:56.987650  4676 main.cpp:187] Parameter odometry = STEAMRO
+W20231206 03:48:56.987674  4676 main.cpp:208] Parameter odometry_options.init_num_frames = 20
+W20231206 03:48:56.987696  4676 main.cpp:209] Parameter odometry_options.init_voxel_size = 1
+W20231206 03:48:56.987718  4676 main.cpp:210] Parameter odometry_options.voxel_size = 1
+W20231206 03:48:56.987740  4676 main.cpp:211] Parameter odometry_options.init_sample_voxel_size = 1
+W20231206 03:48:56.987761  4676 main.cpp:212] Parameter odometry_options.sample_voxel_size = 1
+W20231206 03:48:56.987784  4676 main.cpp:214] Parameter odometry_options.size_voxel_map = 1
+W20231206 03:48:56.987805  4676 main.cpp:215] Parameter odometry_options.min_distance_points = 0.1
+W20231206 03:48:56.987826  4676 main.cpp:216] Parameter odometry_options.max_num_points_in_voxel = 10
+W20231206 03:48:56.987846  4676 main.cpp:217] Parameter odometry_options.max_distance = 80
+W20231206 03:48:56.987880  4676 main.cpp:218] Parameter odometry_options.min_number_neighbors = 1
+W20231206 03:48:56.987900  4676 main.cpp:219] Parameter odometry_options.max_number_neighbors = 1
+W20231206 03:48:56.987938  4676 main.cpp:220] Parameter odometry_options.voxel_lifetime = 3
+W20231206 03:48:56.987964  4676 main.cpp:222] Parameter odometry_options.num_iters_icp = 20
+W20231206 03:48:56.987987  4676 main.cpp:223] Parameter odometry_options.threshold_orientation_norm = 0.0001
+W20231206 03:48:56.988010  4676 main.cpp:224] Parameter odometry_options.threshold_translation_norm = 0.001
+W20231206 03:48:56.988032  4676 main.cpp:225] Parameter odometry_options.min_number_keypoints = 100
+W20231206 03:48:56.988051  4676 main.cpp:227] Parameter odometry_options.debug_print = 1
+W20231206 03:48:56.988073  4676 main.cpp:228] Parameter odometry_options.debug_path = /home/krb/ASRL/temp/steam_icp/boreas_navtech/steamrio
+W20231206 03:48:56.988098  4676 main.cpp:808] Parameter odometry_options.steam.qc_diag = 000001 00.004 0.0001 0.0001 0.0001 000.01
+W20231206 03:48:56.988130  4676 main.cpp:810] Parameter odometry_options.steam.num_extra_states = 0
+W20231206 03:48:56.988153  4676 main.cpp:812] Parameter odometry_options.steam.power_planarity = 2
+W20231206 03:48:56.988176  4676 main.cpp:813] Parameter odometry_options.steam.p2p_max_dist = 5
+W20231206 03:48:56.988199  4676 main.cpp:815] Parameter odometry_options.steam.p2p_loss_func = CAUCHY
+W20231206 03:48:56.988222  4676 main.cpp:831] Parameter odometry_options.steam.p2p_loss_sigma = 1
+W20231206 03:48:56.988245  4676 main.cpp:832] Parameter odometry_options.steam.verbose = 1
+W20231206 03:48:56.988265  4676 main.cpp:833] Parameter odometry_options.steam.max_iterations = 5
+W20231206 03:48:56.988286  4676 main.cpp:834] Parameter odometry_options.steam.num_threads = 16
+W20231206 03:48:56.988307  4676 main.cpp:835] Parameter odometry_options.steam.delay_adding_points = 1
+W20231206 03:48:56.988328  4676 main.cpp:836] Parameter odometry_options.steam.use_final_state_value = 0
+W20231206 03:48:56.988349  4676 main.cpp:837] Parameter odometry_options.steam.beta = 0.0535
+W20231206 03:48:56.988371  4676 main.cpp:838] Parameter odometry_options.steam.voxel_downsample = 0
+W20231206 03:48:56.988394  4676 main.cpp:839] Parameter odometry_options.steam.use_imu = 1
+W20231206 03:48:56.988415  4676 main.cpp:840] Parameter odometry_options.steam.use_accel = 1
+W20231206 03:48:56.988435  4676 main.cpp:841] Parameter odometry_options.steam.r_imu_ang = 0.00334471
+W20231206 03:48:56.988457  4676 main.cpp:842] Parameter odometry_options.steam.p0_bias_gyro = 0.01
+W20231206 03:48:56.988482  4676 main.cpp:843] Parameter odometry_options.steam.q_bias_gyro = 0.0001
+W20231206 03:48:56.988505  4676 main.cpp:844] Parameter odometry_options.steam.acc_loss_func = L2
+W20231206 03:48:56.988526  4676 main.cpp:845] Parameter odometry_options.steam.acc_loss_sigma = 1
+W20231206 03:48:56.988550  4676 main.cpp:852] Parameter odometry_options.steam.r_imu_acc = 0.05 0100 0001
+W20231206 03:48:56.988579  4676 main.cpp:861] Parameter odometry_options.steam.p0_bias_accel = 0.001 0.001 000.1
+W20231206 03:48:56.988606  4676 main.cpp:869] Parameter odometry_options.steam.q_bias_accel = 0.1 0.1 0.1
+W20231206 03:48:56.988618  4676 main.cpp:935] Creating directory /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio/
+W20231206 03:48:57.322472  4676 main.cpp:945] Running odometry on sequence: boreas-2020-12-04-14-00
+W20231206 03:48:57.322576  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999973 -0.00738631 00000000000 000000000-0
+00.00738631 0000.999973 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 04:00:10.482239  4676 main.cpp:1137] Average loading ..................... 16.9519 ms
+W20231206 04:00:10.482268  4676 main.cpp:1137] Average registration ................ 119.257 ms
+W20231206 04:00:10.482275  4676 main.cpp:1137] Average visualization ............... 0.317039 ms
+W20231206 04:00:11.232436  4676 main.cpp:1147] Mean RPE : 2.30285
+W20231206 04:00:11.232467  4676 main.cpp:1148] Mean RPE 2D : 1.65757
+W20231206 04:00:11.232471  4676 main.cpp:1149] Mean APE : 2085.79
+W20231206 04:00:11.232475  4676 main.cpp:1150] Max APE : 4463.34
+W20231206 04:00:11.232479  4676 main.cpp:1151] Mean Local Error : 0.0191395
+W20231206 04:00:11.232483  4676 main.cpp:1152] Max Local Error : 0.223665
+W20231206 04:00:11.232486  4676 main.cpp:1153] Index Max Local Error : 332
+W20231206 04:00:11.232489  4676 main.cpp:1155] KITTI Summary : 1.66 & 0.0046 & 2.30 & 0.0076\\
+W20231206 04:00:11.232494  4676 main.cpp:1161] 
+W20231206 04:00:11.760932  4676 main.cpp:945] Running odometry on sequence: boreas-2021-01-26-10-59
+W20231206 04:00:11.761013  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999973 -0.00738631 00000000000 000000000-0
+00.00738631 0000.999973 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 04:10:46.763410  4676 main.cpp:1137] Average loading ..................... 16.7971 ms
+W20231206 04:10:46.763433  4676 main.cpp:1137] Average registration ................ 111.881 ms
+W20231206 04:10:46.763440  4676 main.cpp:1137] Average visualization ............... 0.289864 ms
+W20231206 04:10:47.496855  4676 main.cpp:1147] Mean RPE : 1.91533
+W20231206 04:10:47.496889  4676 main.cpp:1148] Mean RPE 2D : 1.11169
+W20231206 04:10:47.496893  4676 main.cpp:1149] Mean APE : 2304.74
+W20231206 04:10:47.496897  4676 main.cpp:1150] Max APE : 4525.47
+W20231206 04:10:47.496901  4676 main.cpp:1151] Mean Local Error : 0.0174888
+W20231206 04:10:47.496906  4676 main.cpp:1152] Max Local Error : 0.111237
+W20231206 04:10:47.496909  4676 main.cpp:1153] Index Max Local Error : 958
+W20231206 04:10:47.496912  4676 main.cpp:1155] KITTI Summary : 1.11 & 0.0035 & 1.92 & 0.0073\\
+W20231206 04:10:47.496917  4676 main.cpp:1161] 
+W20231206 04:10:47.977564  4676 main.cpp:945] Running odometry on sequence: boreas-2021-02-09-12-55
+W20231206 04:10:47.977638  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999973 -0.00738631 00000000000 000000000-0
+00.00738631 0000.999973 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 04:19:48.618214  4676 main.cpp:1137] Average loading ..................... 16.8326 ms
+W20231206 04:19:48.618242  4676 main.cpp:1137] Average registration ................ 115.524 ms
+W20231206 04:19:48.618252  4676 main.cpp:1137] Average visualization ............... 0.297669 ms
+W20231206 04:19:49.232777  4676 main.cpp:1147] Mean RPE : 1.87651
+W20231206 04:19:49.232810  4676 main.cpp:1148] Mean RPE 2D : 1.05702
+W20231206 04:19:49.232815  4676 main.cpp:1149] Mean APE : 2177.99
+W20231206 04:19:49.232820  4676 main.cpp:1150] Max APE : 4497.2
+W20231206 04:19:49.232822  4676 main.cpp:1151] Mean Local Error : 0.0179162
+W20231206 04:19:49.232826  4676 main.cpp:1152] Max Local Error : 0.106947
+W20231206 04:19:49.232831  4676 main.cpp:1153] Index Max Local Error : 67
+W20231206 04:19:49.232833  4676 main.cpp:1155] KITTI Summary : 1.06 & 0.0032 & 1.88 & 0.0070\\
+W20231206 04:19:49.232839  4676 main.cpp:1161] 
+W20231206 04:19:49.688081  4676 main.cpp:945] Running odometry on sequence: boreas-2021-03-09-14-23
+W20231206 04:19:49.688149  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999973 -0.00738631 00000000000 000000000-0
+00.00738631 0000.999973 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 04:29:30.702234  4676 main.cpp:1137] Average loading ..................... 17.0075 ms
+W20231206 04:29:30.702265  4676 main.cpp:1137] Average registration ................ 118.352 ms
+W20231206 04:29:30.702271  4676 main.cpp:1137] Average visualization ............... 0.310135 ms
+W20231206 04:29:31.346120  4676 main.cpp:1147] Mean RPE : 1.95499
+W20231206 04:29:31.346153  4676 main.cpp:1148] Mean RPE 2D : 1.24303
+W20231206 04:29:31.346158  4676 main.cpp:1149] Mean APE : 2175.47
+W20231206 04:29:31.346161  4676 main.cpp:1150] Max APE : 4480.9
+W20231206 04:29:31.346169  4676 main.cpp:1151] Mean Local Error : 0.0183576
+W20231206 04:29:31.346174  4676 main.cpp:1152] Max Local Error : 0.13472
+W20231206 04:29:31.346176  4676 main.cpp:1153] Index Max Local Error : 3891
+W20231206 04:29:31.346184  4676 main.cpp:1155] KITTI Summary : 1.24 & 0.0034 & 1.95 & 0.0069\\
+W20231206 04:29:31.346189  4676 main.cpp:1161] 
+W20231206 04:29:31.850579  4676 main.cpp:945] Running odometry on sequence: boreas-2021-04-22-15-00
+W20231206 04:29:31.850659  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999973 -0.00738631 00000000000 000000000-0
+00.00738631 0000.999973 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 04:39:54.370075  4676 main.cpp:1137] Average loading ..................... 16.8587 ms
+W20231206 04:39:54.370101  4676 main.cpp:1137] Average registration ................ 116.847 ms
+W20231206 04:39:54.370110  4676 main.cpp:1137] Average visualization ............... 0.324074 ms
+W20231206 04:39:55.064412  4676 main.cpp:1147] Mean RPE : 2.24748
+W20231206 04:39:55.064443  4676 main.cpp:1148] Mean RPE 2D : 1.58044
+W20231206 04:39:55.064447  4676 main.cpp:1149] Mean APE : 1607.49
+W20231206 04:39:55.064452  4676 main.cpp:1150] Max APE : 3825.89
+W20231206 04:39:55.064455  4676 main.cpp:1151] Mean Local Error : 0.020268
+W20231206 04:39:55.064460  4676 main.cpp:1152] Max Local Error : 1.68694
+W20231206 04:39:55.064463  4676 main.cpp:1153] Index Max Local Error : 1
+W20231206 04:39:55.064466  4676 main.cpp:1155] KITTI Summary : 1.58 & 0.0041 & 2.25 & 0.0071\\
+W20231206 04:39:55.064471  4676 main.cpp:1161] 
+W20231206 04:39:55.571803  4676 main.cpp:945] Running odometry on sequence: boreas-2021-06-29-18-53
+W20231206 04:39:55.571875  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999973 -0.00738631 00000000000 000000000-0
+00.00738631 0000.999973 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 04:50:11.131229  4676 main.cpp:1137] Average loading ..................... 17.1474 ms
+W20231206 04:50:11.131260  4676 main.cpp:1137] Average registration ................ 115.346 ms
+W20231206 04:50:11.131268  4676 main.cpp:1137] Average visualization ............... 0.296009 ms
+W20231206 04:50:11.816699  4676 main.cpp:1147] Mean RPE : 2.41861
+W20231206 04:50:11.816730  4676 main.cpp:1148] Mean RPE 2D : 1.85393
+W20231206 04:50:11.816741  4676 main.cpp:1149] Mean APE : 2123.41
+W20231206 04:50:11.816745  4676 main.cpp:1150] Max APE : 4437.11
+W20231206 04:50:11.816749  4676 main.cpp:1151] Mean Local Error : 0.0200199
+W20231206 04:50:11.816753  4676 main.cpp:1152] Max Local Error : 0.118123
+W20231206 04:50:11.816756  4676 main.cpp:1153] Index Max Local Error : 683
+W20231206 04:50:11.816759  4676 main.cpp:1155] KITTI Summary : 1.85 & 0.0054 & 2.42 & 0.0082\\
+W20231206 04:50:11.816781  4676 main.cpp:1161] 
+W20231206 04:50:12.253067  4676 main.cpp:945] Running odometry on sequence: boreas-2021-06-29-20-43
+W20231206 04:50:12.253151  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999973 -0.00738631 00000000000 000000000-0
+00.00738631 0000.999973 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 04:57:39.802467  4676 main.cpp:1137] Average loading ..................... 16.6841 ms
+W20231206 04:57:39.802500  4676 main.cpp:1137] Average registration ................ 116.987 ms
+W20231206 04:57:39.802506  4676 main.cpp:1137] Average visualization ............... 0.308084 ms
+W20231206 04:57:40.298866  4676 main.cpp:1147] Mean RPE : 2.34868
+W20231206 04:57:40.298897  4676 main.cpp:1148] Mean RPE 2D : 1.68483
+W20231206 04:57:40.298905  4676 main.cpp:1149] Mean APE : 2480.79
+W20231206 04:57:40.298911  4676 main.cpp:1150] Max APE : 4426.72
+W20231206 04:57:40.298916  4676 main.cpp:1151] Mean Local Error : 0.0198922
+W20231206 04:57:40.298923  4676 main.cpp:1152] Max Local Error : 1.6277
+W20231206 04:57:40.298928  4676 main.cpp:1153] Index Max Local Error : 1
+W20231206 04:57:40.298938  4676 main.cpp:1155] KITTI Summary : 1.68 & 0.0047 & 2.35 & 0.0078\\
+W20231206 04:57:40.298960  4676 main.cpp:1161] 
+W20231206 04:57:40.734222  4676 main.cpp:945] Running odometry on sequence: boreas-2021-09-08-21-00
+W20231206 04:57:40.734297  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999973 -0.00738631 00000000000 000000000-0
+00.00738631 0000.999973 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 05:07:41.929586  4676 main.cpp:1137] Average loading ..................... 16.6331 ms
+W20231206 05:07:41.929625  4676 main.cpp:1137] Average registration ................ 114.425 ms
+W20231206 05:07:41.929632  4676 main.cpp:1137] Average visualization ............... 0.303977 ms
+W20231206 05:07:42.601230  4676 main.cpp:1147] Mean RPE : 2.47908
+W20231206 05:07:42.601264  4676 main.cpp:1148] Mean RPE 2D : 1.84338
+W20231206 05:07:42.601269  4676 main.cpp:1149] Mean APE : 2300.8
+W20231206 05:07:42.601272  4676 main.cpp:1150] Max APE : 4457.94
+W20231206 05:07:42.601276  4676 main.cpp:1151] Mean Local Error : 0.0187124
+W20231206 05:07:42.601280  4676 main.cpp:1152] Max Local Error : 0.120531
+W20231206 05:07:42.601284  4676 main.cpp:1153] Index Max Local Error : 4506
+W20231206 05:07:42.601287  4676 main.cpp:1155] KITTI Summary : 1.84 & 0.0054 & 2.48 & 0.0085\\
+W20231206 05:07:42.601294  4676 main.cpp:1161] 
+W20231206 05:07:43.311901  4676 main.cpp:945] Running odometry on sequence: boreas-2021-09-09-15-28
+W20231206 05:07:43.311961  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999973 -0.00738631 00000000000 000000000-0
+00.00738631 0000.999973 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 05:26:18.840610  4676 main.cpp:1137] Average loading ..................... 16.846 ms
+W20231206 05:26:18.840633  4676 main.cpp:1137] Average registration ................ 126.001 ms
+W20231206 05:26:18.840641  4676 main.cpp:1137] Average visualization ............... 0.371854 ms
+W20231206 05:26:20.037698  4676 main.cpp:1147] Mean RPE : 3.1609
+W20231206 05:26:20.037734  4676 main.cpp:1148] Mean RPE 2D : 2.35589
+W20231206 05:26:20.037739  4676 main.cpp:1149] Mean APE : 3596.64
+W20231206 05:26:20.037743  4676 main.cpp:1150] Max APE : 5663
+W20231206 05:26:20.037747  4676 main.cpp:1151] Mean Local Error : 0.0171248
+W20231206 05:26:20.037751  4676 main.cpp:1152] Max Local Error : 0.189056
+W20231206 05:26:20.037755  4676 main.cpp:1153] Index Max Local Error : 675
+W20231206 05:26:20.037758  4676 main.cpp:1155] KITTI Summary : 2.36 & 0.0068 & 3.16 & 0.0102\\
+W20231206 05:26:20.037763  4676 main.cpp:1161] 
+W20231206 05:26:20.698810  4676 main.cpp:945] Running odometry on sequence: boreas-2021-10-05-15-35
+W20231206 05:26:20.698901  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999981 -0.00621693 00000000000 000000000-0
+00.00621693 0000.999981 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 05:37:55.167866  4676 main.cpp:1137] Average loading ..................... 36.3195 ms
+W20231206 05:37:55.167896  4676 main.cpp:1137] Average registration ................ 101.449 ms
+W20231206 05:37:55.167903  4676 main.cpp:1137] Average visualization ............... 0.280119 ms
+W20231206 05:37:55.906636  4676 main.cpp:1147] Mean RPE : 2.13066
+W20231206 05:37:55.906668  4676 main.cpp:1148] Mean RPE 2D : 1.48177
+W20231206 05:37:55.906672  4676 main.cpp:1149] Mean APE : 2079.62
+W20231206 05:37:55.906677  4676 main.cpp:1150] Max APE : 4436.85
+W20231206 05:37:55.906680  4676 main.cpp:1151] Mean Local Error : 0.0160532
+W20231206 05:37:55.906683  4676 main.cpp:1152] Max Local Error : 0.12255
+W20231206 05:37:55.906687  4676 main.cpp:1153] Index Max Local Error : 4098
+W20231206 05:37:55.906690  4676 main.cpp:1155] KITTI Summary : 1.48 & 0.0042 & 2.13 & 0.0072\\
+W20231206 05:37:55.906695  4676 main.cpp:1161] 
+W20231206 05:37:56.394636  4676 main.cpp:945] Running odometry on sequence: boreas-2021-10-26-12-35
+W20231206 05:37:56.394724  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999981 -0.00621693 00000000000 000000000-0
+00.00621693 0000.999981 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 05:51:03.749589  4676 main.cpp:1137] Average loading ..................... 36.1951 ms
+W20231206 05:51:03.749619  4676 main.cpp:1137] Average registration ................ 149.469 ms
+W20231206 05:51:03.749627  4676 main.cpp:1137] Average visualization ............... 0.278696 ms
+W20231206 05:51:04.376798  4676 main.cpp:1147] Mean RPE : 2.12983
+W20231206 05:51:04.376828  4676 main.cpp:1148] Mean RPE 2D : 1.5465
+W20231206 05:51:04.376843  4676 main.cpp:1149] Mean APE : 2187.45
+W20231206 05:51:04.376850  4676 main.cpp:1150] Max APE : 4412.06
+W20231206 05:51:04.376857  4676 main.cpp:1151] Mean Local Error : 0.0168242
+W20231206 05:51:04.376863  4676 main.cpp:1152] Max Local Error : 0.125083
+W20231206 05:51:04.376869  4676 main.cpp:1153] Index Max Local Error : 52
+W20231206 05:51:04.376892  4676 main.cpp:1155] KITTI Summary : 1.55 & 0.0045 & 2.13 & 0.0075\\
+W20231206 05:51:04.376900  4676 main.cpp:1161] 
+W20231206 05:51:04.871760  4676 main.cpp:945] Running odometry on sequence: boreas-2021-11-06-18-55
+W20231206 05:51:04.871850  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999981 -0.00621693 00000000000 000000000-0
+00.00621693 0000.999981 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 06:03:22.012280  4676 main.cpp:1137] Average loading ..................... 40.5404 ms
+W20231206 06:03:22.012315  4676 main.cpp:1137] Average registration ................ 112.088 ms
+W20231206 06:03:22.012322  4676 main.cpp:1137] Average visualization ............... 0.317078 ms
+W20231206 06:03:22.840456  4676 main.cpp:1147] Mean RPE : 2.29764
+W20231206 06:03:22.840489  4676 main.cpp:1148] Mean RPE 2D : 1.57267
+W20231206 06:03:22.840494  4676 main.cpp:1149] Mean APE : 2263.7
+W20231206 06:03:22.840502  4676 main.cpp:1150] Max APE : 4411.33
+W20231206 06:03:22.840507  4676 main.cpp:1151] Mean Local Error : 0.016068
+W20231206 06:03:22.840512  4676 main.cpp:1152] Max Local Error : 0.103526
+W20231206 06:03:22.840517  4676 main.cpp:1153] Index Max Local Error : 27
+W20231206 06:03:22.840521  4676 main.cpp:1155] KITTI Summary : 1.57 & 0.0046 & 2.30 & 0.0076\\
+W20231206 06:03:22.840528  4676 main.cpp:1161] 
+W20231206 06:03:23.426983  4676 main.cpp:945] Running odometry on sequence: boreas-2021-11-28-09-18
+W20231206 06:03:23.427049  4676 main.cpp:993] (BOREAS)Parameter T_sr = 
+0000.999981 -0.00621693 00000000000 000000000-0
+00.00621693 0000.999981 000000000-0 00000000000
+00000000000 000000000-0 00000000001 00000-0.495
+000000000-0 00000000000 000000000-0 00000000001
+W20231206 06:15:19.352512  4676 main.cpp:1137] Average loading ..................... 42.4709 ms
+W20231206 06:15:19.352545  4676 main.cpp:1137] Average registration ................ 115.746 ms
+W20231206 06:15:19.352553  4676 main.cpp:1137] Average visualization ............... 0.328239 ms
+W20231206 06:15:20.108425  4676 main.cpp:1147] Mean RPE : 2.25668
+W20231206 06:15:20.108464  4676 main.cpp:1148] Mean RPE 2D : 1.63235
+W20231206 06:15:20.108472  4676 main.cpp:1149] Mean APE : 2328.08
+W20231206 06:15:20.108493  4676 main.cpp:1150] Max APE : 4441.64
+W20231206 06:15:20.108500  4676 main.cpp:1151] Mean Local Error : 0.0174081
+W20231206 06:15:20.108507  4676 main.cpp:1152] Max Local Error : 0.153074
+W20231206 06:15:20.108515  4676 main.cpp:1153] Index Max Local Error : 54
+W20231206 06:15:20.108520  4676 main.cpp:1155] KITTI Summary : 1.63 & 0.0047 & 2.26 & 0.0080\\
+W20231206 06:15:20.108541  4676 main.cpp:1161] 
+W20231206 06:15:20.316160  4676 main.cpp:1169] 
+W20231206 06:15:20.316532  4676 main.cpp:1180] KITTI metric translation/rotation : 2.3207 0.00788948

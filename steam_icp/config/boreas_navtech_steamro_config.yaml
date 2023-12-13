@@ -2,7 +2,7 @@
   ros__parameters:
     log_dir: /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio
     output_dir: /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio
-    eval_only: false
+    eval_only: true
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
