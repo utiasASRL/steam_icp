@@ -847,6 +847,7 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, q_bias_gyro, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, acc_loss_func, std::string);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, acc_loss_sigma, double);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, filter_lifetimes, bool);
 
       std::vector<double> r_imu_acc;
       ROS2_PARAM_NO_LOG(node, r_imu_acc, prefix, r_imu_acc, std::vector<double>);
@@ -1037,6 +1038,7 @@ int main(int argc, char **argv) {
 
     bool odometry_success = true;
     int k = 0;
+    Eigen::Vector3d t_prev = Eigen::Vector3d::Zero();
     while (seq->hasNext()) {
       LOG(INFO) << "Processing frame " << seq->currFrame() << std::endl;
 
@@ -1094,6 +1096,18 @@ int main(int argc, char **argv) {
       if (options.visualization_options.map_points) {
         /// map points
         auto map_points = odometry->map();
+        if (options.odometry == "STEAMRO" && (summary.t_ms - t_prev).norm() > 10.0) {
+          const auto filename =
+              options.output_dir + "/" + seq->name() + "-" + std::to_string(frame.timestamp) + "_map.txt";
+          std::ofstream outfile(filename);
+          if (!outfile.is_open()) throw std::runtime_error{"failed to open file: " + filename};
+          outfile << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+          for (auto &point : map_points) {
+            outfile << point.pt[0] << " " << point.pt[1] << " " << point.pt[2] << " " << point.radial_velocity
+                    << std::endl;
+          }
+          t_prev = summary.t_ms;
+        }
         auto map_points_msg = to_pc2_msg(map_points, "map");
         map_points_publisher->publish(map_points_msg);
       }
@@ -1144,6 +1158,17 @@ int main(int argc, char **argv) {
 
     // transform and save the estimated trajectory
     seq->save(options.output_dir, odometry->trajectory());
+
+    if (options.odometry == "STEAMLO") {
+      auto map_points = odometry->map();
+      const auto filename = options.output_dir + "/" + seq->name() + "_map.txt";
+      std::ofstream outfile(filename);
+      if (!outfile.is_open()) throw std::runtime_error{"failed to open file: " + filename};
+      outfile << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+      for (auto &point : map_points) {
+        outfile << point.pt[0] << " " << point.pt[1] << " " << point.pt[2] << " " << point.radial_velocity << std::endl;
+      }
+    }
 
     // ground truth
     if (seq->hasGroundTruth()) {

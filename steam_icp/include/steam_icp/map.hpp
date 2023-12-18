@@ -40,7 +40,7 @@ struct VoxelBlock {
 
   bool IsFull() const { return num_points_ == static_cast<int>(points.size()); }
 
-  void AddPoint(const Eigen::Vector3d &point) {
+  void AddPoint(const Point3D &point) {
     if (num_points_ < (int)points.size())
       throw std::runtime_error{"voxel is full with size " + std::to_string(points.size())};
     points.push_back(point);
@@ -50,7 +50,8 @@ struct VoxelBlock {
 
   inline int Capacity() { return num_points_; }
 
-  ArrayVector3d points;
+  // ArrayVector3d points;
+  std::vector<Point3D> points;
 
   int life_time = 10;
 
@@ -84,8 +85,9 @@ class Map {
   Map() = default;
   Map(int default_lifetime) : default_lifetime_(default_lifetime) {}
 
-  ArrayVector3d pointcloud() const {
-    ArrayVector3d points;
+  // ArrayVector3d
+  std::vector<Point3D> pointcloud() const {
+    std::vector<Point3D> points;
     points.reserve(size());
     for (auto &voxel : voxel_map_) {
       for (int i(0); i < voxel.second.NumPoints(); ++i) points.push_back(voxel.second.points[i]);
@@ -104,7 +106,7 @@ class Map {
   void remove(const Eigen::Vector3d &location, double distance) {
     std::vector<Voxel> voxels_to_erase;
     for (auto &pair : voxel_map_) {
-      Eigen::Vector3d pt = pair.second.points[0];
+      Eigen::Vector3d pt = pair.second.points[0].pt;
       if ((pt - location).squaredNorm() > (distance * distance)) {
         voxels_to_erase.push_back(pair.first);
       }
@@ -133,18 +135,18 @@ class Map {
   void add(const std::vector<Point3D> &points, double voxel_size, int max_num_points_in_voxel,
            double min_distance_points, int min_num_points = 0) {
     for (const auto &point : points)
-      add(point.pt, voxel_size, max_num_points_in_voxel, min_distance_points, min_num_points);
+      add(point, voxel_size, max_num_points_in_voxel, min_distance_points, min_num_points);
   }
 
-  void add(const ArrayVector3d &points, double voxel_size, int max_num_points_in_voxel, double min_distance_points) {
-    for (const auto &point : points) add(point, voxel_size, max_num_points_in_voxel, min_distance_points);
-  }
+  // void add(const ArrayVector3d &points, double voxel_size, int max_num_points_in_voxel, double min_distance_points) {
+  //   for (const auto &point : points) add(point, voxel_size, max_num_points_in_voxel, min_distance_points);
+  // }
 
-  void add(const Eigen::Vector3d &point, double voxel_size, int max_num_points_in_voxel, double min_distance_points,
+  void add(const Point3D &point, double voxel_size, int max_num_points_in_voxel, double min_distance_points,
            int min_num_points = 0) {
-    short kx = static_cast<short>(point[0] / voxel_size);
-    short ky = static_cast<short>(point[1] / voxel_size);
-    short kz = static_cast<short>(point[2] / voxel_size);
+    short kx = static_cast<short>(point.pt[0] / voxel_size);
+    short ky = static_cast<short>(point.pt[1] / voxel_size);
+    short kz = static_cast<short>(point.pt[2] / voxel_size);
 
     VoxelHashMap::iterator search = voxel_map_.find(Voxel(kx, ky, kz));
     if (search != voxel_map_.end()) {
@@ -153,8 +155,8 @@ class Map {
       if (!voxel_block.IsFull()) {
         double sq_dist_min_to_points = 10 * voxel_size * voxel_size;
         for (int i(0); i < voxel_block.NumPoints(); ++i) {
-          auto &_point = voxel_block.points[i];
-          double sq_dist = (_point - point).squaredNorm();
+          auto &_point = voxel_block.points[i].pt;
+          double sq_dist = (_point - point.pt).squaredNorm();
           if (sq_dist < sq_dist_min_to_points) {
             sq_dist_min_to_points = sq_dist;
           }
@@ -211,7 +213,7 @@ class Map {
             const auto &voxel_block = search.value();
             if (voxel_block.NumPoints() < threshold_voxel_capacity) continue;
             for (int i(0); i < voxel_block.NumPoints(); ++i) {
-              auto &neighbor = voxel_block.points[i];
+              auto &neighbor = voxel_block.points[i].pt;
               double distance = (neighbor - point).norm();
               if (priority_queue.size() == (size_t)max_num_neighbors) {
                 if (distance < std::get<0>(priority_queue.top())) {

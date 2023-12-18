@@ -161,8 +161,13 @@ std::vector<Point3D> readPointCloud(const std::string &path, const std::string &
     if ((r2 <= min_dist2) || (r2 >= max_dist2)) continue;
 
     new_point.pt = new_point.raw_pt;
-    // intensity and ring number skipped
-    offset += 3;
+
+    offset++;
+    new_point.radial_velocity =
+        static_cast<double>(getFloatFromByteArray(buffer.data(), bufpos + offset * float_offset));  // intensity
+
+    // ring number skipped
+    offset += 2;
 
     new_point.alpha_timestamp =
         static_cast<double>(getFloatFromByteArray(buffer.data(), bufpos + offset * float_offset));

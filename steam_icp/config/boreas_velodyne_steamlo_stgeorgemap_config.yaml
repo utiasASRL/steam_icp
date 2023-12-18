@@ -17,11 +17,11 @@
       all_sequences: false
       # root_path: /home/asrl/boreas_docker_local
       root_path: /workspace/raid/krb/boreas
-      sequence: "boreas-2021-02-09-12-55" #"boreas-2021-09-02-11-42"
-      init_frame: 0 # 5675 (highway 7 front image)
-      last_frame: 1300 # 5680 (highway 7 front image)
-      min_dist_sensor_center: 5.0
-      max_dist_sensor_center: 100.0
+      sequence: "boreas-2021-09-09-15-28" #"boreas-2021-09-02-11-42"
+      init_frame: 11900
+      last_frame: 12678
+      min_dist_sensor_center: 2.0
+      max_dist_sensor_center: 200.0
       lidar_timestamp_round: true
       lidar_timestamp_round_hz: 400.0
 

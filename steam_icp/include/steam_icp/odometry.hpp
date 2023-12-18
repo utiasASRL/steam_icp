@@ -61,7 +61,7 @@ class Odometry {
 
   // map
   size_t size() const { return map_.size(); }
-  ArrayVector3d map() const { return map_.pointcloud(); }
+  std::vector<Point3D> map() const { return map_.pointcloud(); }
 
   // The Output of a registration, including metrics,
   struct RegistrationSummary {

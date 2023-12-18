@@ -77,10 +77,20 @@ std::vector<Point3D> ModifiedCACFAR::run(const cv::Mat &raw_scan, const float &r
         p.raw_pt[0] = rho * std::cos(-azimuth);
         p.raw_pt[1] = rho * std::sin(-azimuth);
         p.raw_pt[2] = 0.0;
+        double intensity = 0;
+        int index = floor(peak_points / num_peak_points);
+        if (index < maxcol - 1) {
+          double ratio = std::fmod(peak_points / num_peak_points, 1.0);
+          intensity = ratio * raw_scan.at<float>(i, index) + (1 - ratio) * raw_scan.at<float>(i, index + 1);
+        } else {
+          intensity = raw_scan.at<float>(i, int(peak_points / num_peak_points));
+        }
+        // p.raw_pt[2] = intensity / 1000.0;
         p.pt = p.raw_pt;
         p.timestamp = time;
         p.alpha_timestamp = alpha_time;
-        p.radial_velocity = rho;
+        p.radial_velocity = intensity;
+        p.beam_id = index;
         raw_points.push_back(p);
         peak_points = 0;
         num_peak_points = 0;
@@ -92,7 +102,7 @@ std::vector<Point3D> ModifiedCACFAR::run(const cv::Mat &raw_scan, const float &r
   // sort points into a canonical order
   std::sort(raw_points.begin(), raw_points.end(), [](Point3D a, Point3D b) {
     if (a.timestamp == b.timestamp)
-      return a.radial_velocity < b.radial_velocity;
+      return a.beam_id < b.beam_id;
     else
       return a.timestamp < b.timestamp;
   });

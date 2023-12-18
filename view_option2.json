@@ -1,0 +1,10 @@
+{
+	"class_name" : "PinholeCameraParameters",
+	"intrinsic" :
+	{
+		"height" : 2160,
+		"width" : 3840
+	},
+	"version_major" : 1,
+	"version_minor" : 0
+}
