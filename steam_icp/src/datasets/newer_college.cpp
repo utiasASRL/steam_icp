@@ -170,6 +170,35 @@ std::vector<Point3D> readPointCloud(const std::string &path, const std::string &
   }
   frame.shrink_to_fit();
 
+  // std::set<double> unique_timeset;
+  // for (const auto &point : frame) {
+  //   unique_timeset.insert(point.alpha_timestamp);
+  // }
+  // std::vector<double> unique_timevec(unique_timeset.begin(), unique_timeset.end());
+  // double ts_hz = unique_timeset.size() / (unique_timevec.back() - unique_timevec[0]);
+  // std::cout << "ts_hz: " << ts_hz << std::endl;
+  // int downsample = std::floor(ts_hz / timestamp_round_hz);
+  // std::cout << "downsample: " << downsample << std::endl;
+  // std::vector<double> unique_timevec2;
+  // for (int i = 0; i < unique_timevec.size(); i += downsample) unique_timevec2.push_back(unique_timevec[i]);
+
+  // for (int i(0); i < (int)frame.size(); i++) {
+  //   const auto p = std::equal_range(unique_timevec2.begin(), unique_timevec2.end(), frame[i].alpha_timestamp);
+  //   if (p.first == unique_timevec2.end()) {
+  //     frame[i].alpha_timestamp = *p.first;
+  //   } else {
+  //     frame[i].alpha_timestamp =
+  //         fabs(frame[i].alpha_timestamp - *p.first) < fabs(frame[i].alpha_timestamp - *p.second) ? *p.first :
+  //         *p.second;
+  //   }
+  //   if (frame[i].alpha_timestamp < frame_first_timestamp) {
+  //     frame_first_timestamp = frame[i].alpha_timestamp;
+  //   }
+  //   if (frame[i].alpha_timestamp > frame_last_timestamp) {
+  //     frame_last_timestamp = frame[i].alpha_timestamp;
+  //   }
+  // }
+
   for (int i(0); i < (int)frame.size(); i++) {
     frame[i].timestamp = frame[i].alpha_timestamp + time_delta_sec;
     frame[i].alpha_timestamp = std::min(1.0, std::max(0.0, 1 - (frame_last_timestamp - frame[i].alpha_timestamp) /

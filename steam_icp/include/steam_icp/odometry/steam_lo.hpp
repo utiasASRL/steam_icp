@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "steam.hpp"
+#include "steam/problem/cost_term/gyro_super_cost_term.hpp"
 #include "steam/problem/cost_term/imu_super_cost_term.hpp"
 #include "steam/problem/cost_term/p2p_const_vel_super_cost_term.hpp"
 #include "steam/problem/cost_term/preintegrated_accel_cost_term.hpp"
@@ -60,6 +61,7 @@ class SteamLoOdometry : public Odometry {
     bool filter_lifetimes = false;
     bool swf_inside_icp_at_begin = true;
     bool break_icp_early = false;
+    bool use_elastic_initialization = false;
   };
 
   SteamLoOdometry(const Options &options);
