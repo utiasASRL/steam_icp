@@ -422,6 +422,8 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, swf_inside_icp_at_begin, bool);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, break_icp_early, bool);
 
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, r_p2p, double);
+
       std::vector<double> r_imu_ang;
       ROS2_PARAM_NO_LOG(node, r_imu_ang, prefix, r_imu_ang, std::vector<double>);
       if ((r_imu_ang.size() != 3) && (r_imu_ang.size() != 0))

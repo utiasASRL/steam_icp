@@ -837,6 +837,7 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   auto p2p_options = P2PCVSuperCostTerm::Options();
   p2p_options.num_threads = options_.num_threads;
   p2p_options.p2p_loss_sigma = options_.p2p_loss_sigma;
+  p2p_options.r_p2p = options_.r_p2p;
   if (options_.p2p_loss_func == SteamLoOdometry::STEAM_LOSS_FUNC::L2)
     p2p_options.p2p_loss_func = P2PCVSuperCostTerm::LOSS_FUNC::L2;
   if (options_.p2p_loss_func == SteamLoOdometry::STEAM_LOSS_FUNC::DCS)
@@ -849,7 +850,7 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       P2PCVSuperCostTerm::MakeShared(steam_trajectory, prev_steam_time, knot_times.back(), p2p_options);
 
   // Transform points into the robot frame just once:
-#if USE_P2P_SUPER_COST_TERM
+  // #if USE_P2P_SUPER_COST_TERM
   timer[0].second->start();
   const Eigen::Matrix4d T_rs_mat = options_.T_sr.inverse();
 #pragma omp parallel for num_threads(options_.num_threads)
@@ -858,7 +859,7 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     keypoint.raw_pt = T_rs_mat.block<3, 3>(0, 0) * keypoint.raw_pt + T_rs_mat.block<3, 1>(0, 3);
   }
   timer[0].second->stop();
-#endif
+  // #endif
 
   auto &p2p_matches = p2p_super_cost_term->get();
   p2p_matches.clear();
@@ -943,7 +944,9 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
         ///   const auto ref_pt = closest_pt;
         Eigen::Matrix3d W = (closest_normal * closest_normal.transpose() + 1e-5 * Eigen::Matrix3d::Identity());
         const auto noise_model = StaticNoiseModel<3>::MakeShared(W, NoiseType::INFORMATION);
-        const auto &T_mr_intp_eval = T_mr_intp_eval_map[keypoint.timestamp];
+        const auto T_mr_intp_eval = inverse(steam_trajectory->getPoseInterpolator(Time(keypoint.timestamp)));
+        // const auto T_ms_intp_eval = inverse(compose(T_sr_var_, T_rm_intp_eval));
+        // const auto &T_mr_intp_eval = T_mr_intp_eval_map[keypoint.timestamp];
         const auto error_func = p2p::p2pError(T_mr_intp_eval, closest_pt, keypoint.raw_pt);
         error_func->setTime(Time(keypoint.timestamp));
 
@@ -1077,11 +1080,12 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   if (sliding_window_filter_->getNumberOfCostTerms() > 100000)
     throw std::runtime_error{"too many cost terms in the filter!"};
 
-  GaussNewtonSolverNVA::Params params;
-  params.max_iterations = 20;
+  GaussNewtonSolver::Params params;
+  params.max_iterations = 5;
   params.reuse_previous_pattern = false;
-  GaussNewtonSolverNVA solver(*sliding_window_filter_, params);
-  if (!swf_inside_icp) solver.optimize();
+  GaussNewtonSolver solver(*sliding_window_filter_, params);
+  // if (!swf_inside_icp)
+  solver.optimize();
 
   if (options_.T_mi_init_only && options_.use_accel) {
     size_t i = prev_trajectory_var_index + 1;
@@ -1113,8 +1117,7 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   // Debug Code (stuff to plot)
   current_estimate.mid_w = steam_trajectory->getVelocityInterpolator(curr_mid_steam_time)->value();
   Covariance covariance(solver);
-  current_estimate.mid_state_cov.block<12, 12>(0, 0) =
-      steam_trajectory->getCovariance(covariance, trajectory_vars_[prev_trajectory_var_index].time);
+  current_estimate.mid_state_cov.block<12, 12>(0, 0) = steam_trajectory->getCovariance(covariance, curr_mid_steam_time);
 
   // timer[0].second->start();
   // transform_keypoints();

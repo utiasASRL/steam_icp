@@ -60,6 +60,8 @@ class SteamLoOdometry : public Odometry {
     bool filter_lifetimes = false;
     bool swf_inside_icp_at_begin = true;
     bool break_icp_early = false;
+    //
+    double r_p2p = 1.0;
   };
 
   SteamLoOdometry(const Options &options);
