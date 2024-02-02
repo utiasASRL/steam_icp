@@ -1,8 +1,8 @@
 /**:
   ros__parameters:
     log_dir: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steamrio
-    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steamrio
-    eval_only: false
+    output_dir: /home/krb/Documents/steam_icp/results/boreas_navtech/steamro
+    eval_only: true
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
@@ -14,12 +14,15 @@
     # DATASET OPTIONS ----
     dataset: BoreasNavtech
     dataset_options:
-      all_sequences: false
+      all_sequences: true
       # root_path: /home/asrl/boreas_docker_local
       root_path: /workspace/raid/krb/boreas
-      sequence: "boreas-2021-02-09-12-55"
-      init_frame: 175 # 5675 (highway 7 front image)
-      last_frame: 544 # 5680 (highway 7 front image)
+      # sequence: "boreas-2021-02-09-12-55"
+      # init_frame: 175 # 5675 (highway 7 front image)
+      # last_frame: 544 # 5680 (highway 7 front image)
+      sequence: "boreas-2021-01-26-10-59"
+      init_frame: 0 # 5675 (highway 7 front image)
+      last_frame: 400 # 5680 (highway 7 front image)
       min_dist_sensor_center: 2.0
       max_dist_sensor_center: 80.0
       radar_resolution: 0.0596
@@ -77,7 +80,7 @@
         r_imu_ang: 3.34471102e-03
         q_bias_gyro: 1.0e-4
         p0_bias_gyro: 1.0e-2
-        use_imu: true
+        use_imu: false
         use_accel: true
         max_iterations: 5
         verbose: true

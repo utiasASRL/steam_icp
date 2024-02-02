@@ -27,6 +27,19 @@ double rotationError2D(Eigen::Matrix4d &pose_error) {
   return rotationError(lgmath::se3::vec2tran(pose_error_projected));
 }
 
+Eigen::Matrix4d projectTo2d(const Eigen::Matrix4d &T_12) {
+  Eigen::Matrix4d T_12_out = Eigen::Matrix4d::Identity();
+  T_12_out.block<2, 1>(0, 3) = T_12.block<2, 1>(0, 3);
+  Eigen::Vector3d xbar;
+  xbar << 1, 0, 0;
+  xbar = T_12.block<3, 3>(0, 0) * xbar;
+  const double phi = -atan2f(xbar(1, 0), xbar(0, 0));
+  T_12_out(0, 0) = T_12_out(1, 1) = cos(phi);
+  T_12_out(0, 1) = sin(phi);
+  T_12_out(1, 0) = -T_12_out(0, 1);
+  return T_12_out;
+}
+
 std::vector<double> trajectoryDistances(const ArrayPoses &poses) {
   std::vector<double> dist(1, 0.0);
   for (size_t i = 1; i < poses.size(); i++) dist.push_back(dist[i - 1] + translationError(poses[i - 1] - poses[i]));
@@ -71,10 +84,19 @@ void computeMeanRPE(const ArrayPoses &poses_gt, const ArrayPoses &poses_result, 
       Eigen::Matrix4d pose_delta_result = poses_result[first_frame].inverse() * poses_result[last_frame];
       Eigen::Matrix4d pose_error = pose_delta_result.inverse() * pose_delta_gt;
       double t_err = translationError(pose_error);
-      double t_err_2d = translationError2D(pose_error);
       double r_err = rotationError(pose_error);
+
+      /*
+      double t_err_2d = translationError2D(pose_error);
       double r_err_2d = rotationError2D(pose_error);
-      seq_err.tab_errors.emplace_back(t_err / len, r_err / len);
+      */
+
+      Eigen::Matrix4d pose_delta_gt_2d = projectTo2d(pose_delta_gt);
+      Eigen::Matrix4d pose_delta_result_2d = projectTo2d(pose_delta_result);
+      Eigen::Matrix4d pose_error_2d = pose_delta_result_2d.inverse() * pose_delta_gt_2d;
+      double t_err_2d = translationError2D(pose_error_2d);
+      double r_err_2d = rotationError(pose_error_2d);
+      seq_err.tab_errors.emplace_back(t_err / len, r_err / len, t_err_2d, r_err_2d, len);
 
       mean_t_rpe += t_err / len;
       mean_t_rpe_2d += t_err_2d / len;
@@ -89,6 +111,62 @@ void computeMeanRPE(const ArrayPoses &poses_gt, const ArrayPoses &poses_result, 
   seq_err.mean_r_rpe = ((mean_r_rpe / static_cast<double>(num_total)) * 180.0 / M_PI);
   seq_err.mean_r_rpe_2d = ((mean_r_rpe_2d / static_cast<double>(num_total)) * 180.0 / M_PI);
 }
+
+// void computeMeanRPELocal(const ArrayPoses &poses_gt, const ArrayPoses &poses_result, Sequence::SeqError &seq_err,
+//                          int step_size) {
+//   // static parameter
+//   // pre-compute distances (from ground truth as reference)
+//   int num_total = 0;
+//   double mean_t_rpe = 0;
+//   double mean_t_rpe_2d = 0;
+//   double mean_r_rpe = 0;
+//   double mean_r_rpe_2d = 0;
+//   // for all start positions do
+//   for (int first_frame = 0; first_frame < (int)poses_gt.size(); first_frame++) {
+//     int last_frame = first_frame + step_size;
+//     if (last_frame >= (int)poses_gt.size()) continue;
+//     // compute translational errors
+//     Eigen::Matrix4d pose_delta_gt = poses_gt[first_frame].inverse() * poses_gt[last_frame];
+//     Eigen::Matrix4d pose_delta_result = poses_result[first_frame].inverse() * poses_result[last_frame];
+//     Eigen::Matrix4d pose_error = pose_delta_result.inverse() * pose_delta_gt;
+//     double t_err = translationError(pose_error);
+//     double r_err = rotationError(pose_error);
+//     double t_err_2d = translationError2D(pose_error);
+//     double r_err_2d = rotationError2D(pose_error);
+
+//     // for all segment lengths do
+//     for (size_t i = 0; i < num_lengths; i++) {
+//       // current length
+//       double len = lengths[i];
+
+//       // compute last frame
+//       int last_frame = lastFrameFromSegmentLength(dist, first_frame, len);
+
+//       // next frame if sequence not long enough
+//       if (last_frame == -1) continue;
+
+//       // compute translational errors
+//       Eigen::Matrix4d pose_delta_gt = poses_gt[first_frame].inverse() * poses_gt[last_frame];
+//       Eigen::Matrix4d pose_delta_result = poses_result[first_frame].inverse() * poses_result[last_frame];
+//       Eigen::Matrix4d pose_error = pose_delta_result.inverse() * pose_delta_gt;
+//       double t_err = translationError(pose_error);
+//       double r_err = rotationError(pose_error);
+//       double t_err_2d = translationError2D(pose_error);
+//       double r_err_2d = rotationError2D(pose_error);
+
+//       mean_t_rpe += t_err / len;
+//       mean_t_rpe_2d += t_err_2d / len;
+//       mean_r_rpe += r_err / len;
+//       mean_r_rpe_2d += r_err_2d / len;
+//       num_total++;
+//     }
+//   }
+
+//   seq_err.mean_t_rpe = ((mean_t_rpe / static_cast<double>(num_total)) * 100.0);
+//   seq_err.mean_t_rpe_2d = ((mean_t_rpe_2d / static_cast<double>(num_total)) * 100.0);
+//   seq_err.mean_r_rpe = ((mean_r_rpe / static_cast<double>(num_total)) * 180.0 / M_PI);
+//   seq_err.mean_r_rpe_2d = ((mean_r_rpe_2d / static_cast<double>(num_total)) * 180.0 / M_PI);
+// }
 
 }  // namespace
 

@@ -254,11 +254,14 @@ auto SteamLoOdometry::registerFrame(const DataFrame &const_frame) -> Registratio
   }
   trajectory_[index_frame].points = frame;
 
+  const Eigen::Vector3d t_ms = trajectory_[index_frame].getMidPose().block<3, 1>(0, 3);
+
   // add points
   if (index_frame == 0) {
     updateMap(index_frame, index_frame);
-  } else if ((index_frame - options_.delay_adding_points) > 0) {
+  } else if ((index_frame - options_.delay_adding_points) > 0) {  // && (t_ms - prev_map_pos).norm() > 1.0) {
     updateMap(index_frame, (index_frame - options_.delay_adding_points));
+    prev_map_pos = t_ms;
   }
 
   summary.corrected_points = keypoints;
@@ -1081,11 +1084,10 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     throw std::runtime_error{"too many cost terms in the filter!"};
 
   GaussNewtonSolver::Params params;
-  params.max_iterations = 5;
+  params.max_iterations = 20;
   params.reuse_previous_pattern = false;
   GaussNewtonSolver solver(*sliding_window_filter_, params);
-  // if (!swf_inside_icp)
-  solver.optimize();
+  if (!swf_inside_icp) solver.optimize();
 
   if (options_.T_mi_init_only && options_.use_accel) {
     size_t i = prev_trajectory_var_index + 1;
@@ -1116,7 +1118,7 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 
   // Debug Code (stuff to plot)
   current_estimate.mid_w = steam_trajectory->getVelocityInterpolator(curr_mid_steam_time)->value();
-  Covariance covariance(solver);
+  Covariance covariance(*sliding_window_filter_);
   current_estimate.mid_state_cov.block<12, 12>(0, 0) = steam_trajectory->getCovariance(covariance, curr_mid_steam_time);
 
   // timer[0].second->start();

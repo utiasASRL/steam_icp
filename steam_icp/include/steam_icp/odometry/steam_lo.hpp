@@ -85,6 +85,8 @@ class SteamLoOdometry : public Odometry {
   // steam variables
   steam::se3::SE3StateVar::Ptr T_sr_var_ = nullptr;  // robot to sensor transformation as a steam variable
 
+  Eigen::Vector3d prev_map_pos = Eigen::Vector3d::Zero();
+
   // trajectory variables
   struct TrajectoryVar {
     TrajectoryVar(const steam::traj::Time &t, const steam::se3::SE3StateVar::Ptr &T,

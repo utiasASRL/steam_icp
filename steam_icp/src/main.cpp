@@ -658,6 +658,7 @@ steam_icp::SLAMOptions loadOptions(const rclcpp::Node::SharedPtr &node) {
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, pk_bias_gyro, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, q_bias_gyro, double);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_imu, bool);
+      ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_accel, bool);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, T_mi_init_only, bool);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_T_mi_prior_after_init, bool);
       ROS2_PARAM_CLAUSE(node, steam_icp_options, prefix, use_bias_prior_after_init, bool);
@@ -1210,6 +1211,20 @@ int main(int argc, char **argv) {
     }
     LOG(WARNING) << "KITTI metric translation/rotation : " << (all_seq_rpe_t / num_total_errors) * 100 << " "
                  << (all_seq_rpe_r / num_total_errors) * 180.0 / M_PI << std::endl;
+  }
+
+  const auto filename = options.output_dir + "/errs_full.txt";
+  std::ofstream outfile(filename);
+  if (!outfile.is_open()) throw std::runtime_error{"failed to open file: " + filename};
+  outfile << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+  for (const auto &seq_error : sequence_errors) {
+    for (const auto &tab_error : seq_error.tab_errors) {
+      // all_seq_rpe_t += tab_error.t_err;
+      // all_seq_rpe_r += tab_error.r_err;
+      // num_total_errors += 1.0;
+      outfile << tab_error.t_err * tab_error.len << " " << tab_error.r_err * tab_error.len << " " << tab_error.t_err_2d
+              << " " << tab_error.r_err_2d << " " << tab_error.len << std::endl;
+    }
   }
 
   rclcpp::shutdown();

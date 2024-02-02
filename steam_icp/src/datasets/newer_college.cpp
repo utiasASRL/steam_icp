@@ -156,6 +156,7 @@ std::vector<Point3D> readPointCloud(const std::string &path, const std::string &
     // intensity and ring number skipped
 
     new_point.alpha_timestamp = cloud->points[i].t * 1.0e-9;
+    new_point.radial_velocity = cloud->points[i].reflectivity;
 
     if (round_timestamps)
       new_point.alpha_timestamp = new_point.alpha_timestamp - fmod(new_point.alpha_timestamp, timestamp_round_dt);

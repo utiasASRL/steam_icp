@@ -66,7 +66,13 @@ class Sequence {
     struct Error {
       double t_err;
       double r_err;
-      Error(double t_err, double r_err) : t_err(t_err), r_err(r_err) {}
+      double t_err_2d;
+      double r_err_2d;
+      double len;
+      Error(double t_err, double r_err) : t_err(t_err), r_err(r_err) { len = 1.0; }
+      Error(double t_err, double r_err, double len) : t_err(t_err), r_err(r_err), len(len) {}
+      Error(double t_err, double r_err, double t_err_2d, double r_err_2d, double len)
+          : t_err(t_err), r_err(r_err), t_err_2d(t_err_2d), r_err_2d(r_err_2d), len(len) {}
     };
     std::vector<Error> tab_errors;
     double mean_t_rpe_2d;

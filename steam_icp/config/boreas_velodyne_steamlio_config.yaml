@@ -1,8 +1,8 @@
 /**:
   ros__parameters:
     log_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlio
-    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlio
-    eval_only: false
+    output_dir: /home/krb/Documents/steam_icp/results/boreas_velodyne/steamlio #/home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlio
+    eval_only: true
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
@@ -14,7 +14,7 @@
     # DATASET OPTIONS ----
     dataset: BoreasVelodyne
     dataset_options:
-      all_sequences: false
+      all_sequences: true
       root_path: /workspace/raid/krb/boreas
       sequence: "boreas-2021-01-26-10-59" #"boreas-2021-09-02-11-42"
       init_frame: 0 # 5675 (highway 7 front image)

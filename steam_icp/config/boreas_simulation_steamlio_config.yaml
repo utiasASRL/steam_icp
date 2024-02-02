@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
-    log_dir: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlio
-    output_dir: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlio
+    log_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlio
+    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlio
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
@@ -14,12 +14,14 @@
     dataset: BoreasVelodyne
     dataset_options:
       all_sequences: false
-      root_path: /workspace/data1
+      root_path: /workspace/raid/krb/boreas
       sequence: "simulation" #"boreas-2021-09-02-11-42"
       init_frame: 0 # 5675 (highway 7 front image)
       last_frame: 200 # 5680 (highway 7 front image)
-      min_dist_sensor_center: 5.0
+      min_dist_sensor_center: 0.1
       max_dist_sensor_center: 100.0
+      lidar_timestamp_round: true
+      lidar_timestamp_round_hz: 5000.0
 
     # ODOMETRY OPTIONS ----
     odometry: STEAMLIO
@@ -44,17 +46,19 @@
 
         # sim:
         ad_diag: [0.0, 0.0, 0.0, 100.07804446, 100.07103628, 100.11791258]
-        qc_diag: [2.7e+2, 2.7e+2, 2.7e+2, 1.4e+03, 1.4e+03, 1.4e+03]
-        r_imu_acc: [0.00038025, 0.00038025, 0.00038025]
-        r_imu_ang: [0.0001, 0.0001, 0.0001]
-        q_bias_accel: [1.0e-11, 1.0e-11, 1.0e-11]
-        p0_bias_accel: [1.0e-2, 1.0e-2, 1.0e-2]
-        q_bias_gyro: 1.0e-10
+        qc_diag: [2.7e+2, 2.7e+2, 2.7e+2, 1.4e+03, 1.4e+03, 1.4e+03]  #LIO, LO+Gyro
+        # qc_diag: [5000.,5000.,5000.,500.,500.,500.]  # LO
+        r_imu_acc: [0.156, 0.156, 0.156]
+        r_imu_ang: [4.326e-04, 4.326e-04, 4.326e-04]
+        q_bias_accel: [1.1236e-4, 1.1236e-4, 1.1236e-4]
+        p0_bias_accel: [1.0e-1, 1.0e-1, 1.0e-1]
+        q_bias_gyro: 1.6e-4
         p0_bias_gyro: 1.0e-2
         r_pose: [0.000625,0.000625,0.000625,0.000076154,0.000076154,0.000076154]
+
         p0_pose: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4]
-        p0_vel: [1.0e-1, 1.0e-1, 1.0e-1, 1.0e-4, 1.0e-4, 1.0e-4]
-        p0_accel: [1.0e+0, 1.0e+0, 1.0e+0, 1.0e-1, 1.0e-1, 1.0e-1]
+        p0_vel: [1.0e-0, 1.0e-0, 1.0e-0, 1.0e-0, 1.0e-0, 1.0e-0]
+        p0_accel: [1.0e-0, 1.0e-0, 1.0e-0, 1.0e-0, 1.0e-0, 1.0e-0]
         # ****************
 
         # qc_diag: [50.0,50.0,50.0,5.0,5.0,5.0]
@@ -70,12 +74,13 @@
         # p0_bias_gyro: 0.01
         # q_bias_gyro: 0.01
         use_imu: true
+        use_accel: true
         max_iterations: 5
         verbose: true
         delay_adding_points: 1
         qg_diag: [1.0e-6, 1.0e-6, 1.0e-6, 1.0e-7, 1.0e-7, 1.0e-6]
         T_mi_init_only: true
-        T_mi_init_cov: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-6, 1.0e-6, 1.0e-8]
+        T_mi_init_cov: [1.0e-3, 1.0e-3, 1.0e-3, 1.0e-3, 1.0e-3, 1.0e-3]
         use_T_mi_prior_after_init: false
         T_mi_prior_cov: [1.0e-3, 1.0e-3, 1.0e-3, 1.0, 1.0, 1.0e-4]
         use_bias_prior_after_init: false
@@ -84,7 +89,8 @@
         xi_ig: [0., 0., 0., -0.0197052, 0.0285345, 0.]
         p2p_loss_func: L2
         num_extra_states: 0
-        acc_loss_func: CAUCHY
+        acc_loss_func: L2
         acc_loss_sigma: 1.0
         gyro_loss_func: L2
         gyro_loss_sigma: 1.0
+        filter_lifetimes: false

@@ -1,21 +1,21 @@
 /**:
   ros__parameters:
-    log_dir: /home/asrl/ASRL/temp/steam_icp/simulation
-    output_dir: /workspace/data1/simulation/
-    root_path: /workspace/data1/
+    log_dir: /home/krb/ASRL/temp/steam_icp/simulation
+    output_dir: /workspace/raid/krb/boreas/simulation/
+    root_path: /workspace/raid/krb/boreas/
     sequence: "boreas-2021-09-02-11-42"
-    lidar_config: "/home/asrl/Documents/steam_icp/steam_icp/simulation/vls128_config.txt"
+    lidar_config: "/home/krb/Documents/steam_icp/steam_icp/simulation/vls128_config.txt"
     num_threads: 20
     verbose: false
-    imu_rate: 200.0
+    imu_rate: 100.0
     offset_imu: 0.0025
     min_dist_sensor_center: 0.1
     max_dist_sensor_center: 200.0
     noisy_measurements: true
     sim_length: 20.0
     lidar_range_std: 0.02
-    r_accel: [0.0195, 0.0195, 0.0195]
-    r_gyro: [0.01, 0.01, 0.01]
+    r_accel: [0.01249, 0.01249, 0.01249]
+    r_gyro: [0.00208, 0.00208, 0.00208]
     gravity: -9.8042
     p0_bias: 0.01
     q_bias: 0.01
@@ -30,7 +30,7 @@
     v_freqs : [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
     v_amps : [1.0, 1.0, 1.0, 0.5, 0.5, 0.5]
     ax: 3.0
-    biases: [0.0, 0.0, 0.0, 0.05, 0.05, 0.05]  #b_ax, b_ay, b_az, b_wx, b_wy, b_wz
+    biases: [0.01, 0.01, 0.01, 0.05, 0.05, 0.05]  #b_ax, b_ay, b_az, b_wx, b_wy, b_wz
     pose_meas_trans_sigma: 0.025
     pose_meas_rot_sigma_degs: 0.5
     pose_rate: 1000.0

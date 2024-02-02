@@ -868,38 +868,39 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   std::vector<double> unique_point_times(unique_point_times_.begin(), unique_point_times_.end());
 
   // get pose meas cost terms (debug only)
-  {
-    pose_meas_cost_terms.reserve(pose_data_vec.size());
-    Eigen::Matrix<double, 6, 6> R_pose = Eigen::Matrix<double, 6, 6>::Zero();
-    R_pose.diagonal() = options_.r_pose;
-    const auto pose_noise_model = StaticNoiseModel<6>::MakeShared(R_pose);
-    const auto pose_loss_func = CauchyLossFunc::MakeShared(1.0);
+  // {
+  //   pose_meas_cost_terms.reserve(pose_data_vec.size());
+  //   Eigen::Matrix<double, 6, 6> R_pose = Eigen::Matrix<double, 6, 6>::Zero();
+  //   R_pose.diagonal() = options_.r_pose;
+  //   const auto pose_noise_model = StaticNoiseModel<6>::MakeShared(R_pose);
+  //   const auto pose_loss_func = CauchyLossFunc::MakeShared(1.0);
 
-    for (const auto &pose_data : pose_data_vec) {
-      size_t i = prev_trajectory_var_index;
-      for (; i < trajectory_vars_.size() - 1; i++) {
-        if (pose_data.timestamp >= trajectory_vars_[i].time.seconds() &&
-            pose_data.timestamp < trajectory_vars_[i + 1].time.seconds())
-          break;
-      }
-      if (pose_data.timestamp < trajectory_vars_[i].time.seconds() ||
-          pose_data.timestamp >= trajectory_vars_[i + 1].time.seconds())
-        throw std::runtime_error("pose stamp not within knot times");
+  //   for (const auto &pose_data : pose_data_vec) {
+  //     size_t i = prev_trajectory_var_index;
+  //     for (; i < trajectory_vars_.size() - 1; i++) {
+  //       if (pose_data.timestamp >= trajectory_vars_[i].time.seconds() &&
+  //           pose_data.timestamp < trajectory_vars_[i + 1].time.seconds())
+  //         break;
+  //     }
+  //     if (pose_data.timestamp < trajectory_vars_[i].time.seconds() ||
+  //         pose_data.timestamp >= trajectory_vars_[i + 1].time.seconds())
+  //       throw std::runtime_error("pose stamp not within knot times");
 
-      const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(Time(pose_data.timestamp));
-      const auto T_ms_intp_eval = inverse(compose(T_sr_var_, T_rm_intp_eval));
+  //     const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(Time(pose_data.timestamp));
+  //     const auto T_ms_intp_eval = inverse(compose(T_sr_var_, T_rm_intp_eval));
 
-      lgmath::se3::Transformation T;
-      const auto T_sm_meas = SE3StateVar::MakeShared(lgmath::se3::Transformation(pose_data.pose));
-      T_sm_meas->locked() = true;
-      auto pose_error = se3_error(compose(T_ms_intp_eval, T_sm_meas), T);
-      const auto pose_cost = WeightedLeastSqCostTerm<6>::MakeShared(pose_error, pose_noise_model, pose_loss_func);
-      pose_meas_cost_terms.emplace_back(pose_cost);
-    }
-  }
+  //     lgmath::se3::Transformation T;
+  //     const auto T_sm_meas = SE3StateVar::MakeShared(lgmath::se3::Transformation(pose_data.pose));
+  //     T_sm_meas->locked() = true;
+  //     auto pose_error = se3_error(compose(T_ms_intp_eval, T_sm_meas), T);
+  //     const auto pose_cost = WeightedLeastSqCostTerm<6>::MakeShared(pose_error, pose_noise_model, pose_loss_func);
+  //     pose_meas_cost_terms.emplace_back(pose_cost);
+  //   }
+  // }
 
   auto imu_options = IMUSuperCostTerm::Options();
   imu_options.num_threads = options_.num_threads;
+  imu_options.use_accel = options_.use_accel;
   imu_options.acc_loss_sigma = options_.acc_loss_sigma;
   if (options_.acc_loss_func == "L2") imu_options.acc_loss_func = IMUSuperCostTerm::LOSS_FUNC::L2;
   if (options_.acc_loss_func == "DCS") imu_options.acc_loss_func = IMUSuperCostTerm::LOSS_FUNC::DCS;

@@ -55,6 +55,7 @@ class SteamLioOdometry : public Odometry {
     double pk_bias_gyro = 0.0001;
     double q_bias_gyro = 0.0001;
     bool use_imu = true;
+    bool use_accel = true;
     bool T_mi_init_only = true;
     // T_mi:
     Eigen::Matrix<double, 6, 1> qg_diag = Eigen::Matrix<double, 6, 1>::Ones();

@@ -410,7 +410,9 @@ int main(int argc, char **argv) {
   fs::path output_path{options.output_dir};
   std::ofstream lidar_pose_out(output_path / "applanix" / "lidar_poses.csv", std::ios::out);
   std::ofstream lidar_pose_meas(output_path / "applanix" / "lidar_pose_meas.csv", std::ios::out);
+  std::ofstream lidar_pose_tum(output_path / "applanix" / "lidar_poses_tum.txt", std::ios::out);
   lidar_pose_out << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+  lidar_pose_tum << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
   lidar_pose_meas << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
   lidar_pose_out
       << "GPSTime,easting,northing,altitude,vel_east,vel_north,vel_up,roll,pitch,heading,angvel_z,angvel_y,angvel_x"
@@ -631,6 +633,16 @@ int main(int argc, char **argv) {
                    << "," << v_ri_in_i(1, 0) << "," << v_ri_in_i(2, 0) << "," << ypr(2, 0) << "," << ypr(1, 0) << ","
                    << ypr(0, 0) << "," << w_si_in_s(2, 0) << "," << w_si_in_s(1, 0) << "," << w_si_in_s(0, 0)
                    << std::endl;
+
+    const uint64_t sec = t_mid_us / uint64_t(1e6);
+    const std::string sec_str = std::to_string(sec);
+    const uint64_t nsec = (t_mid_us % uint64_t(1e6)) * 1000;
+    const std::string nsec_str = std::to_string(nsec);
+    int n_zero = 9;
+    const Eigen::Quaterniond q(Eigen::Matrix3d(T_is.block<3, 3>(0, 0)));
+    const auto nsec_str2 = std::string(n_zero - std::min(n_zero, int(nsec_str.length())), '0') + nsec_str;
+    lidar_pose_tum << sec_str << "." << nsec_str2 << " " << T_is(0, 3) << " " << T_is(1, 3) << " " << T_is(2, 3) << " "
+                   << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << std::endl;
 
     nav_msgs::msg::Odometry odometry;
     odometry.header.frame_id = "map";
@@ -878,7 +890,7 @@ int main(int argc, char **argv) {
   // [x]: load extrinsics from yaml files
   // [x]: step through simulation, generating pointclouds and IMU measurements
   // [x]: save pointclouds as .bin files and imu measurements in same formatted csv file
-  // [ ]: add options for adding Gaussian noise to the lidar and IMU measurements
+  // [x]: add options for adding Gaussian noise to the lidar and IMU measurements
 
   return 0;
 }
