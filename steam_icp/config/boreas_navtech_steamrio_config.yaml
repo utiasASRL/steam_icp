@@ -1,0 +1,95 @@
+/**:
+  ros__parameters:
+    log_dir: /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio
+    output_dir: /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio
+
+    # VISUALIZATION OPTIONS ----
+    visualization_options:
+      odometry: true
+      raw_points: false
+      sampled_points: true
+      map_points: true
+
+    # DATASET OPTIONS ----
+    dataset: BoreasNavtech
+    dataset_options:
+      all_sequences: false
+      root_path: /home/asrl/boreas_docker_local
+      sequence: "boreas-2021-01-26-10-59"
+      init_frame: 0 # 5675 (highway 7 front image)
+      last_frame: 10000 # 5680 (highway 7 front image)
+      min_dist_sensor_center: 2.0
+      max_dist_sensor_center: 80.0
+      radar_resolution: 0.0596
+      radar_range_offset: -0.31
+      modified_cacfar_width: 101
+      modified_cacfar_guard: 5
+      modified_cacfar_threshold: 1.0
+      modified_cacfar_threshold2: 0.0
+      modified_cacfar_threshold3: 0.09
+      modified_cacfar_width_0438: 137
+      modified_cacfar_guard_0438: 7
+      modified_cacfar_threshold_0438: 0.5
+      modified_cacfar_threshold2_0438: 0.0
+      modified_cacfar_threshold3_0438: 0.25
+      modified_cacfar_num_threads: 16
+
+    # ODOMETRY OPTIONS ----
+    odometry: STEAMRIO
+    odometry_options:
+      debug_print: true
+      debug_path: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steamrio
+      min_number_neighbors: 1
+      init_voxel_size: 1.0
+      voxel_size: 1.0
+      init_sample_voxel_size: 1.0
+      sample_voxel_size: 1.0
+      max_number_neighbors: 1  # determines size of priority queue when getting neighbors from map
+      num_iters_icp: 20
+      # map parameters:
+      max_num_points_in_voxel: 10
+      # min_distance_points: 0.1
+      # size_voxel_map: 1.0
+      voxel_lifetime: 3
+      max_distance: 80.0  # determines radius for cropping when adding to the map
+
+      elastic:
+        num_threads: 20
+
+      steam:
+        qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0] #[50.0, 50.0, 50.0, 5.0, 5.0, 5.0]  # [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.01]
+        # qc_diag: [10000.0, 10000.0, 10000.0, 10000.0, 10000.0, 10000.0]
+        ad_diag: [0.0, 0.0, 0.0, 100.0, 100.0, 100.0]
+        # qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
+        num_threads: 16
+        # parameters copied from VTR3:
+        p2p_loss_func: CAUCHY  # (L2, DCS, CAUCHY, GM, HUBER)
+        p2p_loss_sigma: 1.0
+        p2p_max_dist: 5.0
+        beta: 0.0535
+        voxel_downsample: false
+
+        p0_pose: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4]
+        p0_vel: [1.0e-1, 1.0e-1, 1.0e-1, 1.0e-4, 1.0e-4, 1.0e-4]
+        p0_accel: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-1, 1.0e-1, 1.0e-1]
+
+        gravity: -9.8042
+        r_imu_acc: [1.0, 100.0, 1.0]
+        r_imu_ang:  3.34471102e-06
+        q_bias_accel: [0.1, 0.1, 1.0e-1]
+        p0_bias_accel: [1.0e-3, 1.0e-3, 1.0e-3]
+        q_bias_gyro: 1.0e-4
+        p0_bias_gyro: 1.0e-2
+        use_imu: true
+        max_iterations: 5
+        verbose: true
+        delay_adding_points: 1
+        use_bias_prior_after_init: false
+        pk_bias_accel: 1.0e-1  # prior after init
+        pk_bias_gyro: 1.0e-1  # prior after init
+        acc_loss_func: CAUCHY
+        acc_loss_sigma: 1.0
+        gyro_loss_func: L2
+        gyro_loss_sigma: 1.0
+
+

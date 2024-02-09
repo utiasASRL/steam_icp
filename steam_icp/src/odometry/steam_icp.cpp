@@ -13,50 +13,50 @@ namespace steam_icp {
 
 namespace {
 
-/** \brief Basic solver interface */
-class GaussNewtonIterator {
- public:
-  GaussNewtonIterator(steam::Problem &problem) : problem_(problem), state_vector_(problem.getStateVector()) {}
+// /** \brief Basic solver interface */
+// class GaussNewtonIterator {
+//  public:
+//   GaussNewtonIterator(steam::Problem &problem) : problem_(problem), state_vector_(problem.getStateVector()) {}
 
-  /** \brief Perform one iteration */
-  void iterate() {
-    // The 'left-hand-side' of the Gauss-Newton problem, generally known as the
-    // approximate Hessian matrix (note we only store the upper-triangular
-    // elements)
-    Eigen::SparseMatrix<double> approximate_hessian;
-    // The 'right-hand-side' of the Gauss-Newton problem, generally known as the
-    // gradient vector
-    Eigen::VectorXd gradient_vector;
-    // Construct system of equations
-    problem_.buildGaussNewtonTerms(approximate_hessian, gradient_vector);
-    // Solve system
-    // Perform a Cholesky factorization of the approximate Hessian matrix
-    // Check if the pattern has been initialized
-    if (!pattern_initialized_) {
-      hessian_solver_.analyzePattern(approximate_hessian);
-      pattern_initialized_ = true;
-    }
+//   /** \brief Perform one iteration */
+//   void iterate() {
+//     // The 'left-hand-side' of the Gauss-Newton problem, generally known as the
+//     // approximate Hessian matrix (note we only store the upper-triangular
+//     // elements)
+//     Eigen::SparseMatrix<double> approximate_hessian;
+//     // The 'right-hand-side' of the Gauss-Newton problem, generally known as the
+//     // gradient vector
+//     Eigen::VectorXd gradient_vector;
+//     // Construct system of equations
+//     problem_.buildGaussNewtonTerms(approximate_hessian, gradient_vector);
+//     // Solve system
+//     // Perform a Cholesky factorization of the approximate Hessian matrix
+//     // Check if the pattern has been initialized
+//     if (!pattern_initialized_) {
+//       hessian_solver_.analyzePattern(approximate_hessian);
+//       pattern_initialized_ = true;
+//     }
 
-    // Perform a Cholesky factorization of the approximate Hessian matrix
-    hessian_solver_.factorize(approximate_hessian);
-    if (hessian_solver_.info() != Eigen::Success) throw std::runtime_error("Eigen LLT decomposition failed.");
+//     // Perform a Cholesky factorization of the approximate Hessian matrix
+//     hessian_solver_.factorize(approximate_hessian);
+//     if (hessian_solver_.info() != Eigen::Success) throw std::runtime_error("Eigen LLT decomposition failed.");
 
-    // Solve
-    Eigen::VectorXd perturbation = hessian_solver_.solve(gradient_vector);
+//     // Solve
+//     Eigen::VectorXd perturbation = hessian_solver_.solve(gradient_vector);
 
-    // Apply update
-    state_vector_.lock()->update(perturbation);
-  }
+//     // Apply update
+//     state_vector_.lock()->update(perturbation);
+//   }
 
- private:
-  /** \brief Reference to optimization problem */
-  steam::Problem &problem_;
-  /** \brief Collection of state variables */
-  const steam::StateVector::WeakPtr state_vector_;
+//  private:
+//   /** \brief Reference to optimization problem */
+//   steam::Problem &problem_;
+//   /** \brief Collection of state variables */
+//   const steam::StateVector::WeakPtr state_vector_;
 
-  Eigen::SimplicialLLT<Eigen::SparseMatrix<double>, Eigen::Upper> hessian_solver_;
-  bool pattern_initialized_ = false;
-};
+//   Eigen::SimplicialLLT<Eigen::SparseMatrix<double>, Eigen::Upper> hessian_solver_;
+//   bool pattern_initialized_ = false;
+// };
 
 inline double AngularDistance(const Eigen::Matrix3d &rota, const Eigen::Matrix3d &rotb) {
   double norm = ((rota * rotb.transpose()).trace() - 1) / 2;
@@ -65,7 +65,8 @@ inline double AngularDistance(const Eigen::Matrix3d &rota, const Eigen::Matrix3d
 }
 
 /* -------------------------------------------------------------------------------------------------------------- */
-// Subsample to keep one random point in every voxel of the current frame
+// Subsample to keep one (random) point in every voxel of the current frame
+// Run std::shuffle() first in order to retain a random point for each voxel.
 void sub_sample_frame(std::vector<Point3D> &frame, double size_voxel) {
   std::unordered_map<Voxel, std::vector<Point3D>> grid;
   for (int i = 0; i < (int)frame.size(); i++) {
@@ -213,6 +214,11 @@ Trajectory SteamOdometry::trajectory() {
       frame.begin_R = begin_T_ms.block<3, 3>(0, 0);
       frame.begin_t = begin_T_ms.block<3, 1>(0, 3);
 
+      Time mid_steam_time(static_cast<double>(frame.getEvalTime()));
+      const auto mid_T_mr = inverse(full_trajectory->getPoseInterpolator(mid_steam_time))->evaluate().matrix();
+      const auto mid_T_ms = mid_T_mr * options_.T_sr.inverse();
+      frame.setMidPose(mid_T_ms);
+
       Time end_steam_time(frame.end_timestamp);
       const auto end_T_mr = inverse(full_trajectory->getPoseInterpolator(end_steam_time))->evaluate().matrix();
       const auto end_T_ms = end_T_mr * options_.T_sr.inverse();
@@ -223,7 +229,7 @@ Trajectory SteamOdometry::trajectory() {
   return trajectory_;
 }
 
-auto SteamOdometry::registerFrame(const std::vector<Point3D> &const_frame) -> RegistrationSummary {
+auto SteamOdometry::registerFrame(const DataFrame &const_frame) -> RegistrationSummary {
   RegistrationSummary summary;
 
   // add a new frame
@@ -237,7 +243,7 @@ auto SteamOdometry::registerFrame(const std::vector<Point3D> &const_frame) -> Re
   initializeMotion(index_frame);
 
   //
-  auto frame = initializeFrame(index_frame, const_frame);
+  auto frame = initializeFrame(index_frame, const_frame.pointcloud);
 
   //
   if (index_frame > 0) {
@@ -279,7 +285,7 @@ auto SteamOdometry::registerFrame(const std::vector<Point3D> &const_frame) -> Re
 
     trajectory_[index_frame].end_T_rm_cov = Eigen::Matrix<double, 6, 6>::Identity() * 1e-4;
     trajectory_[index_frame].end_w_mr_inr_cov = Eigen::Matrix<double, 6, 6>::Identity() * 1e-4;
-    trajectory_[index_frame].end_state_cov = Eigen::Matrix<double, 12, 12>::Identity() * 1e-4;
+    trajectory_[index_frame].end_state_cov = Eigen::Matrix<double, 18, 18>::Identity() * 1e-4;
 
     summary.success = true;
   }
@@ -315,24 +321,27 @@ auto SteamOdometry::registerFrame(const std::vector<Point3D> &const_frame) -> Re
   return summary;
 }
 
-void SteamOdometry::initializeTimestamp(int index_frame, const std::vector<Point3D> &const_frame) {
+void SteamOdometry::initializeTimestamp(int index_frame, const DataFrame &const_frame) {
   double min_timestamp = std::numeric_limits<double>::max();
   double max_timestamp = std::numeric_limits<double>::min();
-  for (const auto &point : const_frame) {
+  for (const auto &point : const_frame.pointcloud) {
     if (point.timestamp > max_timestamp) max_timestamp = point.timestamp;
     if (point.timestamp < min_timestamp) min_timestamp = point.timestamp;
   }
   trajectory_[index_frame].begin_timestamp = min_timestamp;
   trajectory_[index_frame].end_timestamp = max_timestamp;
+  // purpose: eval trajectory at the exact file stamp to match ground truth
+  trajectory_[index_frame].setEvalTime(const_frame.timestamp);
 }
 
 void SteamOdometry::initializeMotion(int index_frame) {
   if (index_frame <= 1) {
     // Initialize first pose at Identity
-    trajectory_[index_frame].begin_R = Eigen::MatrixXd::Identity(3, 3);
-    trajectory_[index_frame].begin_t = Eigen::Vector3d(0., 0., 0.);
-    trajectory_[index_frame].end_R = Eigen::MatrixXd::Identity(3, 3);
-    trajectory_[index_frame].end_t = Eigen::Vector3d(0., 0., 0.);
+    const Eigen::Matrix4d T_rs = options_.T_sr.inverse();
+    trajectory_[index_frame].begin_R = T_rs.block<3, 3>(0, 0);
+    trajectory_[index_frame].begin_t = T_rs.block<3, 1>(0, 3);
+    trajectory_[index_frame].end_R = T_rs.block<3, 3>(0, 0);
+    trajectory_[index_frame].end_t = T_rs.block<3, 1>(0, 3);
   } else {
     // Different regimen for the second frame due to the bootstrapped elasticity
     Eigen::Matrix3d R_next_end = trajectory_[index_frame - 1].end_R * trajectory_[index_frame - 2].end_R.inverse() *
@@ -402,8 +411,8 @@ void SteamOdometry::updateMap(int index_frame, int update_frame) {
   Time end_steam_time = trajectory_[update_frame].end_timestamp;
 
   // consistency check
-  const auto &begin_var = trajectory_vars_.at(to_marginalize_ - 1);
-  if (begin_var.time > begin_steam_time) throw std::runtime_error("begin_var.time > begin_steam_time");
+  //   const auto &begin_var = trajectory_vars_.at(to_marginalize_ - 1);
+  //   if (begin_var.time > begin_steam_time) throw std::runtime_error("begin_var.time > begin_steam_time");
 
   // construct the trajectory for interpolation
   int num_states = 0;
@@ -419,17 +428,18 @@ void SteamOdometry::updateMap(int index_frame, int update_frame) {
   LOG(INFO) << "Adding points to map between (inclusive): " << begin_steam_time.seconds() << " - "
             << end_steam_time.seconds() << ", with num states: " << num_states << std::endl;
 
-  for (auto &point : frame) {
-    const double query_time = point.timestamp;
+#pragma omp parallel for num_threads(options_.num_threads)
+  for (unsigned i = 0; i < frame.size(); i++) {
+    const double query_time = frame[i].timestamp;
 
     const auto T_rm_intp_eval = update_trajectory->getPoseInterpolator(Time(query_time));
     const auto T_ms_intp_eval = inverse(compose(T_sr_var_, T_rm_intp_eval));
 
-    Eigen::Matrix4d T_ms = T_ms_intp_eval->evaluate().matrix();
-    Eigen::Matrix3d R = T_ms.block<3, 3>(0, 0);
-    Eigen::Vector3d t = T_ms.block<3, 1>(0, 3);
+    const Eigen::Matrix4d T_ms = T_ms_intp_eval->evaluate().matrix();
+    const Eigen::Matrix3d R = T_ms.block<3, 3>(0, 0);
+    const Eigen::Vector3d t = T_ms.block<3, 1>(0, 3);
     //
-    point.pt = R * point.raw_pt + t;
+    frame[i].pt = R * frame[i].raw_pt + t;
   }
 #endif
 
@@ -486,6 +496,7 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
   }
   knot_times.emplace_back(curr_time);
 
+  // add new state variables, initialize with constant velocity
   for (size_t i = 0; i < knot_times.size(); ++i) {
     double knot_time = knot_times[i];
     Time knot_steam_time(knot_time);
@@ -591,8 +602,6 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
   inner_timer.emplace_back("Add Cost Term ................ ", std::make_unique<Stopwatch<>>(false));
   bool innerloop_time = (options_.num_threads == 1);
 
-  int number_keypoints_used = 0;
-
   auto transform_keypoints = [&]() {
 #pragma omp parallel for num_threads(options_.num_threads)
     for (int i = 0; i < (int)keypoints.size(); i++) {
@@ -607,8 +616,6 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
   //
   int num_iter_icp = index_frame < options_.init_num_frames ? 15 : options_.num_iters_icp;
   for (int iter(0); iter < num_iter_icp; iter++) {
-    number_keypoints_used = 0;
-
     timer[0].second->start();
     transform_keypoints();
     timer[0].second->stop();
@@ -630,7 +637,9 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
 
     timer[1].second->start();
 
-#pragma omp parallel for num_threads(options_.num_threads)
+#pragma omp declare reduction(merge_meas : std::vector<BaseCostTerm::ConstPtr> : omp_out.insert( \
+        omp_out.end(), omp_in.begin(), omp_in.end()))
+#pragma omp parallel for num_threads(options_.num_threads) reduction(merge_meas : meas_cost_terms)
     for (int i = 0; i < (int)keypoints.size(); i++) {
       const auto &keypoint = keypoints[i];
       const auto &pt_keypoint = keypoint.pt;
@@ -685,11 +694,7 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
 
           const auto cost = WeightedLeastSqCostTerm<4>::MakeShared(error_func, noise_model, loss_func);
 
-#pragma omp critical(odometry_cost_term)
-          {
-            meas_cost_terms.emplace_back(cost);
-            number_keypoints_used++;
-          }
+          meas_cost_terms.emplace_back(cost);
 
         } else {
           Eigen::Matrix3d W = (closest_normal * closest_normal.transpose() + 1e-5 * Eigen::Matrix3d::Identity());
@@ -715,12 +720,7 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
           }();
 
           const auto cost = WeightedLeastSqCostTerm<3>::MakeShared(error_func, noise_model, loss_func);
-
-#pragma omp critical(odometry_cost_term)
-          {
-            meas_cost_terms.emplace_back(cost);
-            number_keypoints_used++;
-          }
+          meas_cost_terms.emplace_back(cost);
         }
       }
 
@@ -749,9 +749,7 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
           }();
 
           const auto cost = WeightedLeastSqCostTerm<1>::MakeShared(error_func, noise_model, loss_func);
-
-#pragma omp critical(odometry_cost_term)
-          { meas_cost_terms.emplace_back(cost); }
+          meas_cost_terms.emplace_back(cost);
         }
       }
 
@@ -762,9 +760,9 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
 
     timer[1].second->stop();
 
-    if (number_keypoints_used < 100) {
+    if ((int)meas_cost_terms.size() < options_.min_number_keypoints) {
       LOG(ERROR) << "[CT_ICP]Error : not enough keypoints selected in ct-icp !" << std::endl;
-      LOG(ERROR) << "[CT_ICP]Number_of_residuals : " << number_keypoints_used << std::endl;
+      LOG(ERROR) << "[CT_ICP]Number_of_residuals : " << meas_cost_terms.size() << std::endl;
       icp_success = false;
       break;
     }
@@ -797,6 +795,11 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
     diff_trans += (current_estimate.end_t - end_T_ms.block<3, 1>(0, 3)).norm();
     diff_rot += AngularDistance(current_estimate.end_R, end_T_ms.block<3, 3>(0, 0));
 
+    Time curr_mid_steam_time(static_cast<double>(trajectory_[index_frame].getEvalTime()));
+    const auto mid_T_mr = inverse(steam_trajectory->getPoseInterpolator(curr_mid_steam_time))->evaluate().matrix();
+    const auto mid_T_ms = mid_T_mr * options_.T_sr.inverse();
+    current_estimate.setMidPose(mid_T_ms);
+
     current_estimate.begin_R = begin_T_ms.block<3, 3>(0, 0);
     current_estimate.begin_t = begin_T_ms.block<3, 1>(0, 3);
     current_estimate.end_R = end_T_ms.block<3, 3>(0, 0);
@@ -816,7 +819,7 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
   LOG(INFO) << "Optimizing in a sliding window!" << std::endl;
   {
     //
-    steam_trajectory->addPriorCostTerms(*sliding_window_filter_);
+    steam_trajectory->addPriorCostTerms(*sliding_window_filter_);  // ** this includes state priors (like for x_0)
     for (const auto &prior_cost_term : prior_cost_terms) sliding_window_filter_->addCostTerm(prior_cost_term);
     for (const auto &meas_cost_term : meas_cost_terms) sliding_window_filter_->addCostTerm(meas_cost_term);
 
@@ -843,17 +846,25 @@ bool SteamOdometry::icp(int index_frame, std::vector<Point3D> &keypoints) {
   const auto curr_end_T_mr = inverse(steam_trajectory->getPoseInterpolator(curr_end_steam_time))->evaluate().matrix();
   const auto curr_end_T_ms = curr_end_T_mr * options_.T_sr.inverse();
 
+  Time curr_mid_steam_time(static_cast<double>(trajectory_[index_frame].getEvalTime()));
+  const auto mid_T_mr = inverse(steam_trajectory->getPoseInterpolator(curr_mid_steam_time))->evaluate().matrix();
+  const auto mid_T_ms = mid_T_mr * options_.T_sr.inverse();
+  current_estimate.setMidPose(mid_T_ms);
+
   current_estimate.begin_R = curr_begin_T_ms.block<3, 3>(0, 0);
   current_estimate.begin_t = curr_begin_T_ms.block<3, 1>(0, 3);
   current_estimate.end_R = curr_end_T_ms.block<3, 3>(0, 0);
   current_estimate.end_t = curr_end_T_ms.block<3, 1>(0, 3);
   // clang-format on
 
+  const auto w = steam_trajectory->getVelocityInterpolator(curr_end_steam_time)->evaluate();
+  std::cout << "w(-1) " << w << std::endl;
+
   timer[0].second->start();
   transform_keypoints();
   timer[0].second->stop();
 
-  LOG(INFO) << "Number of keypoints used in CT-ICP : " << number_keypoints_used << std::endl;
+  LOG(INFO) << "Number of keypoints used in CT-ICP : " << meas_cost_terms.size() << std::endl;
 
   /// Debug print
   if (options_.debug_print) {

@@ -1,0 +1,36 @@
+/**:
+  ros__parameters:
+    log_dir: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steam
+    output_dir: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steam
+
+    # VISUALIZATION OPTIONS ----
+    visualization_options:
+      odometry: false
+      raw_points: false
+      sampled_points: false
+      map_points: false
+
+    # DATASET OPTIONS ----
+    dataset: BoreasVelodyne
+    dataset_options:
+      all_sequences: false
+      root_path: /workspace/data1
+      sequence: "boreas-2021-09-02-11-42"
+      init_frame: 0 # 5675 (highway 7 front image)
+      last_frame: 100000 # 5680 (highway 7 front image)
+      min_dist_sensor_center: 5.0
+      max_dist_sensor_center: 100.0
+
+    # ODOMETRY OPTIONS ----
+    odometry: STEAM
+    odometry_options:
+      debug_print: true
+      debug_path: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steam
+
+      elastic:
+        num_threads: 20
+
+      steam:
+        qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
+        num_threads: 20
+        verbose: false

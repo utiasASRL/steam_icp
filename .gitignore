@@ -18,3 +18,5 @@ log/
 
 #
 .vscode/
+
+*.ipynb_checkpoints

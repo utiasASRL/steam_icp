@@ -128,16 +128,20 @@ ArrayPoses transformTrajectory(const Trajectory &trajectory) {
 
   poses.reserve(trajectory.size());
   for (auto &frame : trajectory) {
-    Eigen::Matrix3d center_R;
-    Eigen::Vector3d center_t;
-    Eigen::Quaterniond q_begin = Eigen::Quaterniond(frame.begin_R);
-    Eigen::Quaterniond q_end = Eigen::Quaterniond(frame.end_R);
-    Eigen::Vector3d t_begin = frame.begin_t;
-    Eigen::Vector3d t_end = frame.end_t;
-    Eigen::Quaterniond q = q_begin.slerp(0.5, q_end);
-    q.normalize();
-    center_R = q.toRotationMatrix();
-    center_t = 0.5 * t_begin + 0.5 * t_end;
+    // Eigen::Matrix3d center_R;
+    // Eigen::Vector3d center_t;
+    // Eigen::Quaterniond q_begin = Eigen::Quaterniond(frame.begin_R);
+    // Eigen::Quaterniond q_end = Eigen::Quaterniond(frame.end_R);
+    // Eigen::Vector3d t_begin = frame.begin_t;
+    // Eigen::Vector3d t_end = frame.end_t;
+    // Eigen::Quaterniond q = q_begin.slerp(0.5, q_end);
+    // q.normalize();
+    // center_R = q.toRotationMatrix();
+    // center_t = 0.5 * t_begin + 0.5 * t_end;
+
+    const Eigen::Matrix4d T = frame.getMidPose();
+    Eigen::Matrix3d center_R = T.block<3, 3>(0, 0);
+    Eigen::Vector3d center_t = T.block<3, 1>(0, 3);
 
     Eigen::Matrix4d pose = Eigen::Matrix4d::Identity();
     pose.block<3, 3>(0, 0) = center_R;
@@ -167,13 +171,16 @@ Kitti360Sequence::Kitti360Sequence(const Options &options) : Sequence(options) {
   has_ground_truth_ = ((init_frame_ == 0) && last_frame_ == (LENGTH_SEQUENCE_KITTI_360[sequence_id_] + 1));
 }
 
-std::vector<Point3D> Kitti360Sequence::next() {
+DataFrame Kitti360Sequence::next() {
   if (!hasNext()) throw std::runtime_error("No more frames in sequence");
   int curr_frame = curr_frame_++;
   auto filename = dir_path_ + frame_file_name(curr_frame);
-  auto pc = readPointCloud(filename, options_.min_dist_lidar_center, options_.max_dist_lidar_center);
+  DataFrame frame;
+  frame.pointcloud = readPointCloud(filename, options_.min_dist_sensor_center, options_.max_dist_sensor_center);
+  auto &pc = frame.pointcloud;
   for (auto &point : pc) point.timestamp = (static_cast<double>(curr_frame) + point.alpha_timestamp) / 10.0;
-  return pc;
+  frame.timestamp = static_cast<double>(curr_frame) / 10.0 + 0.05;
+  return frame;
 }
 
 void Kitti360Sequence::save(const std::string &path, const Trajectory &trajectory) const {

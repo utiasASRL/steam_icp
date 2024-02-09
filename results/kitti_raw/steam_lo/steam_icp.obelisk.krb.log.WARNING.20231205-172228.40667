@@ -1,0 +1,218 @@
+Log file created at: 2023/12/05 17:22:28
+Running on machine: obelisk
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+W20231205 17:22:28.964851 40667 main.cpp:923] Logging to /home/krb/ASRL/temp/steam_icp/kitti_raw/steamlio
+W20231205 17:22:28.965327 40667 main.cpp:120] Parameter suspend_on_failure = 0
+W20231205 17:22:28.965394 40667 main.cpp:121] Parameter output_dir = /home/krb/ASRL/temp/steam_icp/kitti_raw/steamlio
+W20231205 17:22:28.965461 40667 main.cpp:124] Parameter eval_only = 0
+W20231205 17:22:28.965514 40667 main.cpp:130] Parameter dataset = KITTI_raw
+W20231205 17:22:28.965569 40667 main.cpp:134] Parameter dataset_options.all_sequences = 1
+W20231205 17:22:28.965629 40667 main.cpp:135] Parameter dataset_options.root_path = /workspace/raid/krb/kitti-raw
+W20231205 17:22:28.965690 40667 main.cpp:136] Parameter dataset_options.sequence = 01
+W20231205 17:22:28.965744 40667 main.cpp:137] Parameter dataset_options.init_frame = 0
+W20231205 17:22:28.965806 40667 main.cpp:138] Parameter dataset_options.last_frame = 10000
+W20231205 17:22:28.965860 40667 main.cpp:139] Parameter dataset_options.min_dist_sensor_center = 5
+W20231205 17:22:28.965941 40667 main.cpp:140] Parameter dataset_options.max_dist_sensor_center = 100
+W20231205 17:22:28.966002 40667 main.cpp:141] Parameter dataset_options.lidar_timestamp_round = 1
+W20231205 17:22:28.966070 40667 main.cpp:142] Parameter dataset_options.lidar_timestamp_round_hz = 3000
+W20231205 17:22:28.966131 40667 main.cpp:166] Parameter visualization_options.odometry = 1
+W20231205 17:22:28.966184 40667 main.cpp:167] Parameter visualization_options.raw_points = 0
+W20231205 17:22:28.966238 40667 main.cpp:168] Parameter visualization_options.sampled_points = 1
+W20231205 17:22:28.966301 40667 main.cpp:169] Parameter visualization_options.map_points = 0
+W20231205 17:22:28.966368 40667 main.cpp:178] (YAML)Parameter visualization_options.T_sr = 
+1 0 0 0
+0 1 0 0
+0 0 1 0
+0 0 0 1
+W20231205 17:22:28.966478 40667 main.cpp:187] Parameter odometry = STEAMLO
+W20231205 17:22:28.966549 40667 main.cpp:208] Parameter odometry_options.init_num_frames = 20
+W20231205 17:22:28.966605 40667 main.cpp:209] Parameter odometry_options.init_voxel_size = 0.2
+W20231205 17:22:28.966665 40667 main.cpp:210] Parameter odometry_options.voxel_size = 0.5
+W20231205 17:22:28.966724 40667 main.cpp:211] Parameter odometry_options.init_sample_voxel_size = 1
+W20231205 17:22:28.966786 40667 main.cpp:212] Parameter odometry_options.sample_voxel_size = 1.5
+W20231205 17:22:28.966846 40667 main.cpp:214] Parameter odometry_options.size_voxel_map = 1
+W20231205 17:22:28.966913 40667 main.cpp:215] Parameter odometry_options.min_distance_points = 0.1
+W20231205 17:22:28.966971 40667 main.cpp:216] Parameter odometry_options.max_num_points_in_voxel = 20
+W20231205 17:22:28.967029 40667 main.cpp:217] Parameter odometry_options.max_distance = 100
+W20231205 17:22:28.967094 40667 main.cpp:218] Parameter odometry_options.min_number_neighbors = 20
+W20231205 17:22:28.967146 40667 main.cpp:219] Parameter odometry_options.max_number_neighbors = 20
+W20231205 17:22:28.967200 40667 main.cpp:220] Parameter odometry_options.voxel_lifetime = 10
+W20231205 17:22:28.967257 40667 main.cpp:222] Parameter odometry_options.num_iters_icp = 10
+W20231205 17:22:28.967310 40667 main.cpp:223] Parameter odometry_options.threshold_orientation_norm = 0.0001
+W20231205 17:22:28.967368 40667 main.cpp:224] Parameter odometry_options.threshold_translation_norm = 0.001
+W20231205 17:22:28.967427 40667 main.cpp:225] Parameter odometry_options.min_number_keypoints = 100
+W20231205 17:22:28.967494 40667 main.cpp:227] Parameter odometry_options.debug_print = 1
+W20231205 17:22:28.967569 40667 main.cpp:228] Parameter odometry_options.debug_path = /home/krb/ASRL/temp/steam_icp/kitti_raw/steamlio
+W20231205 17:22:28.967638 40667 main.cpp:357] Parameter odometry_options.steam.T_sr = 
+1 0 0 0
+0 1 0 0
+0 0 1 0
+0 0 0 1
+W20231205 17:22:28.967733 40667 main.cpp:368] Parameter odometry_options.steam.qc_diag = 50 50 50 05 05 05
+W20231205 17:22:28.967808 40667 main.cpp:370] Parameter odometry_options.steam.num_extra_states = 0
+W20231205 17:22:28.967900 40667 main.cpp:372] Parameter odometry_options.steam.power_planarity = 2
+W20231205 17:22:28.967969 40667 main.cpp:373] Parameter odometry_options.steam.p2p_max_dist = 0.5
+W20231205 17:22:28.968036 40667 main.cpp:375] Parameter odometry_options.steam.p2p_loss_func = L2
+W20231205 17:22:28.968116 40667 main.cpp:389] Parameter odometry_options.steam.p2p_loss_sigma = 0.1
+W20231205 17:22:28.968178 40667 main.cpp:391] Parameter odometry_options.steam.use_rv = 0
+W20231205 17:22:28.968237 40667 main.cpp:392] Parameter odometry_options.steam.merge_p2p_rv = 0
+W20231205 17:22:28.968307 40667 main.cpp:393] Parameter odometry_options.steam.rv_max_error = 2
+W20231205 17:22:28.968381 40667 main.cpp:395] Parameter odometry_options.steam.rv_loss_func = 
+W20231205 17:22:28.968405 40667 main.cpp:405] Parameter odometry_options.steam.rv_loss_func not specified. Using default value: CAUCHY
+W20231205 17:22:28.968458 40667 main.cpp:409] Parameter odometry_options.steam.rv_cov_inv = 0.1
+W20231205 17:22:28.968528 40667 main.cpp:410] Parameter odometry_options.steam.rv_loss_threshold = 0.05
+W20231205 17:22:28.968601 40667 main.cpp:412] Parameter odometry_options.steam.verbose = 1
+W20231205 17:22:28.968668 40667 main.cpp:413] Parameter odometry_options.steam.max_iterations = 5
+W20231205 17:22:28.968732 40667 main.cpp:414] Parameter odometry_options.steam.num_threads = 16
+W20231205 17:22:28.968791 40667 main.cpp:416] Parameter odometry_options.steam.delay_adding_points = 1
+W20231205 17:22:28.968850 40667 main.cpp:417] Parameter odometry_options.steam.use_final_state_value = 0
+W20231205 17:22:28.968904 40667 main.cpp:418] Parameter odometry_options.steam.use_imu = 0
+W20231205 17:22:28.968969 40667 main.cpp:419] Parameter odometry_options.steam.use_accel = 0
+W20231205 17:22:28.969023 40667 main.cpp:420] Parameter odometry_options.steam.p0_bias_gyro = 0.0001
+W20231205 17:22:28.969091 40667 main.cpp:421] Parameter odometry_options.steam.q_bias_gyro = 0.0001
+W20231205 17:22:28.969154 40667 main.cpp:422] Parameter odometry_options.steam.swf_inside_icp_at_begin = 0
+W20231205 17:22:28.969216 40667 main.cpp:423] Parameter odometry_options.steam.break_icp_early = 1
+W20231205 17:22:28.969273 40667 main.cpp:430] Parameter odometry_options.steam.r_imu_ang = 0 0 0
+W20231205 17:22:28.969350 40667 main.cpp:439] Parameter odometry_options.steam.qg_diag = 1 1 1 1 1 1
+W20231205 17:22:28.969429 40667 main.cpp:449] Parameter odometry_options.steam.T_mi_init_cov = 1 1 1 1 1 1
+W20231205 17:22:28.969513 40667 main.cpp:457] Parameter odometry_options.steam.r_imu_acc = 1 1 1
+W20231205 17:22:28.969594 40667 main.cpp:466] Parameter odometry_options.steam.p0_bias_accel = 1 1 1
+W20231205 17:22:28.969666 40667 main.cpp:474] Parameter odometry_options.steam.q_bias_accel = 1 1 1
+W20231205 17:22:28.969738 40667 main.cpp:477] Parameter odometry_options.steam.gravity = -9.8042
+W20231205 17:22:28.969812 40667 main.cpp:478] Parameter odometry_options.steam.T_mi_init_only = 1
+W20231205 17:22:28.969882 40667 main.cpp:479] Parameter odometry_options.steam.acc_loss_func = L2
+W20231205 17:22:28.969944 40667 main.cpp:480] Parameter odometry_options.steam.acc_loss_sigma = 1
+W20231205 17:22:28.970031 40667 main.cpp:937] Creating directory /home/krb/ASRL/temp/steam_icp/kitti_raw/steamlio/
+W20231205 17:22:28.970072 40667 main.cpp:947] Running odometry on sequence: 00
+W20231205 17:29:16.282569 40667 main.cpp:1139] Average loading ..................... 18.9247 ms
+W20231205 17:29:16.282642 40667 main.cpp:1139] Average registration ................ 70.2462 ms
+W20231205 17:29:16.282655 40667 main.cpp:1139] Average visualization ............... 0.466858 ms
+W20231205 17:29:16.484575 40667 main.cpp:1149] Mean RPE : 0.490742
+W20231205 17:29:16.484627 40667 main.cpp:1150] Mean RPE 2D : 0.382539
+W20231205 17:29:16.484642 40667 main.cpp:1151] Mean APE : 7.11982
+W20231205 17:29:16.484653 40667 main.cpp:1152] Max APE : 16.6119
+W20231205 17:29:16.484666 40667 main.cpp:1153] Mean Local Error : 0.0149926
+W20231205 17:29:16.484676 40667 main.cpp:1154] Max Local Error : 0.855962
+W20231205 17:29:16.484717 40667 main.cpp:1155] Index Max Local Error : 1
+W20231205 17:29:16.484727 40667 main.cpp:1157] KITTI Summary : 0.38 & 0.0004 & 0.49 & 0.0018\\
+W20231205 17:29:16.484740 40667 main.cpp:1163] 
+W20231205 17:29:17.468564 40667 main.cpp:947] Running odometry on sequence: 01
+W20231205 17:31:26.304652 40667 main.cpp:1139] Average loading ..................... 16.6231 ms
+W20231205 17:31:26.304708 40667 main.cpp:1139] Average registration ................ 99.6748 ms
+W20231205 17:31:26.304720 40667 main.cpp:1139] Average visualization ............... 0.678474 ms
+W20231205 17:31:26.348901 40667 main.cpp:1149] Mean RPE : 0.681963
+W20231205 17:31:26.348935 40667 main.cpp:1150] Mean RPE 2D : 0.622712
+W20231205 17:31:26.348948 40667 main.cpp:1151] Mean APE : 7.09911
+W20231205 17:31:26.348958 40667 main.cpp:1152] Max APE : 9.80671
+W20231205 17:31:26.348969 40667 main.cpp:1153] Mean Local Error : 0.0227846
+W20231205 17:31:26.348979 40667 main.cpp:1154] Max Local Error : 0.991197
+W20231205 17:31:26.348989 40667 main.cpp:1155] Index Max Local Error : 1
+W20231205 17:31:26.348999 40667 main.cpp:1157] KITTI Summary : 0.62 & 0.0002 & 0.68 & 0.0009\\
+W20231205 17:31:26.349011 40667 main.cpp:1163] 
+W20231205 17:31:26.598417 40667 main.cpp:947] Running odometry on sequence: 02
+W20231205 17:39:09.909936 40667 main.cpp:1139] Average loading ..................... 22.8477 ms
+W20231205 17:39:09.909983 40667 main.cpp:1139] Average registration ................ 76.0245 ms
+W20231205 17:39:09.910051 40667 main.cpp:1139] Average visualization ............... 0.495602 ms
+W20231205 17:39:10.153947 40667 main.cpp:1149] Mean RPE : 0.529057
+W20231205 17:39:10.153999 40667 main.cpp:1150] Mean RPE 2D : 0.461774
+W20231205 17:39:10.154012 40667 main.cpp:1151] Mean APE : 9.67094
+W20231205 17:39:10.154024 40667 main.cpp:1152] Max APE : 27.613
+W20231205 17:39:10.154035 40667 main.cpp:1153] Mean Local Error : 0.019686
+W20231205 17:39:10.154045 40667 main.cpp:1154] Max Local Error : 1.52137
+W20231205 17:39:10.154057 40667 main.cpp:1155] Index Max Local Error : 1
+W20231205 17:39:10.154065 40667 main.cpp:1157] KITTI Summary : 0.46 & 0.0005 & 0.53 & 0.0013\\
+W20231205 17:39:10.154078 40667 main.cpp:1163] 
+W20231205 17:39:11.318446 40667 main.cpp:947] Running odometry on sequence: 04
+W20231205 17:39:44.492508 40667 main.cpp:1139] Average loading ..................... 22.8229 ms
+W20231205 17:39:44.492580 40667 main.cpp:1139] Average registration ................ 98.8487 ms
+W20231205 17:39:44.492599 40667 main.cpp:1139] Average visualization ............... 0.697417 ms
+W20231205 17:39:44.515975 40667 main.cpp:1149] Mean RPE : 0.407171
+W20231205 17:39:44.516021 40667 main.cpp:1150] Mean RPE 2D : 0.336445
+W20231205 17:39:44.516038 40667 main.cpp:1151] Mean APE : 0.568152
+W20231205 17:39:44.516053 40667 main.cpp:1152] Max APE : 1.30789
+W20231205 17:39:44.516068 40667 main.cpp:1153] Mean Local Error : 0.0286651
+W20231205 17:39:44.516083 40667 main.cpp:1154] Max Local Error : 1.30742
+W20231205 17:39:44.516098 40667 main.cpp:1155] Index Max Local Error : 1
+W20231205 17:39:44.516111 40667 main.cpp:1157] KITTI Summary : 0.34 & 0.0004 & 0.41 & 0.0007\\
+W20231205 17:39:44.516130 40667 main.cpp:1163] 
+W20231205 17:39:44.594750 40667 main.cpp:947] Running odometry on sequence: 05
+W20231205 17:44:20.183917 40667 main.cpp:1139] Average loading ..................... 22.3673 ms
+W20231205 17:44:20.183965 40667 main.cpp:1139] Average registration ................ 76.9145 ms
+W20231205 17:44:20.183979 40667 main.cpp:1139] Average visualization ............... 0.498732 ms
+W20231205 17:44:20.298557 40667 main.cpp:1149] Mean RPE : 0.25236
+W20231205 17:44:20.298599 40667 main.cpp:1150] Mean RPE 2D : 0.197423
+W20231205 17:44:20.298611 40667 main.cpp:1151] Mean APE : 2.23038
+W20231205 17:44:20.298624 40667 main.cpp:1152] Max APE : 6.99221
+W20231205 17:44:20.298635 40667 main.cpp:1153] Mean Local Error : 0.0119575
+W20231205 17:44:20.298645 40667 main.cpp:1154] Max Local Error : 0.555559
+W20231205 17:44:20.298655 40667 main.cpp:1155] Index Max Local Error : 1
+W20231205 17:44:20.298689 40667 main.cpp:1157] KITTI Summary : 0.20 & 0.0003 & 0.25 & 0.0012\\
+W20231205 17:44:20.298710 40667 main.cpp:1163] 
+W20231205 17:44:20.948781 40667 main.cpp:947] Running odometry on sequence: 06
+W20231205 17:46:37.215405 40667 main.cpp:1139] Average loading ..................... 22.5277 ms
+W20231205 17:46:37.215463 40667 main.cpp:1139] Average registration ................ 100.504 ms
+W20231205 17:46:37.215477 40667 main.cpp:1139] Average visualization ............... 0.693915 ms
+W20231205 17:46:37.260366 40667 main.cpp:1149] Mean RPE : 0.307569
+W20231205 17:46:37.260406 40667 main.cpp:1150] Mean RPE 2D : 0.27257
+W20231205 17:46:37.260417 40667 main.cpp:1151] Mean APE : 1.74225
+W20231205 17:46:37.260428 40667 main.cpp:1152] Max APE : 3.42804
+W20231205 17:46:37.260438 40667 main.cpp:1153] Mean Local Error : 0.0141287
+W20231205 17:46:37.260449 40667 main.cpp:1154] Max Local Error : 1.19575
+W20231205 17:46:37.260459 40667 main.cpp:1155] Index Max Local Error : 1
+W20231205 17:46:37.260468 40667 main.cpp:1157] KITTI Summary : 0.27 & 0.0002 & 0.31 & 0.0008\\
+W20231205 17:46:37.260481 40667 main.cpp:1163] 
+W20231205 17:46:37.501583 40667 main.cpp:947] Running odometry on sequence: 07
+W20231205 17:48:19.073653 40667 main.cpp:1139] Average loading ..................... 21.9619 ms
+W20231205 17:48:19.073709 40667 main.cpp:1139] Average registration ................ 69.7875 ms
+W20231205 17:48:19.073722 40667 main.cpp:1139] Average visualization ............... 0.470481 ms
+W20231205 17:48:19.117978 40667 main.cpp:1149] Mean RPE : 0.329887
+W20231205 17:48:19.118021 40667 main.cpp:1150] Mean RPE 2D : 0.241434
+W20231205 17:48:19.118034 40667 main.cpp:1151] Mean APE : 0.69209
+W20231205 17:48:19.118045 40667 main.cpp:1152] Max APE : 1.65537
+W20231205 17:48:19.118057 40667 main.cpp:1153] Mean Local Error : 0.0128942
+W20231205 17:48:19.118067 40667 main.cpp:1154] Max Local Error : 0.0850041
+W20231205 17:48:19.118084 40667 main.cpp:1155] Index Max Local Error : 1
+W20231205 17:48:19.118093 40667 main.cpp:1157] KITTI Summary : 0.24 & 0.0006 & 0.33 & 0.0016\\
+W20231205 17:48:19.118106 40667 main.cpp:1163] 
+W20231205 17:48:19.363871 40667 main.cpp:947] Running odometry on sequence: 08
+W20231205 17:55:55.105144 40667 main.cpp:1139] Average loading ..................... 22.493 ms
+W20231205 17:55:55.105196 40667 main.cpp:1139] Average registration ................ 88.8538 ms
+W20231205 17:55:55.105211 40667 main.cpp:1139] Average visualization ............... 0.561778 ms
+W20231205 17:55:55.273593 40667 main.cpp:1149] Mean RPE : 0.83081
+W20231205 17:55:55.273641 40667 main.cpp:1150] Mean RPE 2D : 0.710884
+W20231205 17:55:55.273655 40667 main.cpp:1151] Mean APE : 15.8789
+W20231205 17:55:55.273667 40667 main.cpp:1152] Max APE : 26.1225
+W20231205 17:55:55.273679 40667 main.cpp:1153] Mean Local Error : 0.016476
+W20231205 17:55:55.273689 40667 main.cpp:1154] Max Local Error : 0.818444
+W20231205 17:55:55.273698 40667 main.cpp:1155] Index Max Local Error : 1
+W20231205 17:55:55.273708 40667 main.cpp:1157] KITTI Summary : 0.71 & 0.0005 & 0.83 & 0.0018\\
+W20231205 17:55:55.273720 40667 main.cpp:1163] 
+W20231205 17:55:56.294503 40667 main.cpp:947] Running odometry on sequence: 09
+W20231205 17:58:53.461153 40667 main.cpp:1139] Average loading ..................... 22.9051 ms
+W20231205 17:58:53.461201 40667 main.cpp:1139] Average registration ................ 87.8454 ms
+W20231205 17:58:53.461215 40667 main.cpp:1139] Average visualization ............... 0.565682 ms
+W20231205 17:58:53.525286 40667 main.cpp:1149] Mean RPE : 0.46494
+W20231205 17:58:53.525326 40667 main.cpp:1150] Mean RPE 2D : 0.377327
+W20231205 17:58:53.525337 40667 main.cpp:1151] Mean APE : 1.72199
+W20231205 17:58:53.525348 40667 main.cpp:1152] Max APE : 5.94324
+W20231205 17:58:53.525359 40667 main.cpp:1153] Mean Local Error : 0.0154458
+W20231205 17:58:53.525369 40667 main.cpp:1154] Max Local Error : 0.276725
+W20231205 17:58:53.525379 40667 main.cpp:1155] Index Max Local Error : 1
+W20231205 17:58:53.525388 40667 main.cpp:1157] KITTI Summary : 0.38 & 0.0004 & 0.46 & 0.0011\\
+W20231205 17:58:53.525439 40667 main.cpp:1163] 
+W20231205 17:58:53.940835 40667 main.cpp:947] Running odometry on sequence: 10
+W20231205 18:00:43.038601 40667 main.cpp:1139] Average loading ..................... 21.2223 ms
+W20231205 18:00:43.038662 40667 main.cpp:1139] Average registration ................ 69.1116 ms
+W20231205 18:00:43.038676 40667 main.cpp:1139] Average visualization ............... 0.472107 ms
+W20231205 18:00:43.086829 40667 main.cpp:1149] Mean RPE : 0.495464
+W20231205 18:00:43.086870 40667 main.cpp:1150] Mean RPE 2D : 0.425414
+W20231205 18:00:43.086884 40667 main.cpp:1151] Mean APE : 0.978278
+W20231205 18:00:43.086899 40667 main.cpp:1152] Max APE : 1.5805
+W20231205 18:00:43.086915 40667 main.cpp:1153] Mean Local Error : 0.0146718
+W20231205 18:00:43.086930 40667 main.cpp:1154] Max Local Error : 0.121268
+W20231205 18:00:43.086944 40667 main.cpp:1155] Index Max Local Error : 1
+W20231205 18:00:43.086957 40667 main.cpp:1157] KITTI Summary : 0.43 & 0.0006 & 0.50 & 0.0015\\
+W20231205 18:00:43.086977 40667 main.cpp:1163] 
+W20231205 18:00:43.404412 40667 main.cpp:1171] 
+W20231205 18:00:43.404489 40667 main.cpp:1182] KITTI metric translation/rotation : 0.532885 0.00146655

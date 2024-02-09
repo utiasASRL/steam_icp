@@ -1,6 +1,9 @@
 #pragma once
 
+#include "steam/problem/cost_term/imu_super_cost_term.hpp"
+#include "steam_icp/dataframe.hpp"
 #include "steam_icp/map.hpp"
+#include "steam_icp/pose.hpp"
 #include "steam_icp/trajectory.hpp"
 
 namespace steam_icp {
@@ -9,6 +12,8 @@ class Odometry {
  public:
   using Ptr = std::shared_ptr<Odometry>;
   using ConstPtr = std::shared_ptr<const Odometry>;
+
+  ArrayPoses T_i_r_gt_poses;
 
   struct Options {
     using Ptr = std::shared_ptr<Options>;
@@ -30,11 +35,13 @@ class Odometry {
     double max_distance = 100.0;       // The threshold on the voxel size to remove points from the map
     int min_number_neighbors = 20;     // The minimum number of neighbors to be considered in the map
     int max_number_neighbors = 20;
+    int voxel_lifetime = 10;
 
     // common icp options
     int num_iters_icp = 10;                      // The Maximum number of ICP iterations performed
     double threshold_orientation_norm = 0.0001;  // Threshold on rotation (deg) for ICP's stopping criterion
-    double threshold_translation_norm = 0.001;   // Threshold on translation (deg) for ICP's stopping criterion
+    double threshold_translation_norm = 0.001;   // Threshold on translation (m) for ICP's stopping criterion
+    int min_number_keypoints = 100;
 
     //
     bool debug_print = false;  // Whether to output debug information to std::cout
@@ -45,7 +52,7 @@ class Odometry {
     return name2Ctor().at(odometry)(options);
   }
 
-  Odometry(const Options &options) : options_(options) {}
+  Odometry(const Options &options) : options_(options) { map_.setDefaultLifeTime(options_.voxel_lifetime); }
   virtual ~Odometry() = default;
 
   // trajectory
@@ -66,7 +73,7 @@ class Odometry {
     bool success = true;                                 // Whether the registration was a success
   };
   // Registers a new Frame to the Map with an initial estimate
-  virtual RegistrationSummary registerFrame(const std::vector<Point3D> &frame) = 0;
+  virtual RegistrationSummary registerFrame(const DataFrame &frame) = 0;
 
  protected:
   Trajectory trajectory_;
@@ -112,3 +119,7 @@ struct OdometryRegister {
 #include "steam_icp/odometry/ceres_elastic_icp.hpp"
 #include "steam_icp/odometry/elastic_icp.hpp"
 #include "steam_icp/odometry/steam_icp.hpp"
+#include "steam_icp/odometry/steam_lio.hpp"
+#include "steam_icp/odometry/steam_lo.hpp"
+#include "steam_icp/odometry/steam_rio.hpp"
+#include "steam_icp/odometry/steam_ro.hpp"

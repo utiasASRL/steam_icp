@@ -53,10 +53,13 @@ cd ${STEAM_BUILD_DIR}
 cmake -G "$GENERATOR" -S $STEAM_SRC_DIR \
 	-DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
 	-DUSE_AMENT=OFF \
+  -DBUILD_TESTING=ON \
 	-DEigen3_DIR=${EXT_BUILD_DIR}/install/${BUILD_TYPE}/Eigen3/share/eigen3/cmake \
 	-Dlgmath_DIR=${LGMATH_BUILD_DIR}/install/${BUILD_TYPE}/lib/cmake/lgmath \
 	-DCMAKE_INSTALL_PREFIX=${STEAM_BUILD_DIR}/install/${BUILD_TYPE}
 check_status_code $?
+# ctest
+# check_status_code $?
 
 echo "[STEAM_ICP] -- [STEAM] -- building CMake Project"
 cmake --build . --config $BUILD_TYPE --target install --parallel 6

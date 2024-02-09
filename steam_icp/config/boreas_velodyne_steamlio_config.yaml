@@ -1,0 +1,115 @@
+/**:
+  ros__parameters:
+    log_dir: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlio
+    output_dir: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlio
+    eval_only: false
+
+    # VISUALIZATION OPTIONS ----
+    visualization_options:
+      odometry: true
+      raw_points: false
+      sampled_points: true
+      map_points: false
+
+    # DATASET OPTIONS ----
+    dataset: BoreasVelodyne
+    dataset_options:
+      all_sequences: false
+      root_path: /home/asrl/boreas_docker_local
+      sequence: "boreas-2021-01-26-10-59" #"boreas-2021-09-02-11-42"
+      init_frame: 0 # 5675 (highway 7 front image)
+      last_frame: 100000 # 5680 (highway 7 front image)
+      min_dist_sensor_center: 5.0
+      max_dist_sensor_center: 100.0
+      lidar_timestamp_round: true
+      lidar_timestamp_round_hz: 400.0
+
+    # ODOMETRY OPTIONS ----
+    odometry: STEAMLO
+    odometry_options:
+      debug_print: true
+      debug_path: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlio
+      num_iters_icp: 10
+      # init_num_frames: 0
+      sample_voxel_size: 1.70
+      min_distance_points: 0.1
+      max_num_points_in_voxel: 18
+      min_number_neighbors: 18
+      max_number_neighbors: 18
+
+
+
+      elastic:
+        num_threads: 20
+
+      steam:
+        # Note: we train the parameters in the applanix frame but these are in the robot frame...
+        # So, swap x-y and roll-pitch for both qc and ad given the values from the Jupyter notebook.
+        # 7e7 seems too high.
+        # qc_diag: [7.446e+04, 7.446e+04,  2.699e+03,  7.155e+01,  1.183e+01,  6.578e-01]
+        # ad_diag: [4.909e+00, 7.293e+00,  9.998e+00,  8.210e+00,  1.670e+00,  5.980e+00]
+        # ad_diag: [100.11439693, 100.11512779, 100.08909343, 100.07804446, 100.07103628, 100.11791258]
+
+        # qc_diag: [6.18047567e+04, 6.18047567e+04, 3.40402641e+03, 6.13821100e+01, 6.13821100e+01, 9.85316597e+03] # *
+        # ad_diag: [10.0, 10.0, 10.0, 100.07804446, 100.07103628, 100.11791258] # *
+
+        # qc_diag: [7.71192324e+07, 6.18728899e+04, 4.17521215e+03, 9.61858513e+04, 9.22859318e+01, 9.84389207e+03]
+        # ad_diag: [ 47.70635536, 45.84269105,  52.50020805, 117.72565834, 106.55532947, 114.31380624]
+
+        # qc_diag: [  239058.86013384, 2530.90064086, 812.14082001, 482.82146499,    503.24309412,   1650.93326623]
+        # ad_diag: [ 0.19411441, 2.10096542, 16.6857754,  31.84233434,  30.9878876, 10.20092715]
+
+        # sim:
+        ad_diag: [0.0, 0.0, 0.0, 100., 100., 100.]
+        # qc_diag: [1.0e+0, 1.0e+1, 1.0e+1, 3.0e+03, 3.0e+03, 3.0e+04]
+        qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
+
+        # r_imu_acc: [0.00038025, 0.00038025, 0.00038025]
+        # r_imu_ang: [0.0001, 0.0001, 0.0001]
+        # q_bias_accel: 1.0e-11
+        # p0_bias_accel: 1.0e-2
+        # q_bias_gyro: 1.0e-10
+        # p0_bias_gyro: 1.0e-2
+        r_pose: [0.000625,0.000625,0.000625,0.000076154,0.000076154,0.000076154]
+        p0_pose: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4]
+        p0_vel: [1.0e-1, 1.0e-1, 1.0e-1, 1.0e-4, 1.0e-4, 1.0e-4]
+        p0_accel: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-1, 1.0e-1, 1.0e-1]
+        # ****************
+
+        # qc_diag: [50.0,50.0,50.0,5.0,5.0,5.0]
+        # ad_diag: [0.0,0.0,0.0,10.0,10.0,10.0]
+        num_threads: 16
+        gravity: -9.8042  #-9.8042
+        # r_imu_acc: [0.43000461, 0.33698219, 0.29589244]
+        # r_imu_ang: [0.04898588, 0.06860401, 0.04319808]
+        # r_imu_acc: [0.03418968, 0.01292128, 0.00767178]
+        # r_imu_ang: [5.75866815e-06, 2.21540004e-05, 3.48544315e-06]
+        r_imu_acc: [1.0, 100.0, 1.0]
+        r_imu_ang: [3.34471102e-02, 3.34471102e-02, 3.34471102e-03]
+        # q_bias_accel: [1.0e-11, 4.0e-3, 1.0e-3]
+        q_bias_accel: [0.1, 1.0e-1, 1.0e-1]
+        p0_bias_accel: [1.0e-2, 1.0e-2, 1.0e-2]
+        q_bias_gyro: 1.0e-4
+        p0_bias_gyro: 1.0e-2
+        use_imu: true
+        use_accel: true
+        max_iterations: 5
+        verbose: true
+        delay_adding_points: 1
+        qg_diag: [1.0e-6, 1.0e-6, 1.0e-6, 1.0e-7, 1.0e-7, 1.0e-6]  # motion model for T_mi
+        T_mi_init_only: true
+        T_mi_init_cov: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-6, 1.0e-6, 1.0e-8]
+        use_T_mi_prior_after_init: false
+        T_mi_prior_cov: [1.0e-3, 1.0e-3, 1.0e-3, 1.0, 1.0, 1.0e-4]
+        use_bias_prior_after_init: false
+        pk_bias_accel: 1.0e-1  # prior after init
+        pk_bias_gyro: 1.0e-1  # prior after init
+        xi_ig: [0., 0., 0., -1.51869911e-02,  3.07697005e-02, 0.]  # sim: [0., 0., 0., -0.0197052, 0.0285345, 0.] 
+        p2p_loss_func: L2
+        num_extra_states: 0
+        acc_loss_func: L2
+        acc_loss_sigma: 1.0
+        gyro_loss_func: L2
+        gyro_loss_sigma: 1.0
+        # swf_inside_icp_at_begin: false
+        filter_lifetimes: true

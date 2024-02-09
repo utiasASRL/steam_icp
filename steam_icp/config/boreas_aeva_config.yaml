@@ -9,7 +9,6 @@
       raw_points: false
       sampled_points: false
       map_points: false
-      T_sr_vec: [-0.835, -0.39, 0.103, 0.0, 0.0, 0.0]
 
     # DATASET OPTIONS ----
     dataset: BoreasAeva
@@ -19,8 +18,8 @@
       sequence: "04"
       init_frame: 0 # 5675 (highway 7 front image)
       last_frame: 100000 # 5680 (highway 7 front image)
-      min_dist_lidar_center: 5.0
-      max_dist_lidar_center: 100.0
+      min_dist_sensor_center: 5.0
+      max_dist_sensor_center: 100.0
 
     # ODOMETRY OPTIONS ----
     odometry: STEAM
@@ -32,7 +31,6 @@
         num_threads: 20
 
       steam:
-        T_sr_vec: [-0.835, -0.39, 0.103, 0.0, 0.0, 0.0]
         qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
         use_rv: false
         num_threads: 20

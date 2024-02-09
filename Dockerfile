@@ -70,5 +70,9 @@ RUN pip3 install pexpect ipympl
 # evaluation
 RUN pip3 install asrl-pylgmath asrl-pysteam
 
+RUN apt update && apt install -q -y \
+  libsuitesparse-dev \
+  wget
+
 ## Switch to specified user
 USER ${USERID}:${GROUPID}

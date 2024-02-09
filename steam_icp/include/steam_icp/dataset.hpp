@@ -4,7 +4,10 @@
 #include <string>
 #include <vector>
 
+#include "steam/problem/cost_term/imu_super_cost_term.hpp"
+#include "steam_icp/dataframe.hpp"
 #include "steam_icp/point.hpp"
+#include "steam_icp/pose.hpp"
 #include "steam_icp/trajectory.hpp"
 
 namespace steam_icp {
@@ -14,13 +17,31 @@ class Sequence {
   using Ptr = std::shared_ptr<Sequence>;
   using ConstPtr = std::shared_ptr<const Sequence>;
 
+  ArrayPoses T_i_r_gt_poses;
+
   struct Options {
     std::string root_path;
     std::string sequence;
     int init_frame = 0;
     int last_frame = std::numeric_limits<int>::max();  // exclusive bound
-    double min_dist_lidar_center = 3.0;                // Threshold to filter points too close to the LiDAR center
-    double max_dist_lidar_center = 100.0;              // Threshold to filter points too far to the LiDAR center
+    double min_dist_sensor_center = 3.0;               // Threshold to filter points too close to the sensor center
+    double max_dist_sensor_center = 100.0;             // Threshold to filter points too far to the sensor center
+    // Navtech extraction parameters
+    double radar_resolution = 0.0596;
+    double radar_range_offset = -0.31;
+    int modified_cacfar_width = 101;
+    int modified_cacfar_guard = 5;
+    double modified_cacfar_threshold = 1.0;
+    double modified_cacfar_threshold2 = 0.0;
+    double modified_cacfar_threshold3 = 0.09;
+    int modified_cacfar_width_0438 = 137;
+    int modified_cacfar_guard_0438 = 7;
+    double modified_cacfar_threshold_0438 = 0.5;
+    double modified_cacfar_threshold2_0438 = 0.0;
+    double modified_cacfar_threshold3_0438 = 0.25;
+    int modified_cacfar_num_threads = 1;
+    bool lidar_timestamp_round = false;
+    double lidar_timestamp_round_hz = 400.0;
   };
 
   Sequence(const Options &options) : options_(options) {}
@@ -33,7 +54,7 @@ class Sequence {
     throw std::runtime_error("set random initial frame not supported");
   };
   virtual bool hasNext() const = 0;
-  virtual std::vector<Point3D> next() = 0;
+  virtual DataFrame next() = 0;
   virtual bool withRandomAccess() const { return false; }
   virtual std::vector<Point3D> frame(size_t /* index */) const {
     throw std::runtime_error("random access not supported");
@@ -62,6 +83,9 @@ class Sequence {
   };
   virtual bool hasGroundTruth() const { return false; }
   virtual SeqError evaluate(const std::string & /* path */, const Trajectory & /* trajectory */) const {
+    throw std::runtime_error("no ground truth available");
+  }
+  virtual SeqError evaluate(const std::string & /* path */) const {
     throw std::runtime_error("no ground truth available");
   }
 
@@ -127,6 +151,7 @@ struct DatasetRegister {
 ///
 #include "steam_icp/datasets/aeva.hpp"
 #include "steam_icp/datasets/boreas_aeva.hpp"
+#include "steam_icp/datasets/boreas_navtech.hpp"
 #include "steam_icp/datasets/boreas_velodyne.hpp"
 #include "steam_icp/datasets/kitti_360.hpp"
 #include "steam_icp/datasets/kitti_raw.hpp"

@@ -39,13 +39,11 @@ int lastFrameFromSegmentLength(const std::vector<double> &dist, int first_frame,
   return -1;
 }
 
-void computeMeanRPE(const ArrayPoses &poses_gt, const ArrayPoses &poses_result, Sequence::SeqError &seq_err) {
+void computeMeanRPE(const ArrayPoses &poses_gt, const ArrayPoses &poses_result, Sequence::SeqError &seq_err,
+                    int step_size) {
   // static parameter
   double lengths[] = {100, 200, 300, 400, 500, 600, 700, 800};
   size_t num_lengths = sizeof(lengths) / sizeof(double);
-
-  // parameters
-  int step_size = 10;  // every 10 frame (= every second for LiDAR at 10Hz)
 
   // pre-compute distances (from ground truth as reference)
   std::vector<double> dist = trajectoryDistances(poses_gt);
@@ -94,8 +92,10 @@ void computeMeanRPE(const ArrayPoses &poses_gt, const ArrayPoses &poses_result, 
 
 }  // namespace
 
+// step_size: every 10 frame (= every second for LiDAR at 10Hz)
+// for the Navtech, use 4 (=every second at 4Hz)
 Sequence::SeqError evaluateOdometry(const std::string &filename, const ArrayPoses &poses_gt,
-                                    const ArrayPoses &poses_est) {
+                                    const ArrayPoses &poses_est, int step_size) {
   std::ofstream errorfile(filename);
   if (!errorfile.is_open()) throw std::runtime_error{"failed to open file: " + filename};
   errorfile << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
@@ -142,7 +142,7 @@ Sequence::SeqError evaluateOdometry(const std::string &filename, const ArrayPose
   seq_err.mean_local_err /= static_cast<double>(poses_gt.size() - 1);
 
   // Compute sequence mean RPE errors
-  computeMeanRPE(poses_gt, poses_est, seq_err);
+  computeMeanRPE(poses_gt, poses_est, seq_err, step_size);
 
   return seq_err;
 }
