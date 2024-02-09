@@ -1,6 +1,8 @@
 # STEAM-ICP
 
-Paper: [Picking Up Speed: Continuous-Time Lidar-Only Odometry using Doppler Velocity Measurements](https://ieeexplore.ieee.org/document/9968059)
+Paper: Continuous-Time Radar-Inertial and Lidar-Inertial Odometry using a Gaussian Process Motion Prior
+
+Previous Paper: [Picking Up Speed: Continuous-Time Lidar-Only Odometry using Doppler Velocity Measurements](https://ieeexplore.ieee.org/document/9968059)
 
 For code that pertains to the picking-up-speed paper, `git checkout picking_up_speed`
 
