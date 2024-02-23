@@ -1,6 +1,6 @@
 # STEAM-ICP
 
-Paper: Continuous-Time Radar-Inertial and Lidar-Inertial Odometry using a Gaussian Process Motion Prior
+Paper: [Continuous-Time Radar-Inertial and Lidar-Inertial Odometry using a Gaussian Process Motion Prior](https://arxiv.org/abs/2402.06174)
 
 Previous Paper: [Picking Up Speed: Continuous-Time Lidar-Only Odometry using Doppler Velocity Measurements](https://ieeexplore.ieee.org/document/9968059)
 
@@ -71,10 +71,10 @@ In terms of outputs, you should get something similar to the files in the [resul
 
 See python scripts in the [script](./script) directory for evaluation.
 
-## Citation
+## The following papers are based on this repository and can be cited as follows:
 
 ```bibtex
-@ARTICLE{9968059,
+@ARTICLE{wu_ral23,
   author={Wu, Yuchen and Yoon, David J. and Burnett, Keenan and Kammel, Soeren and Chen, Yi and Vhavle, Heethesh and Barfoot, Timothy D.},
   journal={IEEE Robotics and Automation Letters}, 
   title={Picking up Speed: Continuous-Time Lidar-Only Odometry Using Doppler Velocity Measurements}, 
@@ -83,6 +83,15 @@ See python scripts in the [script](./script) directory for evaluation.
   number={1},
   pages={264-271},
   doi={10.1109/LRA.2022.3226068}
+}
+```
+
+```bibtex
+@article{burnett_arxiv24,
+  title={Continuous-Time Radar-Inertial and Lidar-Inertial Odometry using a Gaussian Process Motion Prior},
+  author={Burnett, Keenan and Schoellig, Angela P and Barfoot, Timothy D},
+  journal={arXiv preprint arXiv:2402.06174},
+  year={2024}
 }
 ```
 
