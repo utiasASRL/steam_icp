@@ -2,6 +2,9 @@
 
 Paper: [Continuous-Time Radar-Inertial and Lidar-Inertial Odometry using a Gaussian Process Motion Prior](https://arxiv.org/abs/2402.06174)
 
+In the paper, STEAM-LO and STEAM-LIO are implemented in `steam_icp/src/odometry/steam_lo.cpp` where `use_imu=True` in the configuration yaml enables the use of an IMU.
+Similarly, STEAM-RO and STEAM-RIO are implemented in `steam_icp/odometry/steam_ro.cpp`.
+
 Previous Paper: [Picking Up Speed: Continuous-Time Lidar-Only Odometry using Doppler Velocity Measurements](https://ieeexplore.ieee.org/document/9968059)
 
 For code that pertains to the picking-up-speed paper, `git checkout picking_up_speed`
