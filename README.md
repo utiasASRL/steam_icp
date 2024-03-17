@@ -98,7 +98,7 @@ ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/c
 ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/config/ncd_singer_config.yaml
 # after setting use_accel=False, to run the Singer prior as lidar + gyro only on the Newer College dataset
 ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/config/ncd_singer_config.yaml
-# after setting use_imu=False, qc_diag: [5000.,5000.,5000.,500.,500.,500.], to run the Singer prior as lidar-only odometry on the Newer College Dataset, use:
+# after setting use_imu=False, to run the Singer prior as lidar-only odometry on the Newer College Dataset, use:
 ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/config/ncd_singer_config.yaml
 
 
