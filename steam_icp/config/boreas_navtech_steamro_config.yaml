@@ -1,8 +1,8 @@
 /**:
   ros__parameters:
-    log_dir: /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio
-    output_dir: /home/asrl/ASRL/temp/steam_icp/boreas_navtech/steamrio
-    eval_only: true
+    log_dir: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steamrio
+    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_navtech/steamrio
+    eval_only: false
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
@@ -15,10 +15,10 @@
     dataset: BoreasNavtech
     dataset_options:
       all_sequences: true
-      root_path: /home/asrl/boreas_docker_local
-      sequence: "boreas-2021-01-26-10-59"
+      root_path: /workspace/raid/krb/boreas/
+      sequence: "boreas-2021-09-02-11-42"
       init_frame: 0 # 5675 (highway 7 front image)
-      last_frame: 10000 # 5680 (highway 7 front image)
+      last_frame: 100000 # 5680 (highway 7 front image)
       min_dist_sensor_center: 2.0
       max_dist_sensor_center: 80.0
       radar_resolution: 0.0596
@@ -53,6 +53,8 @@
       # size_voxel_map: 1.0
       voxel_lifetime: 3
       max_distance: 80.0  # determines radius for cropping when adding to the map
+      min_number_keypoints: 1
+      init_num_frames: 40
 
 
       elastic:
@@ -61,25 +63,25 @@
       steam:
         qc_diag: [1.0, 0.004, 0.0001, 0.0001, 0.0001, 0.01] #[50.0, 50.0, 50.0, 5.0, 5.0, 5.0]  # [1.0, 0.0001, 0.0001, 0.0001, 0.0001, 0.01]
         # qc_diag: [50.0, 50.0, 50.0, 5.0, 5.0, 5.0]
-        num_threads: 16
+        num_threads: 10
         # parameters copied from VTR3:
-        p2p_loss_func: CAUCHY  # (L2, DCS, CAUCHY, GM, HUBER)
-        p2p_loss_sigma: 1.0
-        p2p_max_dist: 5.0
+        p2p_loss_func: HUBER  # (L2, DCS, CAUCHY, GM, HUBER)
+        p2p_loss_sigma: 0.15
+        p2p_max_dist: 1.0
         beta: 0.0535
         voxel_downsample: false
 
         p0_pose: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4]
         p0_vel: [1.0e-1, 1.0e-1, 1.0e-1, 1.0e-4, 1.0e-4, 1.0e-4]
 
-        r_imu_ang: 3.34471102e-03
-        q_bias_gyro: 1.0e-4
+        r_imu_ang: 3.34471102e-06
+        q_bias_gyro: 1.0e-6
         p0_bias_gyro: 1.0e-2
         use_imu: true
         use_accel: true
         max_iterations: 5
         verbose: true
-        delay_adding_points: 1
+        delay_adding_points: 2
         # Accel
         r_imu_acc: [5.0e-02, 100.0, 1.0]
         q_bias_accel: [0.1, 0.1, 1.0e-1]

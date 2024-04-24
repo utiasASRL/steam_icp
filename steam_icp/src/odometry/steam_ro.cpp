@@ -202,11 +202,16 @@ auto SteamRoOdometry::registerFrame(const DataFrame &const_frame) -> Registratio
   }
   trajectory_[index_frame].points = frame;
 
+  const Eigen::Vector3d t = trajectory_[index_frame].end_t;
+
   // add points
   if (index_frame == 0) {
     updateMap(index_frame, index_frame);
   } else if ((index_frame - options_.delay_adding_points) > 0) {
-    updateMap(index_frame, (index_frame - options_.delay_adding_points));
+    if ((t - t_prev_).norm() > 1.0) {
+      updateMap(index_frame, (index_frame - options_.delay_adding_points));
+      t_prev_ = t;
+    }
   }
 
   summary.corrected_points = keypoints;
@@ -568,33 +573,36 @@ bool SteamRoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       trajectory_vars_[prev_trajectory_var_index + 1].imu_biases, T_mi_var_, T_mi_var_, imu_options);
 
   if (options_.use_imu) {
-    if (options_.use_accel) {
-      preint_cost_term->set(imu_data_vec);
-      preint_cost_term->init();
-    }
-    imu_cost_terms.reserve(imu_data_vec.size());
-    Eigen::Matrix<double, 1, 1> R_ang = Eigen::Matrix<double, 1, 1>::Identity() * options_.r_imu_ang;
-    const auto gyro_noise_model = StaticNoiseModel<1>::MakeShared(R_ang);
-    const auto gyro_loss_func = CauchyLossFunc::MakeShared(1.0);
-    for (const auto &imu_data : imu_data_vec) {
-      size_t i = prev_trajectory_var_index;
-      for (; i < trajectory_vars_.size() - 1; i++) {
-        if (imu_data.timestamp >= trajectory_vars_[i].time.seconds() &&
-            imu_data.timestamp < trajectory_vars_[i + 1].time.seconds())
-          break;
+    if (index_frame > options_.init_num_frames) {
+      if (options_.use_accel) {
+        preint_cost_term->set(imu_data_vec);
+        preint_cost_term->init();
       }
-      if (imu_data.timestamp < trajectory_vars_[i].time.seconds() ||
-          imu_data.timestamp >= trajectory_vars_[i + 1].time.seconds())
-        throw std::runtime_error("imu stamp not within knot times");
+      imu_cost_terms.reserve(imu_data_vec.size());
+      Eigen::Matrix<double, 1, 1> R_ang = Eigen::Matrix<double, 1, 1>::Identity() * options_.r_imu_ang;
+      const auto gyro_noise_model = StaticNoiseModel<1>::MakeShared(R_ang);
+      const auto gyro_loss_func = CauchyLossFunc::MakeShared(1.0);
+      for (const auto &imu_data : imu_data_vec) {
+        size_t i = prev_trajectory_var_index;
+        for (; i < trajectory_vars_.size() - 1; i++) {
+          if (imu_data.timestamp >= trajectory_vars_[i].time.seconds() &&
+              imu_data.timestamp < trajectory_vars_[i + 1].time.seconds())
+            break;
+        }
+        if (imu_data.timestamp < trajectory_vars_[i].time.seconds() ||
+            imu_data.timestamp >= trajectory_vars_[i + 1].time.seconds())
+          throw std::runtime_error("imu stamp not within knot times");
 
-      const auto bias_intp_eval = VSpaceInterpolator<6>::MakeShared(
-          Time(imu_data.timestamp), trajectory_vars_[i].imu_biases, trajectory_vars_[i].time,
-          trajectory_vars_[i + 1].imu_biases, trajectory_vars_[i + 1].time);
+        const auto bias_intp_eval = VSpaceInterpolator<6>::MakeShared(
+            Time(imu_data.timestamp), trajectory_vars_[i].imu_biases, trajectory_vars_[i].time,
+            trajectory_vars_[i + 1].imu_biases, trajectory_vars_[i + 1].time);
 
-      const auto w_mr_inr_intp_eval = steam_trajectory->getVelocityInterpolator(Time(imu_data.timestamp));
-      const auto gyro_error_func = imu::GyroErrorSE2(w_mr_inr_intp_eval, bias_intp_eval, imu_data.ang_vel);
-      const auto gyro_cost = WeightedLeastSqCostTerm<1>::MakeShared(gyro_error_func, gyro_noise_model, gyro_loss_func);
-      imu_cost_terms.emplace_back(gyro_cost);
+        const auto w_mr_inr_intp_eval = steam_trajectory->getVelocityInterpolator(Time(imu_data.timestamp));
+        const auto gyro_error_func = imu::GyroErrorSE2(w_mr_inr_intp_eval, bias_intp_eval, imu_data.ang_vel);
+        const auto gyro_cost =
+            WeightedLeastSqCostTerm<1>::MakeShared(gyro_error_func, gyro_noise_model, gyro_loss_func);
+        imu_cost_terms.emplace_back(gyro_cost);
+      }
     }
 
     {
@@ -749,6 +757,7 @@ bool SteamRoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   auto p2p_options = P2PDopplerCVSuperCostTerm::Options();
   p2p_options.num_threads = options_.num_threads;
   p2p_options.p2p_loss_sigma = options_.p2p_loss_sigma;
+  if (index_frame < options_.init_num_frames) p2p_options.p2p_loss_sigma = 1.0;
   p2p_options.beta = options_.beta;
   p2p_options.T_sr = options_.T_sr;
   if (options_.p2p_loss_func == SteamRoOdometry::STEAM_LOSS_FUNC::L2)
@@ -763,7 +772,8 @@ bool SteamRoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       P2PDopplerCVSuperCostTerm::MakeShared(steam_trajectory, prev_steam_time, knot_times.back(), p2p_options);
 
   //
-  const double max_pair_d2 = options_.p2p_max_dist * options_.p2p_max_dist;
+  double max_pair_d2 = options_.p2p_max_dist * options_.p2p_max_dist;
+  if (index_frame < options_.init_num_frames) max_pair_d2 = 25.0;
 
   Eigen::Matrix<double, 6, 1> v_begin = Eigen::Matrix<double, 6, 1>::Zero();
   Eigen::Matrix<double, 6, 1> v_end = Eigen::Matrix<double, 6, 1>::Zero();
@@ -881,7 +891,7 @@ bool SteamRoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     for (const auto &cost : imu_cost_terms) problem.addCostTerm(cost);
     for (const auto &cost : imu_prior_cost_terms) problem.addCostTerm(cost);
     problem.addCostTerm(p2p_super_cost_term);
-    if (options_.use_imu && options_.use_accel) {
+    if (options_.use_imu && options_.use_accel && index_frame > options_.init_num_frames) {
       problem.addCostTerm(preint_cost_term);
     }
 
@@ -965,7 +975,7 @@ bool SteamRoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   for (const auto &imu_cost : imu_cost_terms) sliding_window_filter_->addCostTerm(imu_cost);
   for (const auto &imu_prior_cost : imu_prior_cost_terms) sliding_window_filter_->addCostTerm(imu_prior_cost);
   sliding_window_filter_->addCostTerm(p2p_super_cost_term);
-  if (options_.use_imu && options_.use_accel) {
+  if (options_.use_imu && options_.use_accel && index_frame > options_.init_num_frames) {
     sliding_window_filter_->addCostTerm(preint_cost_term);
   }
 

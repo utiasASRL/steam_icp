@@ -97,6 +97,8 @@ class SteamRoOdometry : public Odometry {
 
   steam::SlidingWindowFilter::Ptr sliding_window_filter_;
 
+  Eigen::Vector3d t_prev_ = Eigen::Vector3d::Zero();
+
   STEAM_ICP_REGISTER_ODOMETRY("STEAMRO", SteamRoOdometry);
 };
 
