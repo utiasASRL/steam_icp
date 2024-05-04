@@ -73,8 +73,10 @@ ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/c
 # this would run STEAM-LO from our "continuous-time radar-inertial..." paper (on the Boreas dataset)
 ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/config/boreas_velodyne_steamlo_config.yaml
 # this would run STEAM-RIO from our "continuous-time radar-inertial..." paper (on the Boreas dataset)
-ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/config/boreas_navtech_steamro_config.yaml
+ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/config/boreas_navtech_paper_results_config.yaml
 # after setting use_imu=False in the yaml file, this would run STEAM-RO from our "continuous-time radar-inertial..." paper (on the Boreas dataset)
+ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/config/boreas_navtech_paper_results_config.yaml
+# this would run STEAM-RIO++ from our "continuous-time radar-inertial..." paper (on the Boreas dataset)
 ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/config/boreas_navtech_steamro_config.yaml
 # this would run STEAM-LO from our "continuous-time radar-inertial..." paper (on the KITTI-raw dataset)
 ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/config/kitti_raw_steamlo_config.yaml
