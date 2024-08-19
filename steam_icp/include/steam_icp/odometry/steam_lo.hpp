@@ -57,11 +57,17 @@ class SteamLoOdometry : public Odometry {
     Eigen::Matrix<double, 6, 1> T_mi_init_cov = Eigen::Matrix<double, 6, 1>::Ones();
     std::string acc_loss_func = "L2";
     double acc_loss_sigma = 1.0;
+    std::string gyro_loss_func = "L2";
+    double gyro_loss_sigma = 1.0;
     //
     bool filter_lifetimes = false;
     bool swf_inside_icp_at_begin = true;
     bool break_icp_early = false;
     bool use_elastic_initialization = false;
+    double keyframe_translation_threshold_m = 0.0;
+    double keyframe_rotation_threshold_deg = 0.0;
+    bool use_line_search = false;
+    bool use_pointtopoint_factors = false;
   };
 
   SteamLoOdometry(const Options &options);
@@ -103,6 +109,9 @@ class SteamLoOdometry : public Odometry {
   std::map<double, std::pair<Matrix12d, Matrix12d>> interp_mats_;
 
   steam::SlidingWindowFilter::Ptr sliding_window_filter_;
+
+  Eigen::Vector3d t_prev_ = Eigen::Vector3d::Zero();
+  Eigen::Matrix3d r_prev_ = Eigen::Matrix3d::Identity();
 
   STEAM_ICP_REGISTER_ODOMETRY("STEAMLO", SteamLoOdometry);
 };

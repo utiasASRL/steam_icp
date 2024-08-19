@@ -1,8 +1,8 @@
 /**:
   ros__parameters:
-    log_dir: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlo
-    output_dir: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlo
-    eval_only: true
+    log_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlo
+    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlo
+    eval_only: false
 
     # VISUALIZATION OPTIONS ----
     visualization_options:
@@ -15,7 +15,7 @@
     dataset: BoreasVelodyne
     dataset_options:
       all_sequences: true
-      root_path: /home/asrl/boreas_docker_local
+      root_path: /workspace/raid/krb/boreas/
       sequence: "boreas-2021-01-26-10-59" #"boreas-2021-09-02-11-42"
       init_frame: 0 # 5675 (highway 7 front image)
       last_frame: 100000 # 5680 (highway 7 front image)
@@ -28,7 +28,7 @@
     odometry: STEAMLO
     odometry_options:
       debug_print: true
-      debug_path: /home/asrl/ASRL/temp/steam_icp/boreas_velodyne/steamlo
+      debug_path: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/steamlo
       num_iters_icp: 10
       # init_num_frames: 0
       sample_voxel_size: 1.70
@@ -102,7 +102,7 @@
         use_bias_prior_after_init: false
         pk_bias_accel: 1.0e-1  # prior after init
         pk_bias_gyro: 1.0e-1  # prior after init
-        xi_ig: [0., 0., 0., -1.51869911e-02,  3.07697005e-02, 0.]  # sim: [0., 0., 0., -0.0197052, 0.0285345, 0.] 
+        xi_ig: [0., 0., 0., 0.,  0., 0.]  # sim: [0., 0., 0., -0.0197052, 0.0285345, 0.] 
         p2p_loss_func: L2
         num_extra_states: 0
         acc_loss_func: L2
@@ -111,3 +111,7 @@
         gyro_loss_sigma: 1.0
         # swf_inside_icp_at_begin: false
         filter_lifetimes: true
+        # keyframe_translation_threshold_m: 1.0
+        # keyframe_rotation_threshold_deg: 30.0
+        break_icp_early: false
+        use_line_search: false

@@ -208,7 +208,7 @@ auto SteamRoOdometry::registerFrame(const DataFrame &const_frame) -> Registratio
   if (index_frame == 0) {
     updateMap(index_frame, index_frame);
   } else if ((index_frame - options_.delay_adding_points) > 0) {
-    if ((t - t_prev_).norm() > 1.0) {
+    if ((t - t_prev_).norm() > options_.keyframe_translation_threshold_m) {
       updateMap(index_frame, (index_frame - options_.delay_adding_points));
       t_prev_ = t;
     }
@@ -910,6 +910,10 @@ bool SteamRoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     GaussNewtonSolverNVA::Params params;
     params.verbose = options_.verbose;
     params.max_iterations = (unsigned int)options_.max_iterations;
+    if (iter >= 2 && options_.use_line_search)
+      params.line_search = true;
+    else
+      params.line_search = false;
 #if SWF_INSIDE_ICP
     params.reuse_previous_pattern = false;
 #endif
@@ -960,7 +964,7 @@ bool SteamRoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       if (options_.debug_print) {
         LOG(INFO) << "CT_ICP: Finished with N=" << iter << " ICP iterations" << std::endl;
       }
-      // break;
+      if (options_.break_icp_early) break;
     }
   }
 

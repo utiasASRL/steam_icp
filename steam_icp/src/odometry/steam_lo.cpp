@@ -254,11 +254,18 @@ auto SteamLoOdometry::registerFrame(const DataFrame &const_frame) -> Registratio
   }
   trajectory_[index_frame].points = frame;
 
+  const Eigen::Vector3d t = trajectory_[index_frame].end_t;
+  const Eigen::Matrix3d r = trajectory_[index_frame].end_R;
+
   // add points
   if (index_frame == 0) {
     updateMap(index_frame, index_frame);
   } else if ((index_frame - options_.delay_adding_points) > 0) {
-    updateMap(index_frame, (index_frame - options_.delay_adding_points));
+    // if ((t - t_prev_).norm() > options_.keyframe_translation_threshold_m || fabs(AngularDistance(r, r_prev_)) > options_.keyframe_rotation_threshold_deg) {
+      updateMap(index_frame, (index_frame - options_.delay_adding_points));
+      t_prev_ = t;
+      r_prev_ = r;
+    // }
   }
 
   summary.corrected_points = keypoints;
@@ -511,8 +518,6 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   std::vector<BaseCostTerm::ConstPtr> meas_cost_terms;
   std::vector<BaseCostTerm::ConstPtr> imu_cost_terms;
   std::vector<BaseCostTerm::ConstPtr> imu_prior_cost_terms;
-  std::vector<BaseCostTerm::ConstPtr> preint_cost_terms;
-  std::vector<BaseCostTerm::ConstPtr> T_mi_prior_cost_terms;
   const size_t prev_trajectory_var_index = trajectory_vars_.size() - 1;
   size_t curr_trajectory_var_index = trajectory_vars_.size() - 1;
 
@@ -649,7 +654,7 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       auto noise_model = StaticNoiseModel<6>::MakeShared(init_T_mi_cov);
       auto loss_func = L2LossFunc::MakeShared();
       const auto T_mi_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(T_mi_error, noise_model, loss_func);
-      T_mi_prior_cost_terms.emplace_back(T_mi_prior_factor);
+      imu_prior_cost_terms.emplace_back(T_mi_prior_factor);
     }
   }
 
@@ -724,33 +729,38 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   imu_options.gravity(2, 0) = options_.gravity;
   imu_options.r_imu_acc = options_.r_imu_acc;
 
-  const auto preint_cost_term = PreintAccCostTerm::MakeShared(
-      steam_trajectory, prev_steam_time, knot_times.back(), trajectory_vars_[prev_trajectory_var_index].imu_biases,
-      trajectory_vars_[prev_trajectory_var_index + 1].imu_biases, trajectory_vars_[prev_trajectory_var_index].T_mi,
-      trajectory_vars_[prev_trajectory_var_index + 1].T_mi, imu_options);
+  // const auto preint_cost_term = PreintAccCostTerm::MakeShared(
+  //     steam_trajectory, prev_steam_time, knot_times.back(), trajectory_vars_[prev_trajectory_var_index].imu_biases,
+  //     trajectory_vars_[prev_trajectory_var_index + 1].imu_biases, trajectory_vars_[prev_trajectory_var_index].T_mi,
+  //     trajectory_vars_[prev_trajectory_var_index + 1].T_mi, imu_options);
 
   auto gyro_options = GyroSuperCostTerm::Options();
   gyro_options.num_threads = options_.num_threads;
-  gyro_options.gyro_loss_func = GyroSuperCostTerm::LOSS_FUNC::L2;
+  if (options_.gyro_loss_func == "L2") gyro_options.gyro_loss_func = GyroSuperCostTerm::LOSS_FUNC::L2;
+  if (options_.acc_loss_func == "DCS") gyro_options.gyro_loss_func = GyroSuperCostTerm::LOSS_FUNC::DCS;
+  if (options_.acc_loss_func == "CAUCHY") gyro_options.gyro_loss_func = GyroSuperCostTerm::LOSS_FUNC::CAUCHY;
+  if (options_.acc_loss_func == "GM") gyro_options.gyro_loss_func = GyroSuperCostTerm::LOSS_FUNC::GM;
   gyro_options.r_imu_ang = options_.r_imu_ang;
+  gyro_options.gyro_loss_sigma = options_.gyro_loss_sigma;
 
-  const auto gyro_super_cost_term = GyroSuperCostTerm::MakeShared(
-      steam_trajectory, prev_steam_time, knot_times.back(), trajectory_vars_[prev_trajectory_var_index].imu_biases,
-      trajectory_vars_[prev_trajectory_var_index + 1].imu_biases, gyro_options);
+  // const auto gyro_super_cost_term = GyroSuperCostTerm::MakeShared(
+  //     steam_trajectory, prev_steam_time, knot_times.back(), trajectory_vars_[prev_trajectory_var_index].imu_biases,
+  //     trajectory_vars_[prev_trajectory_var_index + 1].imu_biases, gyro_options);
 
   if (options_.use_imu) {
-    if (options_.use_accel) {
-      preint_cost_term->set(imu_data_vec);
-      preint_cost_term->init();
-    }
-    gyro_super_cost_term->set(imu_data_vec);
-    gyro_super_cost_term->init();
+    // if (options_.use_accel) {
+    //   preint_cost_term->set(imu_data_vec);
+    //   preint_cost_term->init();
+    // }
+    // gyro_super_cost_term->set(imu_data_vec);
+    // gyro_super_cost_term->init();
 
     // imu_cost_terms.reserve(imu_data_vec.size());
     // Eigen::Matrix<double, 3, 3> R_ang = Eigen::Matrix<double, 3, 3>::Identity();
     // R_ang.diagonal() = options_.r_imu_ang;
     // const auto gyro_noise_model = StaticNoiseModel<3>::MakeShared(R_ang);
-    // const auto gyro_loss_func = L2LossFunc::MakeShared();
+    // // const auto gyro_loss_func = L2LossFunc::MakeShared();
+    // const auto gyro_loss_func = CauchyLossFunc::MakeShared(1.0);
     // for (const auto &imu_data : imu_data_vec) {
     //   size_t i = prev_trajectory_var_index;
     //   for (; i < trajectory_vars_.size() - 1; i++) {
@@ -769,8 +779,37 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     //   const auto w_mr_inr_intp_eval = steam_trajectory->getVelocityInterpolator(Time(imu_data.timestamp));
     //   const auto gyro_error_func = imu::GyroError(w_mr_inr_intp_eval, bias_intp_eval, imu_data.ang_vel);
     //   const auto gyro_cost = WeightedLeastSqCostTerm<3>::MakeShared(gyro_error_func, gyro_noise_model,
-    //   gyro_loss_func); imu_cost_terms.emplace_back(gyro_cost);
+    //   gyro_loss_func);
+    //   imu_cost_terms.emplace_back(gyro_cost);
     // }
+
+    
+    for (size_t i = prev_trajectory_var_index; i < trajectory_vars_.size() - 1; i++) {
+      const auto gyro_super_cost_term = GyroSuperCostTerm::MakeShared(
+        steam_trajectory, trajectory_vars_[i].time, trajectory_vars_[i + 1].time, trajectory_vars_[i].imu_biases,
+        trajectory_vars_[i + 1].imu_biases, gyro_options);
+        std::vector<steam::IMUData> data_vec;
+        for (auto imu_data : imu_data_vec) {
+          if (imu_data.timestamp >= trajectory_vars_[i].time.seconds() && imu_data.timestamp < trajectory_vars_[i + 1].time.seconds()) {
+            data_vec.push_back(imu_data);
+          }
+        }
+        if (!data_vec.size()) {
+          continue;
+        }
+        gyro_super_cost_term->set(data_vec);
+        gyro_super_cost_term->init();
+        imu_cost_terms.push_back(gyro_super_cost_term);
+        if (options_.use_accel) {
+          const auto preint_cost_term = PreintAccCostTerm::MakeShared(
+            steam_trajectory, trajectory_vars_[i].time, trajectory_vars_[i + 1].time, trajectory_vars_[i].imu_biases,
+            trajectory_vars_[i + 1].imu_biases, trajectory_vars_[i].T_mi,
+            trajectory_vars_[i + 1].T_mi, imu_options);
+          preint_cost_term->set(data_vec);
+          preint_cost_term->init();
+          imu_cost_terms.push_back(preint_cost_term);
+        }
+    }
 
     {
       Eigen::Matrix<double, 6, 6> bias_cov = Eigen::Matrix<double, 6, 6>::Identity();
@@ -797,7 +836,7 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       for (; i < trajectory_vars_.size() - 1; i++) {
         auto T_mi_error = se3_error(compose_rinv(trajectory_vars_[i + 1].T_mi, trajectory_vars_[i].T_mi), T_mi);
         const auto T_mi_prior_factor = WeightedLeastSqCostTerm<6>::MakeShared(T_mi_error, noise_model, loss_func);
-        T_mi_prior_cost_terms.emplace_back(T_mi_prior_factor);
+        imu_prior_cost_terms.emplace_back(T_mi_prior_factor);
       }
     }
   }
@@ -831,8 +870,6 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 #pragma omp critical
     interp_mats_.emplace(time, std::make_pair(omega, lambda));
   }
-
-  // #if USE_P2P_SUPER_COST_TERM
 
   auto transform_keypoints = [&]() {
     const auto knot1 = steam_trajectory->get(prev_steam_time);
@@ -922,6 +959,22 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     swf_inside_icp = true;
   }
 
+  const auto p2p_loss_func = [this]() -> BaseLossFunc::Ptr {
+    switch (options_.p2p_loss_func) {
+      case STEAM_LOSS_FUNC::L2:
+        return L2LossFunc::MakeShared();
+      case STEAM_LOSS_FUNC::DCS:
+        return DcsLossFunc::MakeShared(options_.p2p_loss_sigma);
+      case STEAM_LOSS_FUNC::CAUCHY:
+        return CauchyLossFunc::MakeShared(options_.p2p_loss_sigma);
+      case STEAM_LOSS_FUNC::GM:
+        return GemanMcClureLossFunc::MakeShared(options_.p2p_loss_sigma);
+      default:
+        return nullptr;
+    }
+    return nullptr;
+  }();
+
   //
   for (int iter(0); iter < options_.num_iters_icp; iter++) {
     timer[0].second->start();
@@ -967,55 +1020,44 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       ArrayVector3d vector_neighbors =
           map_.searchNeighbors(pt_keypoint, nb_voxels_visited, options_.size_voxel_map, options_.max_number_neighbors);
 
-      if ((int)vector_neighbors.size() < kMinNumNeighbors) {
-        continue;
-      }
-
-      // Compute normals from neighbors
+      if ((int)vector_neighbors.size() >= kMinNumNeighbors) {
+              // Compute normals from neighbors
       auto neighborhood = compute_neighborhood_distribution(vector_neighbors);
 
       const double planarity_weight = std::pow(neighborhood.a2D, options_.power_planarity);
       const double weight = planarity_weight;
+      Eigen::Vector3d closest_pt = vector_neighbors[0];
+      const double dist_to_plane = std::abs((keypoint.pt - closest_pt).transpose() * neighborhood.normal);
+      if (dist_to_plane >= options_.p2p_max_dist)
+        continue;
 
-      const double dist_to_plane = std::abs((keypoint.pt - vector_neighbors[0]).transpose() * neighborhood.normal);
-      double max_dist_to_plane = options_.p2p_max_dist;
-      bool use_p2p = (dist_to_plane < max_dist_to_plane);
-      if (use_p2p) {
 #if USE_P2P_SUPER_COST_TERM
-        Eigen::Vector3d closest_pt = vector_neighbors[0];
         Eigen::Vector3d closest_normal = weight * neighborhood.normal;
         p2p_matches.emplace_back(P2PMatch(keypoint.timestamp, closest_pt, closest_normal, keypoint.raw_pt));
 #else
-        Eigen::Vector3d closest_pt = vector_neighbors[0];
         Eigen::Vector3d closest_normal = weight * neighborhood.normal;
         /// \note query and reference point
         ///   const auto qry_pt = keypoint.raw_pt;
         ///   const auto ref_pt = closest_pt;
-        Eigen::Matrix3d W = (closest_normal * closest_normal.transpose() + 1e-5 * Eigen::Matrix3d::Identity());
-        const auto noise_model = StaticNoiseModel<3>::MakeShared(W, NoiseType::INFORMATION);
-        const auto &T_mr_intp_eval = T_mr_intp_eval_map[keypoint.timestamp];
-        const auto error_func = p2p::p2pError(T_mr_intp_eval, closest_pt, keypoint.raw_pt);
+        const auto noise_model = StaticNoiseModel<1>::MakeShared(Eigen::Matrix<double, 1, 1>::Identity());
+        const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(Time(keypoint.timestamp));
+        const auto T_mr_intp_eval = InverseEvaluator::MakeShared(T_rm_intp_eval);
+        const auto error_func = p2p::p2planeError(T_mr_intp_eval, closest_pt, keypoint.raw_pt, closest_normal);
         error_func->setTime(Time(keypoint.timestamp));
-
-        const auto loss_func = [this]() -> BaseLossFunc::Ptr {
-          switch (options_.p2p_loss_func) {
-            case STEAM_LOSS_FUNC::L2:
-              return L2LossFunc::MakeShared();
-            case STEAM_LOSS_FUNC::DCS:
-              return DcsLossFunc::MakeShared(options_.p2p_loss_sigma);
-            case STEAM_LOSS_FUNC::CAUCHY:
-              return CauchyLossFunc::MakeShared(options_.p2p_loss_sigma);
-            case STEAM_LOSS_FUNC::GM:
-              return GemanMcClureLossFunc::MakeShared(options_.p2p_loss_sigma);
-            default:
-              return nullptr;
-          }
-          return nullptr;
-        }();
-
-        const auto cost = WeightedLeastSqCostTerm<3>::MakeShared(error_func, noise_model, loss_func);
+        const auto cost = WeightedLeastSqCostTerm<1>::MakeShared(error_func, noise_model, p2p_loss_func);
         meas_cost_terms.emplace_back(cost);
 #endif
+      } else if (options_.use_pointtopoint_factors && vector_neighbors.size()) {
+        if ((keypoint.pt - vector_neighbors[0]).norm() >= options_.p2p_max_dist)
+          continue;
+        Eigen::Vector3d closest_pt = vector_neighbors[0];
+        const auto noise_model = StaticNoiseModel<3>::MakeShared(Eigen::Matrix3d::Identity());
+        const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(Time(keypoint.timestamp));
+        const auto T_mr_intp_eval = InverseEvaluator::MakeShared(T_rm_intp_eval);
+        const auto error_func = p2p::p2pError(T_mr_intp_eval, closest_pt, keypoint.raw_pt);
+        error_func->setTime(Time(keypoint.timestamp));
+        const auto cost = WeightedLeastSqCostTerm<3>::MakeShared(error_func, noise_model, p2p_loss_func);
+        meas_cost_terms.emplace_back(cost);
       }
     }
 
@@ -1031,13 +1073,13 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     for (const auto &cost : imu_cost_terms) problem->addCostTerm(cost);
     for (const auto &cost : imu_prior_cost_terms) problem->addCostTerm(cost);
     problem->addCostTerm(p2p_super_cost_term);
-    if (options_.use_imu) {
-      problem->addCostTerm(gyro_super_cost_term);
-      if (options_.use_accel) {
-        for (const auto &cost : T_mi_prior_cost_terms) problem->addCostTerm(cost);
-        problem->addCostTerm(preint_cost_term);
-      }
-    }
+    // if (options_.use_imu) {
+      // problem->addCostTerm(gyro_super_cost_term);
+      // if (options_.use_accel) {
+      //   for (const auto &cost : T_mi_prior_cost_terms) problem->addCostTerm(cost);
+      //   problem->addCostTerm(preint_cost_term);
+      // }
+    // }
 
     timer[1].second->stop();
 
@@ -1054,6 +1096,10 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     GaussNewtonSolverNVA::Params params;
     params.verbose = options_.verbose;
     params.max_iterations = (unsigned int)options_.max_iterations;
+    if (iter >= 2 && options_.use_line_search)
+      params.line_search = true;
+    else
+      params.line_search = false;
     if (swf_inside_icp) params.reuse_previous_pattern = false;
     GaussNewtonSolverNVA solver(*problem, params);
     solver.optimize();
@@ -1117,13 +1163,13 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   for (const auto &imu_cost : imu_cost_terms) sliding_window_filter_->addCostTerm(imu_cost);
   sliding_window_filter_->addCostTerm(p2p_super_cost_term);
   for (const auto &imu_prior_cost : imu_prior_cost_terms) sliding_window_filter_->addCostTerm(imu_prior_cost);
-  if (options_.use_imu) {
-    sliding_window_filter_->addCostTerm(gyro_super_cost_term);
-    if (options_.use_accel) {
-      for (const auto &cost : T_mi_prior_cost_terms) sliding_window_filter_->addCostTerm(cost);
-      sliding_window_filter_->addCostTerm(preint_cost_term);
-    }
-  }
+  // if (options_.use_imu) {
+  //   sliding_window_filter_->addCostTerm(gyro_super_cost_term);
+  //   if (options_.use_accel) {
+  //     for (const auto &cost : T_mi_prior_cost_terms) sliding_window_filter_->addCostTerm(cost);
+  //     sliding_window_filter_->addCostTerm(preint_cost_term);
+  //   }
+  // }
 
   //
   LOG(INFO) << "number of variables: " << sliding_window_filter_->getNumberOfVariables() << std::endl;
@@ -1216,3 +1262,4 @@ bool SteamLoOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 }
 
 }  // namespace steam_icp
+   

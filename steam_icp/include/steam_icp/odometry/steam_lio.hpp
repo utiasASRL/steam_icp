@@ -72,6 +72,9 @@ class SteamLioOdometry : public Odometry {
     double gyro_loss_sigma = 1.0;
     //
     bool filter_lifetimes = false;
+    bool break_icp_early = true;
+    bool use_line_search = false;
+    bool use_accel = true;
   };
 
   SteamLioOdometry(const Options &options);

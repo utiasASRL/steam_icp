@@ -212,8 +212,15 @@ NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(op
   Eigen::Matrix4d T_base1_imu = Eigen::Matrix4d::Identity();
   const double x = std::cos(M_PI_4);
   // yaw by pi / 4
-  T_base1_imu.block<3, 3>(0, 0) << x, -x, 0, x, x, 0, 0, 0, 1;
+  T_base1_imu.block<3, 3>(0, 0) << std::cos(M_PI_4), std::sin(M_PI_4), 0, -std::sin(M_PI_4), std::cos(M_PI_4), 0.0, 0.0, 0.0, 1.0;
   T_base1_imu.block<3, 1>(0, 3) << -0.08815464364571213, -0.03774772105123108, 0.02165299999999999;
+  
+  std::cout << "T_base1_imu: " << T_base1_imu << std::endl;
+  // Eigen::Matrix4d T2 = Eigen::Matrix4d::Identity();
+  // T2.block<3, 3>(0, 0) = T_base1_imu.block<3, 3>(0, 0).transpose();
+  // T2.block<3, 1>(0, 3) = -T_base1_imu.block<3, 3>(0, 0).transpose() * T_base1_imu.block<3, 1>(0, 3);
+  // T_base1_imu = T2;
+  std::cout << "T_base1_imu (inverse): " << T_base1_imu << std::endl;
   Eigen::Matrix4d T_base2_base1 = Eigen::Matrix4d::Identity();
   // xforwards to zforwards (optimal frame convention)
   T_base2_base1.block<3, 3>(0, 0) << 0, -1, 0, 0, 0, -1, 1, 0, 0;
@@ -223,6 +230,7 @@ NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(op
   T_imu_lidar_.block<3, 1>(0, 3) << -0.006252999999999995, 0.011774999999999994, 0.02853499999999999;
   T_imu_lidar_.block<3, 3>(0, 0) << -1, 0, 0, 0, -1, 0, 0, 0, 1;  // yaw rotation by pi
   T_lidar_base2_ = (T_base2_imu_ * T_imu_lidar_).inverse();
+  std::cout << "T_lidar_base2_: " << T_lidar_base2_ << std::endl;
 
   dir_path_ = options_.root_path + "/" + options_.sequence + "/raw_format/ouster_zip_files/ouster_scan/";
   auto dir_iter = std::filesystem::directory_iterator(dir_path_);
@@ -243,8 +251,6 @@ NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(op
   std::string sec = elems[1];
   std::string nsec = elems[2].substr(0, elems[2].find("."));
   filename_to_time_convert_factor_ = 1.0e-9;
-  initial_timestamp_ = std::stoll(sec) * uint64_t(1e9) + std::stoll(nsec);
-  std::cout << "initial timestamp: " << initial_timestamp_ << std::endl;
 
   for (const std::string filename : filenames_) {
     std::vector<std::string> elems;
@@ -258,6 +264,9 @@ NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(op
     uint64_t ts = std::stoll(sec) * uint64_t(1e9) + std::stoll(nsec);
     timestamps_.push_back(ts);
   }
+
+  initial_timestamp_ = timestamps_[0];
+  std::cout << "initial timestamp: " << initial_timestamp_ << std::endl;
 
   fs::path root_path{options_.root_path};
   std::string ground_truth_file = options_.root_path + "/" + options_.sequence + "/ground_truth/registered_poses.csv";
@@ -316,12 +325,13 @@ DataFrame NewerCollegeSequence::next() {
   while (std::getline(ss, item, '_')) {
     elems.push_back(item);
   }
-  std::string sec = elems[1];
-  std::string nsec = elems[2].substr(0, elems[2].find("."));
-  filename_to_time_convert_factor_ = 1.0e-9;
+  // std::string sec = elems[1];
+  // std::string nsec = elems[2].substr(0, elems[2].find("."));
+  // filename_to_time_convert_factor_ = 1.0e-9;
 
   DataFrame frame;
-  int64_t time_delta = std::stoll(sec) * uint64_t(1e9) + std::stoll(nsec) - initial_timestamp_;
+  // int64_t time_delta = std::stoll(sec) * uint64_t(1e9) + std::stoll(nsec) - initial_timestamp_;
+  int64_t time_delta = timestamps_[curr_frame] - initial_timestamp_;
   double time_delta_sec = double(time_delta) * filename_to_time_convert_factor_;
   frame.timestamp = time_delta_sec;
   const auto precision_time_file = options_.root_path + "/" + options_.sequence + "/lidar_times/" + filename;
@@ -336,6 +346,9 @@ DataFrame NewerCollegeSequence::next() {
     if (p.timestamp < tmin) tmin = p.timestamp;
     if (p.timestamp > tmax) tmax = p.timestamp;
   }
+  LOG(INFO) << "ts: " << frame.timestamp << " tmin: " << tmin << " tmax: " << tmax << std::endl;
+  // frame.timestamp = (tmax + tmin) / 2.0;
+  
   frame.imu_data_vec.reserve(10);
   for (; curr_imu_idx_ < imu_data_vec_.size(); curr_imu_idx_++) {
     if (imu_data_vec_[curr_imu_idx_].timestamp < tmin) {

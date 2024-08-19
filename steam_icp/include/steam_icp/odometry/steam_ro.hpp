@@ -57,6 +57,9 @@ class SteamRoOdometry : public Odometry {
     Eigen::Matrix<double, 3, 1> q_bias_accel = Eigen::Matrix<double, 3, 1>::Ones();
     std::string acc_loss_func = "L2";
     double acc_loss_sigma = 1.0;
+    double keyframe_translation_threshold_m = 1.0;
+    bool use_line_search = false;
+    bool break_icp_early = false;
   };
 
   SteamRoOdometry(const Options &options);

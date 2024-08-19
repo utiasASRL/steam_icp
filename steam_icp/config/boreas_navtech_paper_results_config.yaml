@@ -88,4 +88,7 @@
         p0_bias_accel: [1.0e-3, 1.0e-3, 1.0e-1]
         acc_loss_func: L2
         acc_loss_sigma: 1.0
+        keyframe_translation_threshold_m: 1.0
+        use_line_search: false
+        break_icp_early: false
 

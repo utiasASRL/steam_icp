@@ -901,6 +901,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   auto imu_options = IMUSuperCostTerm::Options();
   imu_options.num_threads = options_.num_threads;
   imu_options.acc_loss_sigma = options_.acc_loss_sigma;
+  imu_options.use_accel = options_.use_accel;
   if (options_.acc_loss_func == "L2") imu_options.acc_loss_func = IMUSuperCostTerm::LOSS_FUNC::L2;
   if (options_.acc_loss_func == "DCS") imu_options.acc_loss_func = IMUSuperCostTerm::LOSS_FUNC::DCS;
   if (options_.acc_loss_func == "CAUCHY") imu_options.acc_loss_func = IMUSuperCostTerm::LOSS_FUNC::CAUCHY;
@@ -1249,6 +1250,10 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     GaussNewtonSolverNVA::Params params;
     params.verbose = options_.verbose;
     params.max_iterations = (unsigned int)options_.max_iterations;
+    if (iter >= 2 && options_.use_line_search)
+      params.line_search = true;
+    else
+      params.line_search = false;
     if (swf_inside_icp) params.reuse_previous_pattern = false;
     GaussNewtonSolverNVA solver(*problem, params);
     solver.optimize();
@@ -1321,7 +1326,7 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       if (options_.debug_print) {
         LOG(INFO) << "CT_ICP: Finished with N=" << iter << " ICP iterations" << std::endl;
       }
-      break;
+      if (options_.break_icp_early) break;
     }
     timer[0].second->start();
     transform_keypoints();
