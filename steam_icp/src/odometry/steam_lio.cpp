@@ -610,6 +610,8 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
     throw std::runtime_error{"missing previous scan end variable"};
   Time prev_steam_time = trajectory_vars_.back().time;
   lgmath::se3::Transformation prev_T_rm = trajectory_vars_.back().T_rm->value();
+  Eigen::Matrix<double, 6, 1> prev_w_mr_inr = trajectory_vars_.back().w_mr_inr->value();
+  Eigen::Matrix<double, 6, 1> prev_dw_mr_inr = trajectory_vars_.back().dw_mr_inr->value();
   Eigen::Matrix<double, 6, 1> prev_imu_biases = trajectory_vars_.back().imu_biases->value();
   lgmath::se3::Transformation prev_T_mi = trajectory_vars_.back().T_mi->value();
 
@@ -645,10 +647,13 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   LOG(INFO) << "[CT_ICP_STEAM] curr scan end time: " << trajectory_[index_frame].end_timestamp << std::endl;
   LOG(INFO) << "[CT_ICP_STEAM] total num new states: " << 1 << std::endl;
   const double curr_time = trajectory_[index_frame].end_timestamp;
-  const int num_states = 1;
+  const int num_states = options_.num_extra_states + 1;
   const double time_diff = (curr_time - prev_time) / static_cast<double>(num_states);
   std::vector<double> knot_times;
   knot_times.reserve(num_states);
+  for (int i = 0; i < options_.num_extra_states; ++i) {
+    knot_times.emplace_back(prev_time + (double)(i + 1) * time_diff);
+  }
   knot_times.emplace_back(curr_time);
 
   /// add new state variables, initialize with constant velocity
@@ -672,18 +677,26 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   for (size_t i = 0; i < knot_times.size(); ++i) {
     double knot_time = knot_times[i];
     Time knot_steam_time(knot_time);
-    const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(knot_steam_time);
-    const auto w_mr_inr_intp_eval = steam_trajectory->getVelocityInterpolator(knot_steam_time);
-    const auto dw_mr_inr_intp_eval = steam_trajectory->getAccelerationInterpolator(knot_steam_time);
-    const auto knot_T_rm = T_rm_intp_eval->value();
-    const auto T_rm_var = SE3StateVar::MakeShared(knot_T_rm);
-    const auto w_mr_inr_var = VSpaceStateVar<6>::MakeShared(w_mr_inr_intp_eval->value());
-    const auto dw_mr_inr_var = VSpaceStateVar<6>::MakeShared(dw_mr_inr_intp_eval->value());
+    // const auto T_rm_intp_eval = steam_trajectory->getPoseInterpolator(knot_steam_time);
+    // const auto w_mr_inr_intp_eval = steam_trajectory->getVelocityInterpolator(knot_steam_time);
+    // const auto dw_mr_inr_intp_eval = steam_trajectory->getAccelerationInterpolator(knot_steam_time);
+    // const auto knot_T_rm = T_rm_intp_eval->value();
+    // const auto T_rm_var = SE3StateVar::MakeShared(knot_T_rm);
+    // const auto w_mr_inr_var = VSpaceStateVar<6>::MakeShared(w_mr_inr_intp_eval->value());
+    // const auto dw_mr_inr_var = VSpaceStateVar<6>::MakeShared(dw_mr_inr_intp_eval->value());
 
     // const auto T_rm_var = SE3StateVar::MakeShared(T_next);
     // const auto w_mr_inr_var = VSpaceStateVar<6>::MakeShared(w_next);
     // const auto dw_mr_inr_var = VSpaceStateVar<6>::MakeShared(dw_next);
     //
+
+    const Eigen::Matrix<double, 6, 1> xi_mr_inr_odo((knot_steam_time - prev_steam_time).seconds() * prev_w_mr_inr);
+    const auto knot_T_rm = lgmath::se3::Transformation(xi_mr_inr_odo) * prev_T_rm;
+    const auto T_rm_var = SE3StateVar::MakeShared(knot_T_rm);
+    const auto w_mr_inr_var = VSpaceStateVar<6>::MakeShared(prev_w_mr_inr);
+    const auto dw_mr_inr_var = VSpaceStateVar<6>::MakeShared(prev_dw_mr_inr);
+
+
 
     LOG(INFO) << "init: w_mr_inr_var->value() " << w_mr_inr_var->value().transpose() << std::endl;
     LOG(INFO) << "init: dw_mr_inr_var->value() " << dw_mr_inr_var->value().transpose() << std::endl;
@@ -922,7 +935,10 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
 
   // Get IMU cost terms
   if (options_.use_imu) {
-#if true
+    for (auto imu : imu_data_vec) {
+      std::cout << std::setprecision(4) << imu.timestamp << " " << imu.ang_vel.transpose() << " " << imu.lin_acc.transpose() << std::endl;
+    }
+#if false
     imu_super_cost_term->set(imu_data_vec);
     imu_super_cost_term->init();
 #else
@@ -973,7 +989,8 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
       gyro_error_func->setTime(Time(imu_data.timestamp));
 
       const auto acc_cost = WeightedLeastSqCostTerm<3>::MakeShared(acc_error_func, acc_noise_model, acc_loss_func);
-      imu_cost_terms.emplace_back(acc_cost);
+      if (options_.use_accel)
+        imu_cost_terms.emplace_back(acc_cost);
       const auto gyro_cost = WeightedLeastSqCostTerm<3>::MakeShared(gyro_error_func, gyro_noise_model, gyro_loss_func);
       imu_cost_terms.emplace_back(gyro_cost);
     }
@@ -1117,10 +1134,21 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   p2p_matches.clear();
   int N_matches = 0;
 
-  Eigen::Matrix<double, 6, 1> v_begin = Eigen::Matrix<double, 6, 1>::Zero();
-  Eigen::Matrix<double, 6, 1> v_end = Eigen::Matrix<double, 6, 1>::Zero();
-  Eigen::Matrix<double, 6, 1> a_begin = Eigen::Matrix<double, 6, 1>::Zero();
-  Eigen::Matrix<double, 6, 1> a_end = Eigen::Matrix<double, 6, 1>::Zero();
+  Time curr_begin_steam_time(static_cast<double>(trajectory_[index_frame].begin_timestamp));
+  const auto begin_T_mr = inverse(steam_trajectory->getPoseInterpolator(curr_begin_steam_time))->value().matrix();
+  const auto begin_T_ms = begin_T_mr * options_.T_sr.inverse();
+  current_estimate.begin_t = begin_T_ms.block<3, 1>(0, 3);
+  current_estimate.begin_R = begin_T_ms.block<3, 3>(0, 0);
+  Time curr_end_steam_time(static_cast<double>(trajectory_[index_frame].end_timestamp));
+  const auto end_T_mr = inverse(steam_trajectory->getPoseInterpolator(curr_end_steam_time))->value().matrix();
+  const auto end_T_ms = end_T_mr * options_.T_sr.inverse();
+  current_estimate.end_t = end_T_ms.block<3, 1>(0, 3);
+  current_estimate.end_R = end_T_ms.block<3, 3>(0, 0);
+
+  Eigen::Matrix<double, 6, 1> v_begin = steam_trajectory->getVelocityInterpolator(curr_begin_steam_time)->value();
+  Eigen::Matrix<double, 6, 1> v_end = steam_trajectory->getVelocityInterpolator(curr_end_steam_time)->value();
+  Eigen::Matrix<double, 6, 1> a_begin = steam_trajectory->getAccelerationInterpolator(curr_begin_steam_time)->value();
+  Eigen::Matrix<double, 6, 1> a_end = steam_trajectory->getAccelerationInterpolator(curr_end_steam_time)->value();
 
   bool swf_inside_icp = true;  // kitti-raw : false
   if (index_frame > options_.init_num_frames) swf_inside_icp = true;
@@ -1367,10 +1395,8 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
   }
 
   // clang-format off
-  Time curr_begin_steam_time(static_cast<double>(current_estimate.begin_timestamp));
   const auto curr_begin_T_mr = inverse(steam_trajectory->getPoseInterpolator(curr_begin_steam_time))->value().matrix();
   const auto curr_begin_T_ms = curr_begin_T_mr * options_.T_sr.inverse();
-  Time curr_end_steam_time(static_cast<double>(current_estimate.end_timestamp));
   const auto curr_end_T_mr = inverse(steam_trajectory->getPoseInterpolator(curr_end_steam_time))->value().matrix();
   const auto curr_end_T_ms = curr_end_T_mr * options_.T_sr.inverse();
 
@@ -1410,9 +1436,19 @@ bool SteamLioOdometry::icp(int index_frame, std::vector<Point3D> &keypoints,
                                           trajectory_vars_[i + 1].imu_biases, trajectory_vars_[i + 1].time);
 
     current_estimate.mid_b = bias_intp_eval->value();
+    LOG(INFO) << "mid_T_mi: " << current_estimate.mid_T_mi << std::endl;
+    LOG(INFO) << "b_begin: " << trajectory_vars_[i].imu_biases->value().transpose() << std::endl;
+    LOG(INFO) << "b_end: " << trajectory_vars_[i + 1].imu_biases->value().transpose() << std::endl;
   }
 
   LOG(INFO) << "Number of keypoints used in CT-ICP : " << N_matches << std::endl;
+  LOG(INFO) << "v_begin: " << v_begin.transpose() << std::endl;
+  LOG(INFO) << "v_end: " << v_end.transpose() << std::endl;
+  LOG(INFO) << "a_begin: " << a_begin.transpose() << std::endl;
+  LOG(INFO) << "a_end: " << a_end.transpose() << std::endl;
+  
+  
+
 
   /// Debug print
   if (options_.debug_print) {

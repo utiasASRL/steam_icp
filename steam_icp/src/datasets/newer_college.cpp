@@ -293,7 +293,7 @@ NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(op
       std::getline(ss, sec, ',');
       std::getline(ss, nsec, ',');
       const int64_t tns = std::stoll(sec) * uint64_t(1e9) + std::stoll(nsec);
-      imu_data.timestamp = double(tns - int64_t(initial_timestamp_)) * 1.0e-9;
+      imu_data.timestamp = double(tns - int64_t(initial_timestamp_)) * double(1.0e-9);
       std::getline(ss, value, ',');
       imu_data.ang_vel[0] = std::stod(value);
       std::getline(ss, value, ',');

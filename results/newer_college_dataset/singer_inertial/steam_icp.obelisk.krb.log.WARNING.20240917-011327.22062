@@ -1,0 +1,108 @@
+Log file created at: 2024/09/17 01:13:27
+Running on machine: obelisk
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+W20240917 01:13:27.189913 22062 main.cpp:1082] Logging to /home/krb/ASRL/temp/steam_icp/newer_college_dataset/steamlio
+W20240917 01:13:27.190308 22062 main.cpp:120] Parameter suspend_on_failure = 0
+W20240917 01:13:27.190374 22062 main.cpp:121] Parameter output_dir = /home/krb/ASRL/temp/steam_icp/newer_college_dataset/steamlio
+W20240917 01:13:27.190438 22062 main.cpp:124] Parameter eval_only = 0
+W20240917 01:13:27.190492 22062 main.cpp:130] Parameter dataset = NewerCollege
+W20240917 01:13:27.190547 22062 main.cpp:134] Parameter dataset_options.all_sequences = 0
+W20240917 01:13:27.190604 22062 main.cpp:135] Parameter dataset_options.root_path = /workspace/raid/krb/newer_college_dataset
+W20240917 01:13:27.190665 22062 main.cpp:136] Parameter dataset_options.sequence = 06_dynamic_spinning
+W20240917 01:13:27.190718 22062 main.cpp:137] Parameter dataset_options.init_frame = 0
+W20240917 01:13:27.190771 22062 main.cpp:138] Parameter dataset_options.last_frame = 100000
+W20240917 01:13:27.190825 22062 main.cpp:139] Parameter dataset_options.min_dist_sensor_center = 0.1
+W20240917 01:13:27.190908 22062 main.cpp:140] Parameter dataset_options.max_dist_sensor_center = 100
+W20240917 01:13:27.190970 22062 main.cpp:141] Parameter dataset_options.lidar_timestamp_round = 0
+W20240917 01:13:27.191025 22062 main.cpp:142] Parameter dataset_options.lidar_timestamp_round_hz = 5000
+W20240917 01:13:27.191084 22062 main.cpp:166] Parameter visualization_options.odometry = 1
+W20240917 01:13:27.191143 22062 main.cpp:167] Parameter visualization_options.raw_points = 0
+W20240917 01:13:27.191200 22062 main.cpp:168] Parameter visualization_options.sampled_points = 1
+W20240917 01:13:27.191253 22062 main.cpp:169] Parameter visualization_options.map_points = 0
+W20240917 01:13:27.191308 22062 main.cpp:178] (YAML)Parameter visualization_options.T_sr = 
+1 0 0 0
+0 1 0 0
+0 0 1 0
+0 0 0 1
+W20240917 01:13:27.191406 22062 main.cpp:187] Parameter odometry = STEAMLIO
+W20240917 01:13:27.191465 22062 main.cpp:210] Parameter odometry_options.init_num_frames = 20
+W20240917 01:13:27.191520 22062 main.cpp:211] Parameter odometry_options.init_voxel_size = 0.2
+W20240917 01:13:27.191583 22062 main.cpp:212] Parameter odometry_options.voxel_size = 0.5
+W20240917 01:13:27.191641 22062 main.cpp:213] Parameter odometry_options.init_sample_voxel_size = 1
+W20240917 01:13:27.191699 22062 main.cpp:214] Parameter odometry_options.sample_voxel_size = 1
+W20240917 01:13:27.191756 22062 main.cpp:216] Parameter odometry_options.size_voxel_map = 1
+W20240917 01:13:27.191818 22062 main.cpp:217] Parameter odometry_options.min_distance_points = 0.1
+W20240917 01:13:27.191877 22062 main.cpp:218] Parameter odometry_options.max_num_points_in_voxel = 20
+W20240917 01:13:27.191932 22062 main.cpp:219] Parameter odometry_options.max_distance = 400
+W20240917 01:13:27.191990 22062 main.cpp:220] Parameter odometry_options.min_number_neighbors = 10
+W20240917 01:13:27.192047 22062 main.cpp:221] Parameter odometry_options.max_number_neighbors = 20
+W20240917 01:13:27.192101 22062 main.cpp:222] Parameter odometry_options.voxel_lifetime = 10
+W20240917 01:13:27.192153 22062 main.cpp:224] Parameter odometry_options.num_iters_icp = 10
+W20240917 01:13:27.192206 22062 main.cpp:225] Parameter odometry_options.threshold_orientation_norm = 0.0001
+W20240917 01:13:27.192268 22062 main.cpp:226] Parameter odometry_options.threshold_translation_norm = 0.001
+W20240917 01:13:27.192327 22062 main.cpp:227] Parameter odometry_options.min_number_keypoints = 0
+W20240917 01:13:27.192381 22062 main.cpp:229] Parameter odometry_options.debug_print = 1
+W20240917 01:13:27.192435 22062 main.cpp:230] Parameter odometry_options.debug_path = /home/krb/ASRL/temp/steam_icp/newer_college_dataset/steamlio
+W20240917 01:13:27.192512 22062 main.cpp:646] Parameter odometry_options.steam.T_sr = 
+0000000000-1 -3.58979e-09 000000000000 000-0.006253
+03.58979e-09 0000000000-1 000000000000 00000.011775
+000000000000 000000000000 000000000001 000-0.028535
+000000000000 000000000000 000000000000 000000000001
+W20240917 01:13:27.192652 22062 main.cpp:657] Parameter odometry_options.steam.qc_diag = 5000 5000 5000 0500 0500 0500
+W20240917 01:13:27.192730 22062 main.cpp:666] Parameter odometry_options.steam.ad_diag = 000 000 000 100 100 100
+W20240917 01:13:27.192834 22062 main.cpp:675] Parameter odometry_options.steam.qg_diag = 0.001 0.001 0.001 0.001 0.001 0.001
+W20240917 01:13:27.192909 22062 main.cpp:684] Parameter odometry_options.steam.p0_pose = 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001
+W20240917 01:13:27.192981 22062 main.cpp:693] Parameter odometry_options.steam.p0_vel = 1 1 1 1 1 1
+W20240917 01:13:27.193055 22062 main.cpp:702] Parameter odometry_options.steam.p0_accel = 1 1 1 1 1 1
+W20240917 01:13:27.193128 22062 main.cpp:712] Parameter odometry_options.steam.T_mi_init_cov = 1 1 1 1 1 1
+W20240917 01:13:27.193198 22062 main.cpp:721] Parameter odometry_options.steam.T_mi_prior_cov = 000.01 000.01 00.001 000001 000001 0.0001
+W20240917 01:13:27.193270 22062 main.cpp:729] Parameter odometry_options.steam.xi_ig = 0 0 0 0 0 0
+W20240917 01:13:27.193344 22062 main.cpp:732] Parameter odometry_options.steam.num_extra_states = 0
+W20240917 01:13:27.193400 22062 main.cpp:734] Parameter odometry_options.steam.power_planarity = 2
+W20240917 01:13:27.193457 22062 main.cpp:735] Parameter odometry_options.steam.p2p_max_dist = 1
+W20240917 01:13:27.193516 22062 main.cpp:737] Parameter odometry_options.steam.p2p_loss_func = L2
+W20240917 01:13:27.193576 22062 main.cpp:751] Parameter odometry_options.steam.p2p_loss_sigma = 0.1
+W20240917 01:13:27.193637 22062 main.cpp:753] Parameter odometry_options.steam.acc_loss_func = L2
+W20240917 01:13:27.193696 22062 main.cpp:754] Parameter odometry_options.steam.acc_loss_sigma = 1
+W20240917 01:13:27.193756 22062 main.cpp:755] Parameter odometry_options.steam.gyro_loss_func = L2
+W20240917 01:13:27.193810 22062 main.cpp:756] Parameter odometry_options.steam.gyro_loss_sigma = 1
+W20240917 01:13:27.193871 22062 main.cpp:758] Parameter odometry_options.steam.verbose = 1
+W20240917 01:13:27.193931 22062 main.cpp:759] Parameter odometry_options.steam.max_iterations = 10
+W20240917 01:13:27.193986 22062 main.cpp:760] Parameter odometry_options.steam.num_threads = 8
+W20240917 01:13:27.194038 22062 main.cpp:761] Parameter odometry_options.steam.delay_adding_points = 1
+W20240917 01:13:27.194092 22062 main.cpp:762] Parameter odometry_options.steam.use_final_state_value = 0
+W20240917 01:13:27.194149 22062 main.cpp:763] Parameter odometry_options.steam.gravity = -9.81599
+W20240917 01:13:27.194216 22062 main.cpp:769] Parameter odometry_options.steam.r_imu_acc = 0.156 0.156 0.156
+W20240917 01:13:27.194283 22062 main.cpp:776] Parameter odometry_options.steam.r_imu_ang = 0.0004326 0.0004326 0.0004326
+W20240917 01:13:27.194357 22062 main.cpp:785] Parameter odometry_options.steam.r_pose = 0 0 0 0 0 0
+W20240917 01:13:27.194427 22062 main.cpp:794] Parameter odometry_options.steam.p0_bias_accel = 0.1 0.1 0.1
+W20240917 01:13:27.194494 22062 main.cpp:802] Parameter odometry_options.steam.q_bias_accel = 0.011236 0.011236 0.011236
+W20240917 01:13:27.194566 22062 main.cpp:805] Parameter odometry_options.steam.pk_bias_accel = 0.1
+W20240917 01:13:27.194628 22062 main.cpp:806] Parameter odometry_options.steam.p0_bias_gyro = 0.01
+W20240917 01:13:27.194684 22062 main.cpp:807] Parameter odometry_options.steam.pk_bias_gyro = 0.1
+W20240917 01:13:27.194742 22062 main.cpp:808] Parameter odometry_options.steam.q_bias_gyro = 0.00016
+W20240917 01:13:27.194800 22062 main.cpp:809] Parameter odometry_options.steam.use_imu = 1
+W20240917 01:13:27.194859 22062 main.cpp:810] Parameter odometry_options.steam.T_mi_init_only = 1
+W20240917 01:13:27.194911 22062 main.cpp:811] Parameter odometry_options.steam.use_T_mi_prior_after_init = 0
+W20240917 01:13:27.194965 22062 main.cpp:812] Parameter odometry_options.steam.use_bias_prior_after_init = 0
+W20240917 01:13:27.195019 22062 main.cpp:813] Parameter odometry_options.steam.filter_lifetimes = 0
+W20240917 01:13:27.195076 22062 main.cpp:814] Parameter odometry_options.steam.break_icp_early = 1
+W20240917 01:13:27.195148 22062 main.cpp:815] Parameter odometry_options.steam.use_line_search = 1
+W20240917 01:13:27.195204 22062 main.cpp:816] Parameter odometry_options.steam.use_accel = 1
+W20240917 01:13:27.195266 22062 main.cpp:1096] Creating directory /home/krb/ASRL/temp/steam_icp/newer_college_dataset/steamlio/
+W20240917 01:13:27.228730 22062 main.cpp:1106] Running odometry on sequence: 06_dynamic_spinning
+W20240917 01:15:31.027170 22062 main.cpp:1298] Average loading ..................... 9.62313 ms
+W20240917 01:15:31.027197 22062 main.cpp:1298] Average registration ................ 92.6755 ms
+W20240917 01:15:31.027210 22062 main.cpp:1298] Average visualization ............... 0.244592 ms
+W20240917 01:15:31.328066 22062 main.cpp:1308] Mean RPE : -nan
+W20240917 01:15:31.328100 22062 main.cpp:1309] Mean RPE 2D : -nan
+W20240917 01:15:31.328112 22062 main.cpp:1310] Mean APE : 0.176474
+W20240917 01:15:31.328123 22062 main.cpp:1311] Max APE : 0.611185
+W20240917 01:15:31.328135 22062 main.cpp:1312] Mean Local Error : 0.027215
+W20240917 01:15:31.328145 22062 main.cpp:1313] Max Local Error : 0.231161
+W20240917 01:15:31.328155 22062 main.cpp:1314] Index Max Local Error : 238
+W20240917 01:15:31.328163 22062 main.cpp:1316] KITTI Summary : -nan & -nan & -nan & -nan\\
+W20240917 01:15:31.328174 22062 main.cpp:1322] 
+W20240917 01:15:31.703198 22062 main.cpp:1330] 
+W20240917 01:15:31.703220 22062 main.cpp:1341] KITTI metric translation/rotation : -nan -nan
