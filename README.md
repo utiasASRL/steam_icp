@@ -100,7 +100,7 @@ ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/c
 ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/config/ncd_singer_config.yaml
 # after setting use_accel=False, to run the Singer prior as lidar + gyro only on the Newer College dataset
 ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/config/ncd_singer_config.yaml
-# after setting use_imu=False, to run the Singer prior as lidar-only odometry on the Newer College Dataset, use:
+# after setting use_imu=False, ad_diag = [100.0,100.0,100.0,100.,100.,100.], qc_diag = [500000.,500000.,500000.,50000.,50000.,50000.], use_line_search=False, to run the Singer prior as lidar-only odometry on the Newer College Dataset, use:
 ros2 run steam_icp steam_icp --ros-args --params-file ${WORKING_DIR}/steam_icp/config/ncd_singer_config.yaml
 
 
@@ -142,6 +142,15 @@ See python scripts in the [script](./script) directory for evaluation.
   title={Continuous-Time Radar-Inertial and Lidar-Inertial Odometry using a Gaussian Process Motion Prior},
   author={Burnett, Keenan and Schoellig, Angela P and Barfoot, Timothy D},
   journal={arXiv preprint arXiv:2402.06174},
+  year={2024}
+}
+```
+
+```bibtex
+@article{burnett_arxiv24b,
+  title={IMU as an Input vs. a Measurement of the State in Inertial-Aided State Estimation},
+  author={Burnett, Keenan and Schoellig, Angela P and Barfoot, Timothy D},
+  journal={arXiv preprint arXiv:2403.05968},
   year={2024}
 }
 ```
