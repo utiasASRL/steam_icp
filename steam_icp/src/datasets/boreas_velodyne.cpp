@@ -313,6 +313,11 @@ BoreasVelodyneSequence::BoreasVelodyneSequence(const Options &options) : Sequenc
       pose_data_vec_.push_back(pose_data);
     }
   }
+
+  for (const std::string filename : filenames_) {
+    const std::string time_str = filename.substr(0, filename.find("."));
+    timestamps_.push_back(std::stoll(time_str));
+  }
   LOG(INFO) << "Loaded IMU Data: " << imu_data_vec_.size() << std::endl;
   LOG(INFO) << "Loaded Pose Meas Data: " << pose_data_vec_.size() << std::endl;
 }
@@ -390,6 +395,31 @@ void BoreasVelodyneSequence::save(const std::string &path, const Trajectory &tra
       posefile << R(0, 0) << " " << R(0, 1) << " " << R(0, 2) << " " << t(0) << " " << R(1, 0) << " " << R(1, 1) << " "
                << R(1, 2) << " " << t(1) << " " << R(2, 0) << " " << R(2, 1) << " " << R(2, 2) << " " << t(2)
                << std::endl;
+    }
+  }
+
+  //
+  {
+    const auto filename = path + "/" + options_.sequence + "_tum.txt";
+    std::ofstream posefile(filename);
+    if (!posefile.is_open()) throw std::runtime_error{"failed to open file: " + filename};
+    posefile << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+    // timestamp x y z q_x q_y q_z q_w
+    // for (auto &frame : trajectory) {
+    const uint64_t convert_factor = 1.0 / filename_to_time_convert_factor_;
+    for (size_t i = 0; i < trajectory.size(); ++i) {
+      const auto &frame = trajectory[i];
+      const uint64_t ts = timestamps_[i];
+      const uint64_t sec = ts / convert_factor;
+      const std::string sec_str = std::to_string(sec);
+      const uint64_t nsec = (ts % convert_factor) * (1e9 / convert_factor);
+      const std::string nsec_str = std::to_string(nsec);
+      int n_zero = 9;
+      const auto nsec_str2 = std::string(n_zero - std::min(n_zero, int(nsec_str.length())), '0') + nsec_str;
+      const Eigen::Matrix4d T = frame.getMidPose();
+      const Eigen::Quaterniond q(Eigen::Matrix3d(T.block<3, 3>(0, 0)));
+      posefile << sec_str << "." << nsec_str2 << " " << T(0, 3) << " " << T(1, 3) << " " << T(2, 3) << " " << q.x()
+               << " " << q.y() << " " << q.z() << " " << q.w() << std::endl;
     }
   }
 

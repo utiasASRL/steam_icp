@@ -31,6 +31,7 @@ class BoreasVelodyneSequence : public Sequence {
   int curr_frame_ = 0;
   int last_frame_ = std::numeric_limits<int>::max();  // exclusive bound
   double filename_to_time_convert_factor_ = 1.0e-6;   // may change depending on length of timestamp (ns vs. us)
+  std::vector<uint64_t> timestamps_;
 };
 
 class BoreasVelodyneDataset : public Dataset {

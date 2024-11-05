@@ -1,0 +1,87 @@
+/**:
+  ros__parameters:
+    log_dir: /home/krb/ASRL/temp/steam_icp/newer_college_dataset/discretelio
+    output_dir: /home/krb/ASRL/temp/steam_icp/newer_college_dataset/discretelio
+    eval_only: false
+
+    # VISUALIZATION OPTIONS ----
+    visualization_options:
+      odometry: true
+      raw_points: false
+      sampled_points: true
+      map_points: true
+    # DATASET OPTIONS ----
+    dataset: NewerCollege
+    dataset_options:
+      all_sequences: false
+      root_path: /workspace/raid/krb/newer_college_dataset
+      sequence: "06_dynamic_spinning"
+      init_frame: 1
+      last_frame: 100000
+      min_dist_sensor_center: 0.1
+      max_dist_sensor_center: 100.0
+      lidar_timestamp_round: false
+      lidar_timestamp_round_hz: 5000.0
+
+    # ODOMETRY OPTIONS ----
+    odometry: DiscreteLIO
+    odometry_options:
+      debug_print: true
+      debug_path: /home/krb/ASRL/temp/steam_icp/newer_college_dataset/discretelio
+      num_iters_icp: 20
+      # init_voxel_size: 0.5
+      # voxel_size: 0.5
+      # init_sample_voxel_size: 0.5
+      # sample_voxel_size: 0.5
+      threshold_orientation_norm: 0.1
+      threshold_translation_norm: 0.025
+      voxel_size: 0.25
+      sample_voxel_size: 0.5
+      size_voxel_map: 0.5
+      min_number_neighbors: 10
+      # max_number_neighbors: 25
+      # voxel_lifetime: 100
+      # map:
+      # min_distance_points: 0.05
+      # max_num_points_in_voxel: 100
+      max_distance: 400.0  #LIO: 400
+      # voxel_lifetime: 10
+      min_number_keypoints: 0
+
+      elastic:
+        num_threads: 20
+
+      steam:
+        p2p_max_dist: 1.0
+        p2p_loss_func: L2
+        num_threads: 16
+        # Gyro
+        r_imu_ang: [4.326e-0, 4.326e-0, 4.326e-0]
+        q_bias_gyro: 1.6e-10
+        p0_bias_gyro: 1.0e-2
+        pk_bias_gyro: 1.0e-1  # prior after init
+        # Accel
+        r_imu_acc: [5.0e+02, 5.0e+02, 5.0e+02]
+        q_bias_accel: [1.0e-10, 1.0e-10, 1.0e-10]
+        p0_bias_accel: [1.0e-2, 1.0e-2, 1.0e-2]
+        gravity: -9.81599
+        pk_bias_accel: 1.0e-1  # prior after init
+        # IMU
+        imu_loss_func: L2
+        imu_loss_sigma: 1.0
+        use_bias_prior_after_init: false
+        # STEAM
+        max_iterations: 10
+        verbose: true
+        use_line_search: false
+        # length of sliding window
+        delay_adding_points: 1
+        # Robot (ground truth frame) to Lidar sensor
+        T_sr_vec: [ 0.01849613,  0.00982219, -0.028535  ,  0.        ,  0.        , 3.14159265]
+        # mapping
+        filter_lifetimes: false  #LIO: false
+        # ICP
+        break_icp_early: true
+        # Init cov
+        p0_pose: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4]
+        p0_vel: [1.0e-1, 1.0e-1, 1.0e-1]

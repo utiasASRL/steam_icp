@@ -383,7 +383,14 @@ int main(int argc, char **argv) {
 
   // Build the Output_dir
   LOG(WARNING) << "Creating directory " << options.output_dir << std::endl;
-  fs::create_directories(options.output_dir);
+  fs::path output_path{options.output_dir};
+  fs::create_directories(output_path);
+  fs::create_directories(output_path / "lidar");
+  fs::create_directories(output_path / "applanix");
+  fs::create_directories(output_path / "calib");
+  fs::path root_path{options.root_path};
+  const auto copyOptions = fs::copy_options::update_existing;
+  fs::copy(root_path / options.sequence / "calib" / "T_applanix_lidar.txt", output_path / "calib" / "T_applanix_lidar.txt", copyOptions);
 
   // Load VLS128 Config
   const auto lidar_config = loadVLS128Config(options.lidar_config);
@@ -407,10 +414,12 @@ int main(int argc, char **argv) {
 
   const double wall_delta = 1.0e-6;
   const uint64_t t0_us = 1695166988000000;  // just pick a random epoch time to conform to the expected format
-  fs::path output_path{options.output_dir};
+  
   std::ofstream lidar_pose_out(output_path / "applanix" / "lidar_poses.csv", std::ios::out);
+  std::ofstream lidar_pose_tum(output_path / "applanix" / "lidar_poses_tum.txt", std::ios::out);
   std::ofstream lidar_pose_meas(output_path / "applanix" / "lidar_pose_meas.csv", std::ios::out);
   lidar_pose_out << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+  lidar_pose_tum << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
   lidar_pose_meas << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
   lidar_pose_out
       << "GPSTime,easting,northing,altitude,vel_east,vel_north,vel_up,roll,pitch,heading,angvel_z,angvel_y,angvel_x"
@@ -456,6 +465,7 @@ int main(int argc, char **argv) {
                 (-v_amps[j] * v_freqs[j] * (2 * M_PI)) * std::cos(v_freqs[j] * (sensor_s - 2 * delta_s) * (2 * M_PI));
             // }
           }
+          w += options.x0.block<6, 1>(6, 0);
         }
         const double dtg = (sensor_tns - sensor_tns_prev) * 1.0e-9;
         T_ri_local = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * dtg + 0.5 * dtg * dtg * dw)).matrix() *
@@ -593,6 +603,7 @@ int main(int argc, char **argv) {
                      std::cos(v_freqs[j] * (t_mid_min_ns * 1.0e-9 - 2 * delta_s) * (2 * M_PI));
           // }
         }
+        w += options.x0.block<6, 1>(6, 0);
       }
       double dtg = dtns * 1.0e-9;
       T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * dtg + 0.5 * dtg * dtg * dw)).matrix() *
@@ -622,6 +633,7 @@ int main(int argc, char **argv) {
         dw(j, 0) = (-v_amps[j] * v_freqs[j] * (2 * M_PI)) * std::cos(v_freqs[j] * (t_mid_s - 2 * delta_s) * (2 * M_PI));
         // }
       }
+      w += options.x0.block<6, 1>(6, 0);
     }
     const Eigen::Vector3d v_ri_in_i = T_ir.block<3, 3>(0, 0) * -1 * w.block<3, 1>(0, 0);
     const Eigen::Vector3d w_si_in_s = options.T_sr.block<3, 3>(0, 0) * -1 * w.block<3, 1>(3, 0);
@@ -631,6 +643,17 @@ int main(int argc, char **argv) {
                    << "," << v_ri_in_i(1, 0) << "," << v_ri_in_i(2, 0) << "," << ypr(2, 0) << "," << ypr(1, 0) << ","
                    << ypr(0, 0) << "," << w_si_in_s(2, 0) << "," << w_si_in_s(1, 0) << "," << w_si_in_s(0, 0)
                    << std::endl;
+    {               
+      const uint64_t sec = t_mid_us / uint64_t(1000000);
+      const std::string sec_str = std::to_string(sec);
+      const uint64_t nsec = (t_mid_us % 1000000) * (1000);
+      const std::string nsec_str = std::to_string(nsec);
+      int n_zero = 9;
+      const auto nsec_str2 = std::string(n_zero - std::min(n_zero, int(nsec_str.length())), '0') + nsec_str;
+      const Eigen::Quaterniond q(Eigen::Matrix3d(T_is.block<3, 3>(0, 0)));
+      lidar_pose_tum << sec_str << "." << nsec_str2 << " " << T_is(0, 3) << " " << T_is(1, 3) << " " << T_is(2, 3) << " " << q.x()
+               << " " << q.y() << " " << q.z() << " " << q.w() << std::endl;
+    }
 
     nav_msgs::msg::Odometry odometry;
     odometry.header.frame_id = "map";
@@ -654,6 +677,7 @@ int main(int argc, char **argv) {
                      std::cos(v_freqs[j] * (t_end_min_ns * 1.0e-9 - 2 * delta_s) * (2 * M_PI));
           // }
         }
+        w += options.x0.block<6, 1>(6, 0);
       }
       double dtg = dtns * 1.0e-9;
       T_ri = lgmath::se3::Transformation(Eigen::Matrix<double, 6, 1>(w * dtg + 0.5 * dtg * dtg * dw)).matrix() *
@@ -688,6 +712,7 @@ int main(int argc, char **argv) {
   }
 
   lidar_pose_out.close();
+  lidar_pose_tum.close();
 
   std::ofstream imu_raw_out(output_path / "applanix" / "imu_raw.csv", std::ios::out);
   std::ofstream imu_out(output_path / "applanix" / "imu.csv", std::ios::out);
@@ -713,8 +738,8 @@ int main(int argc, char **argv) {
   const Eigen::Matrix3d C_robot_body = yfwd2xfwd * imu_body_raw_to_applanix;
   const Eigen::Matrix3d C_body_robot = C_robot_body.inverse();
 
-  // TODO: step through simulation for IMU measurements
-  // TODO: rotate gravity vector into the sensor frame.
+  // Step through simulation for IMU measurements
+  // Rotate gravity vector into the sensor frame.
   const uint64_t delta_imu_ns = 1000000000 / options.imu_rate;
   const double delta_imu_s = delta_imu_ns * 1.0e-9;
   const Eigen::Matrix3d C_ig = lgmath::so3::Rotation(options.xi_ig).matrix();
@@ -745,6 +770,7 @@ int main(int argc, char **argv) {
             (-v_amps[j] * v_freqs[j] * (2 * M_PI)) * std::cos(v_freqs[j] * (tns * 1.0e-9 - 2 * delta_s) * (2 * M_PI));
         // }
       }
+      w += options.x0.block<6, 1>(6, 0);
     }
     // simulate fake IMU measurements
     const double ts = (tns + t0_ns) * 1.0e-9;
@@ -835,6 +861,7 @@ int main(int argc, char **argv) {
             (-v_amps[j] * v_freqs[j] * (2 * M_PI)) * std::cos(v_freqs[j] * (tns * 1.0e-9 - 2 * delta_s) * (2 * M_PI));
         // }
       }
+      w += options.x0.block<6, 1>(6, 0);
     }
 
     const double ts = (tns + t0_ns) * 1.0e-9;

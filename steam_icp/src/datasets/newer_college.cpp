@@ -198,7 +198,6 @@ std::vector<Point3D> readPointCloud(const std::string &path, const std::string &
   //     frame_last_timestamp = frame[i].alpha_timestamp;
   //   }
   // }
-
   for (int i(0); i < (int)frame.size(); i++) {
     frame[i].timestamp = frame[i].alpha_timestamp + time_delta_sec;
     frame[i].alpha_timestamp = std::min(1.0, std::max(0.0, 1 - (frame_last_timestamp - frame[i].alpha_timestamp) /
@@ -210,7 +209,7 @@ std::vector<Point3D> readPointCloud(const std::string &path, const std::string &
 
 NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(options) {
   Eigen::Matrix4d T_base1_imu = Eigen::Matrix4d::Identity();
-  const double x = std::cos(M_PI_4);
+  // const double x = std::cos(M_PI_4);
   // yaw by pi / 4
   T_base1_imu.block<3, 3>(0, 0) << std::cos(M_PI_4), std::sin(M_PI_4), 0, -std::sin(M_PI_4), std::cos(M_PI_4), 0.0, 0.0, 0.0, 1.0;
   T_base1_imu.block<3, 1>(0, 3) << -0.08815464364571213, -0.03774772105123108, 0.02165299999999999;
@@ -261,7 +260,7 @@ NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(op
     }
     std::string sec = elems[1];
     std::string nsec = elems[2].substr(0, elems[2].find("."));
-    uint64_t ts = std::stoll(sec) * uint64_t(1e9) + std::stoll(nsec);
+    uint64_t ts = std::stoll(sec) * uint64_t(1000000000) + std::stoll(nsec);
     timestamps_.push_back(ts);
   }
 
@@ -274,8 +273,14 @@ NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(op
   const ArrayPoses gt_poses(gt_poses_full.begin() + init_frame_, gt_poses_full.begin() + last_frame_);
   T_i_r_gt_poses = gt_poses;
 
+  // std::string imu_path = options_.root_path + "/" + options_.sequence + "/raw_format/realsense_imu/data.csv";
   std::string imu_path = options_.root_path + "/" + options_.sequence + "/raw_format/ouster_imu/data.csv";
   std::ifstream imu_file(imu_path);
+
+  // Eigen::Matrix3d C_imu = Eigen::Matrix3d::Zero();
+  // const double x = std::cos(M_PI / 4.0);
+  // C_imu << x, 0, x, -x, 0, x, 0, -1, 0;
+  // std::cout << "C_imu: " << C_imu << std::endl;
 
   // const double initial_timestamp_sec = initial_timestamp_ * filename_to_time_convert_factor_;
   if (imu_file.is_open()) {
@@ -292,8 +297,8 @@ NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(op
       std::string sec, nsec;
       std::getline(ss, sec, ',');
       std::getline(ss, nsec, ',');
-      const int64_t tns = std::stoll(sec) * uint64_t(1e9) + std::stoll(nsec);
-      imu_data.timestamp = double(tns - int64_t(initial_timestamp_)) * double(1.0e-9);
+      const uint64_t tns = std::stoll(sec) * uint64_t(1000000000) + std::stoll(nsec);
+      imu_data.timestamp = double(tns - uint64_t(initial_timestamp_)) * double(1.0e-9);
       std::getline(ss, value, ',');
       imu_data.ang_vel[0] = std::stod(value);
       std::getline(ss, value, ',');
@@ -307,6 +312,9 @@ NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(op
       imu_data.lin_acc[1] = std::stod(value);
       std::getline(ss, value, ',');
       imu_data.lin_acc[2] = std::stod(value);
+
+      // imu_data.ang_vel = C_imu * imu_data.ang_vel;
+      // imu_data.lin_acc = C_imu * imu_data.lin_acc;
 
       imu_data_vec_.emplace_back(imu_data);
     }
@@ -331,7 +339,7 @@ DataFrame NewerCollegeSequence::next() {
 
   DataFrame frame;
   // int64_t time_delta = std::stoll(sec) * uint64_t(1e9) + std::stoll(nsec) - initial_timestamp_;
-  int64_t time_delta = timestamps_[curr_frame] - initial_timestamp_;
+  uint64_t time_delta = timestamps_[curr_frame] - initial_timestamp_;
   double time_delta_sec = double(time_delta) * filename_to_time_convert_factor_;
   frame.timestamp = time_delta_sec;
   const auto precision_time_file = options_.root_path + "/" + options_.sequence + "/lidar_times/" + filename;
@@ -369,8 +377,6 @@ void NewerCollegeSequence::save(const std::string &path, const Trajectory &traje
   ArrayPoses poses;
   poses.reserve(trajectory.size());
 
-  // TODO: transform poses into the left camera frame (RS_C1)
-
   for (auto &frame : trajectory) {
     poses.emplace_back(T_base2_imu_ * frame.getMidPose() * T_lidar_base2_);
   }
@@ -400,12 +406,12 @@ void NewerCollegeSequence::save(const std::string &path, const Trajectory &traje
     posefile << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
     // timestamp x y z q_x q_y q_z q_w
     // for (auto &frame : trajectory) {
-    for (int i = 0; i < trajectory.size(); ++i) {
+    for (size_t i = 0; i < trajectory.size(); ++i) {
       const auto &frame = trajectory[i];
       const uint64_t ts = timestamps_[i];
-      const uint64_t sec = ts / uint64_t(1e9);
+      const uint64_t sec = ts / uint64_t(1000000000);
       const std::string sec_str = std::to_string(sec);
-      const uint64_t nsec = ts % uint64_t(1e9);
+      const uint64_t nsec = ts % uint64_t(1000000000);
       const std::string nsec_str = std::to_string(nsec);
       int n_zero = 9;
       const auto nsec_str2 = std::string(n_zero - std::min(n_zero, int(nsec_str.length())), '0') + nsec_str;

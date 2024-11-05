@@ -1,0 +1,74 @@
+/**:
+  ros__parameters:
+    log_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/discretelio
+    output_dir: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/discretelio
+    eval_only: false
+
+    # VISUALIZATION OPTIONS ----
+    visualization_options:
+      odometry: true
+      raw_points: false
+      sampled_points: true
+      map_points: false
+
+    # DATASET OPTIONS ----
+    dataset: BoreasVelodyne
+    dataset_options:
+      all_sequences: false
+      root_path: /workspace/raid/krb/boreas/robotica_sims
+      sequence: "fast_0000"
+      init_frame: 0 # 5675 (highway 7 front image)
+      last_frame: 100000 # 5680 (highway 7 front image)
+      min_dist_sensor_center: 0.1
+      max_dist_sensor_center: 100.0
+      lidar_timestamp_round: true
+      lidar_timestamp_round_hz: 5000.0
+
+    # ODOMETRY OPTIONS ----
+    odometry: DiscreteLIO
+    odometry_options:
+      debug_print: true
+      debug_path: /home/krb/ASRL/temp/steam_icp/boreas_velodyne/discretelio
+      num_iters_icp: 10
+      sample_voxel_size: 1.0
+      min_number_neighbors: 10
+      max_distance: 400.0  #LIO: 400
+      min_number_keypoints: 10
+
+      elastic:
+        num_threads: 20
+
+      steam:
+        p2p_max_dist: 1.0
+        p2p_loss_func: L2
+        num_threads: 16
+        # Gyro
+        r_imu_ang: [100., 100., 100.]
+        q_bias_gyro: 1.0e-10
+        p0_bias_gyro: 1.0e-2
+        pk_bias_gyro: 1.0e-1  # prior after init
+        # Accel
+        r_imu_acc: [380.25, 380.25, 380.25]
+        q_bias_accel: [1.0e-10, 1.0e-10, 1.0e-10]
+        p0_bias_accel: [1.0e-2, 1.0e-2, 1.0e-2]
+        gravity: -9.8042  #-9.8042
+        pk_bias_accel: 1.0e-1  # prior after init
+        # IMU
+        imu_loss_func: L2
+        imu_loss_sigma: 1.0
+        use_bias_prior_after_init: false
+        # STEAM
+        max_iterations: 10
+        verbose: true
+        use_line_search: true
+        # length of sliding window
+        delay_adding_points: 1
+        # mapping
+        filter_lifetimes: false  #LIO: false
+        # ICP
+        break_icp_early: true
+        # Init cov
+        p0_pose: [1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4]
+        p0_vel: [1.0e-0, 1.0e-0, 1.0e-0]
+        # Sim Debug (pose measurements)
+        r_pose: [0.000625,0.000625,0.000625,0.000076154,0.000076154,0.000076154]

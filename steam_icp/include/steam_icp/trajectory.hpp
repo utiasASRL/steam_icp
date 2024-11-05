@@ -1,6 +1,7 @@
 #pragma once
 
 #include "steam.hpp"
+#include "steam/problem/cost_term/imu_super_cost_term.hpp"
 
 #include "steam_icp/point.hpp"
 
@@ -78,6 +79,7 @@ struct TrajectoryFrame {
   Eigen::Matrix4d mid_T_mi = Eigen::Matrix4d::Identity();
 
   std::vector<Point3D> points;
+  std::vector<steam::IMUData> imu_data_vec;
 
  private:
   Eigen::Matrix4d mid_pose_ = Eigen::Matrix4d::Identity();
