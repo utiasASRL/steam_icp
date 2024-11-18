@@ -1,2 +1,2 @@
-*.ipynb  text
-#*.ipynb linguist-documentation
+#*.ipynb  text
+*.ipynb linguist-documentation
