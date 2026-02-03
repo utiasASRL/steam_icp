@@ -67,7 +67,7 @@ check_status_code $?
 
 echo "[STEAM_ICP] -- [STEAM_ICP] -- building steam icp package"
 cd ${STEAM_ICP_SRC_DIR}
-source /opt/ros/galactic/setup.bash
+source /opt/ros/${ROS_DISTRO}/setup.bash
 colcon build --symlink-install \
 	--packages-select steam_icp \
 	--cmake-args \

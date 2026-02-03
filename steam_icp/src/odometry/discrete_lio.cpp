@@ -1,12 +1,11 @@
-#include "steam_icp/odometry/discrete_lio.hpp"
-
+#include <set>
 #include <iomanip>
 #include <random>
-
 #include <glog/logging.h>
 
-#include "steam.hpp"
+#include <steam.hpp>
 
+#include "steam_icp/odometry/discrete_lio.hpp"
 #include "steam_icp/utils/stopwatch.hpp"
 
 namespace steam_icp {

@@ -53,7 +53,7 @@ ExternalProject_Add(
 	PREFIX Ceres
 
 	GIT_REPOSITORY  https://ceres-solver.googlesource.com/ceres-solver
-	GIT_TAG 2.0.0
+	GIT_TAG 2.2.0
 
 	BUILD_ALWAYS OFF
 	INSTALL_DIR ${EXT_INSTALL_DIR}/Ceres

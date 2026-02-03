@@ -1,11 +1,10 @@
-#include "steam_icp/odometry/ceres_elastic_icp.hpp"
-
 #include <iomanip>
 #include <random>
-
+#include <set>
 #include <ceres/ceres.h>
 #include <glog/logging.h>
 
+#include "steam_icp/odometry/ceres_elastic_icp.hpp"
 #include "steam_icp/utils/stopwatch.hpp"
 
 namespace steam_icp {
@@ -284,7 +283,7 @@ class ICPOptimizationBuilder {
   void AddParameterBlocks(Eigen::Quaterniond &begin_quat, Eigen::Quaterniond &end_quat, Eigen::Vector3d &begin_t,
                           Eigen::Vector3d &end_t) {
     if (parameter_block_set_) throw std::runtime_error{"The parameter block was already set"};
-    auto *parameterization = new ceres::EigenQuaternionParameterization();
+    auto *parameterization = new ceres::EigenQuaternionManifold();
     begin_t_ = &begin_t.x();
     end_t_ = &end_t.x();
     begin_quat_ = &begin_quat.x();
