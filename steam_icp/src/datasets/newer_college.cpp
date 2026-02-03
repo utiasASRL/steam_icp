@@ -297,8 +297,14 @@ NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(op
       std::string sec, nsec;
       std::getline(ss, sec, ',');
       std::getline(ss, nsec, ',');
-      const uint64_t tns = std::stoll(sec) * uint64_t(1000000000) + std::stoll(nsec);
-      imu_data.timestamp = double(tns - uint64_t(initial_timestamp_)) * double(1.0e-9);
+      const uint64_t sec_u  = std::stoull(sec);
+      const uint64_t nsec_u = std::stoull(nsec);
+      if (nsec_u >= 1'000'000'000ULL) {
+          throw std::runtime_error("nsec out of range");
+      }
+      const uint64_t tns = sec_u * 1'000'000'000ULL + nsec_u;
+      const int64_t dt_ns = static_cast<int64_t>(tns) - static_cast<int64_t>(initial_timestamp_);
+      imu_data.timestamp = static_cast<double>(dt_ns) * 1e-9;
       std::getline(ss, value, ',');
       imu_data.ang_vel[0] = std::stod(value);
       std::getline(ss, value, ',');
