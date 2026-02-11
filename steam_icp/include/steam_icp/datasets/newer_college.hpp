@@ -22,7 +22,7 @@ class NewerCollegeSequence : public Sequence {
  private:
   std::string dir_path_;
   std::vector<std::string> filenames_;
-  int64_t initial_timestamp_;
+  uint64_t initial_timestamp_;
   std::vector<steam::IMUData> imu_data_vec_;
   std::vector<PoseData> pose_data_vec_;
   unsigned curr_imu_idx_ = 0;

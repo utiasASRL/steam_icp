@@ -207,6 +207,11 @@ std::vector<Point3D> readPointCloud(const std::string &path, const std::string &
   return frame;
 }
 
+struct FrameData {
+  uint64_t timestamp;
+  std::string filename;
+};
+
 NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(options) {
   Eigen::Matrix4d T_base1_imu = Eigen::Matrix4d::Identity();
   // const double x = std::cos(M_PI_4);
@@ -247,8 +252,7 @@ NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(op
   while (std::getline(ss, item, '_')) {
     elems.push_back(item);
   }
-  std::string sec = elems[1];
-  std::string nsec = elems[2].substr(0, elems[2].find("."));
+
   filename_to_time_convert_factor_ = 1.0e-9;
 
   for (const std::string filename : filenames_) {
@@ -260,9 +264,29 @@ NewerCollegeSequence::NewerCollegeSequence(const Options &options) : Sequence(op
     }
     std::string sec = elems[1];
     std::string nsec = elems[2].substr(0, elems[2].find("."));
-    uint64_t ts = std::stoll(sec) * uint64_t(1000000000) + std::stoll(nsec);
+    uint64_t s = std::stoull(sec);
+    uint64_t ns = std::stoull(nsec);
+    if (ns >= 1'000'000'000ULL) {
+      throw std::runtime_error("nsec in filename out of range");
+    }
+    uint64_t ts = s * 1'000'000'000ULL + ns;
     timestamps_.push_back(ts);
   }
+
+  // Sort by timestamp just in case lexicographical order fails
+  std::vector<FrameData> frames;
+  for (size_t i = 0; i < filenames_.size(); ++i) {
+    frames.push_back({timestamps_[i], filenames_[i]});
+  }
+  std::sort(frames.begin(), frames.end(),
+          [](const FrameData& a, const FrameData& b) {
+              return a.timestamp < b.timestamp;
+          });
+  for (size_t i = 0; i < frames.size(); ++i) {
+    timestamps_[i] = frames[i].timestamp;
+    filenames_[i] = frames[i].filename;
+  }
+
 
   initial_timestamp_ = timestamps_[0];
   std::cout << "initial timestamp: " << initial_timestamp_ << std::endl;
@@ -339,14 +363,10 @@ DataFrame NewerCollegeSequence::next() {
   while (std::getline(ss, item, '_')) {
     elems.push_back(item);
   }
-  // std::string sec = elems[1];
-  // std::string nsec = elems[2].substr(0, elems[2].find("."));
-  // filename_to_time_convert_factor_ = 1.0e-9;
 
   DataFrame frame;
-  // int64_t time_delta = std::stoll(sec) * uint64_t(1e9) + std::stoll(nsec) - initial_timestamp_;
-  uint64_t time_delta = timestamps_[curr_frame] - initial_timestamp_;
-  double time_delta_sec = double(time_delta) * filename_to_time_convert_factor_;
+  const int64_t time_delta = static_cast<int64_t>(timestamps_[curr_frame]) - static_cast<int64_t>(initial_timestamp_);
+  const double time_delta_sec = static_cast<double>(time_delta) * filename_to_time_convert_factor_;
   frame.timestamp = time_delta_sec;
   const auto precision_time_file = options_.root_path + "/" + options_.sequence + "/lidar_times/" + filename;
   frame.pointcloud = readPointCloud(dir_path_ + "/" + filename, precision_time_file, time_delta_sec,
