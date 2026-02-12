@@ -20,3 +20,6 @@ log/
 .vscode/
 
 *.ipynb_checkpoints
+
+# Jetbrain workspaces
+.idea
